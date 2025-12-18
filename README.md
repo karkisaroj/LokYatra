@@ -1,5 +1,3 @@
-LokYatra 
-
 # LokYatra
 
 ## Project Structure
