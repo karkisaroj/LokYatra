@@ -1,0 +1,29 @@
+# Flutter/Dart
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/build/
+frontend/flutter_*.log
+frontend/ios/Pods/
+frontend/ios/.symlinks/
+frontend/.fvm/
+
+# .NET
+backend/bin/
+backend/obj/
+backend/*.user
+backend/*.suo
+backend/.vs/
+backend/packages/
+backend/TestResults/
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific
+.DS_Store
+Thumbs.db
