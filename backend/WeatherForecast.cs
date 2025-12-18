@@ -1,4 +1,4 @@
-namespace lokyatra_backend
+namespace backend
 {
     public class WeatherForecast
     {

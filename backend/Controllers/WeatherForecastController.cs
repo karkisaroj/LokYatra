@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace lokyatra_backend.Controllers
+namespace backend.Controllers
 {
     [ApiController]
     [Route("[controller]")]
