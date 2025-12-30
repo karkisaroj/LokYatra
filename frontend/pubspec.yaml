@@ -41,6 +41,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_launcher_icons: ^0.14.4
+  go_router: ^17.0.1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -74,6 +75,7 @@ flutter:
     - assets/images/Homestay.png
     - assets/images/Play.png
     - assets/images/learn.png
+    - assets/images/learn&play.png
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
