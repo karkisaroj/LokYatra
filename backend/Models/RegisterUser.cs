@@ -4,8 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
-    [Table("User")] 
-    public class User
+    [Table("RegisterUser")] 
+    public class RegisterUser
     {
         [Key]
         [Column("userID")] 

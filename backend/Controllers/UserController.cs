@@ -16,7 +16,7 @@ namespace backend.Controllers
         [HttpGet("getUsers")]
         public async Task<IActionResult> GetUsers()
         {
-            var results = await _context.User
+            var results = await _context.RegisterUser
                 .Select(x => new {
                     x.UserId,
                     x.Name,
@@ -33,19 +33,19 @@ namespace backend.Controllers
         }
 
         [HttpPost("createUser")]
-        public async Task<IActionResult> CreateUser([FromBody] User user)
+        public async Task<IActionResult> CreateUser([FromBody] RegisterUser user)
         {
            
-            _context.User.Add(user);
+            _context.RegisterUser.Add(user);
             await _context.SaveChangesAsync();
             return Ok(user);
         }
 
     
         [HttpPut("editUser")]
-        public async Task<IActionResult> EditUser([FromBody] User user)
+        public async Task<IActionResult> EditUser([FromBody] RegisterUser user)
         {
-            var rows = await _context.User
+            var rows = await _context.RegisterUser
                 .Where(x => x.UserId == user.UserId)
                 .ExecuteUpdateAsync(x => x.SetProperty(u => u.Name, user.Name));
 
@@ -56,7 +56,7 @@ namespace backend.Controllers
         [HttpDelete("deleteUser/{userId}")]
         public async Task<IActionResult> DeleteUser(int userId)
         {
-            var rows = await _context.User
+            var rows = await _context.RegisterUser
                 .Where(x => x.UserId == userId)
                 .ExecuteDeleteAsync();
 

@@ -9,6 +9,6 @@ namespace backend.Database
         {
         }
 
-        public DbSet<User> User { get; set; }
+        public DbSet<RegisterUser> RegisterUser { get; set; }
     }
 }
