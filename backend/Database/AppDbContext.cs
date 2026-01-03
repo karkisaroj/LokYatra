@@ -3,12 +3,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend.Database
 {
-    public class AppDbContext: DbContext
-    {
-        public AppDbContext(DbContextOptions options) : base(options)
+    public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
         {
+            public DbSet<User> Users { get; set; }
         }
 
-        public DbSet<RegisterUser> RegisterUser { get; set; }
+        
     }
-}

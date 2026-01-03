@@ -4,32 +4,28 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
-    [Table("RegisterUser")] 
-    public class RegisterUser
+    [Table("User")] 
+    public class User
     {
-        [Key]
-        [Column("userID")] 
-        public int UserId { get; set; }
+   
+        public Guid UserId { get; set; }
 
-        [Column("name")]
         public string Name { get; set; } = string.Empty;
 
-        [Column("email")]
         public string Email { get; set; } = string.Empty;
 
-        [Column("password")]
-        public string Password { get; set; } = string.Empty;
+        public string PasswordHash { get; set; } = string.Empty;
 
-        [Column("role")]
-        public string Role { get; set; } = "tourist";
+        public string Role { get; set; } = string.Empty;
 
-        [Column("profile_image")]
+        public string? RefreshToken { get; set; }
+
+        public DateTime? RefreshTokenExpiryTime { get; set; }
+
         public string ProfileImage { get; set; } = string.Empty;
 
-        [Column("created_at")]
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
-        [Column("updated_at")]
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
     }
 }
