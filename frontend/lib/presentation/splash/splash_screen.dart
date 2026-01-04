@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:lokyatra_frontend/presentation/screens/Onboarding/OnBoarding.dart';
+import 'package:lokyatra_frontend/presentation/screens/test/users.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -11,7 +11,7 @@ class SplashScreen extends StatelessWidget {
       designSize: const Size(375,812),
       minTextAdapt: true,
       builder: (context , child){
-        return MaterialApp(debugShowCheckedModeBanner: false,home: OnboardingScreen(),);
+        return MaterialApp(debugShowCheckedModeBanner: false,home: Posts());
       },
     );
   }

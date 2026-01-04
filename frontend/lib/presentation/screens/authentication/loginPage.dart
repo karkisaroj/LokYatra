@@ -15,6 +15,7 @@ class LoginPage extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Column(
               children: [
+
                 Image.asset(
                   'assets/images/lokyatra_logo.png',
                   height: 120,

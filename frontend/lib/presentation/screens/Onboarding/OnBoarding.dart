@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:lokyatra_frontend/presentation/screens/authentication/loginPage.dart';
-import 'package:lokyatra_frontend/presentation/screens/splash/OnboardingDotsIndicator.dart';
 import '../../../data/models/onboarding.dart';
+import '../../splash/OnboardingDotsIndicator.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
