@@ -12,7 +12,7 @@ namespace backend.Services
 {
     public class AuthService(AppDbContext context,IConfiguration configuration) : IAuthService
     {
-        public async Task<TokenResponseDto?> LoginAsync(UserDto request)
+        public async Task<TokenResponseDto?> LoginAsync(LoginDto request)
         {
             var user = await context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
@@ -34,17 +34,27 @@ namespace backend.Services
             return new TokenResponseDto { AccessToken = CreateToken(user), RefreshToken = await GenerateAndSaveRefreshTokenAsync(user) };
         }
 
-        public async Task<User?> RegisterAsync(UserDto request)
+        public async Task<User?> RegisterAsync(RegisterDto request)
         {
-            if(await context.Users.AnyAsync(u => u.Email == request.Email))
+            if (await context.Users.AnyAsync(u => u.Email == request.Email))
             {
                 return null;
             }
+            else if (string.IsNullOrWhiteSpace(request.Role))
+                return null;
+            else if (request.Role != "tourist" && request.Role != "owner")
+                return null;
 
-            var user = new User();
-            var hashedPassword = new PasswordHasher<User>().HashPassword(user, request.Password);
-            user.Email = request.Email;
-            user.PasswordHash = hashedPassword;
+            var user = new User
+            {
+                UserId=Guid.NewGuid(),
+                Email = request.Email,
+                Name = request.Name,
+                Role = request.Role,
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            };
+            user.PasswordHash = new PasswordHasher<User>().HashPassword(user, request.Password);
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
@@ -52,7 +62,7 @@ namespace backend.Services
         }
         public async Task<TokenResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request)
         {
-            var user = await ValidateRefreshTokenAsync(request.UserId, request.RefreshToken);
+            var user = await ValidateRefreshTokenAsync(request.RefreshToken);
             if (user is null)
             {
                 return null;
@@ -60,9 +70,9 @@ namespace backend.Services
             return await CreateTokenResponse(user);
 
         }
-        private async Task<User?> ValidateRefreshTokenAsync(Guid UserId,string refreshToken)
+        private async Task<User?> ValidateRefreshTokenAsync(string refreshToken)
         {
-            var user = await context.Users.FindAsync(UserId);
+            var user = await context.Users.FirstOrDefaultAsync(u => u.RefreshToken == refreshToken);
             if(user is null|| user.RefreshToken!=refreshToken|| user.RefreshTokenExpiryTime<=DateTime.UtcNow
                 )
             {
@@ -94,7 +104,7 @@ namespace backend.Services
         {
             var claims = new List<Claim> {
                 new Claim(ClaimTypes.NameIdentifier,user.UserId.ToString()),
-                new Claim(ClaimTypes.NameIdentifier,user.UserId.ToString()),
+                new Claim(ClaimTypes.Email,user.Email),
                 new Claim(ClaimTypes.Role,user.Role)
             };
 
@@ -102,14 +112,14 @@ namespace backend.Services
 
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
 
-            var tokenDescriptor = new JwtSecurityToken(
+            var token = new JwtSecurityToken(
                 issuer: configuration.GetValue<string>("AppSettings:Issuer"),
                 audience: configuration.GetValue<string>("AppSettings:Audience"),
                 claims: claims,
                 expires: DateTime.UtcNow.AddDays(7),
                 signingCredentials: creds
                 );
-            return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
+            return new JwtSecurityTokenHandler().WriteToken(token);
 
         }
 

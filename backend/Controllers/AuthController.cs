@@ -18,16 +18,18 @@ namespace backend.Controllers
     {
 
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(UserDto request)
+        public async Task<ActionResult<User>> Register(RegisterDto request)
         {
+            
             var user = await authService.RegisterAsync(request);
             if (user == null) {
-                return BadRequest("Username already exists.");
+                return BadRequest("Invalid registration data values.");
             }
+
             return Ok(user);
         }
         [HttpPost("login")]
-        public async Task<ActionResult<TokenResponseDto>> Login(UserDto request)
+        public async Task<ActionResult<TokenResponseDto>> Login(LoginDto request)
         {
             var result = await authService.LoginAsync(request);
             if (result is null)
@@ -57,10 +59,17 @@ namespace backend.Controllers
         }
 
         [Authorize(Roles ="tourist")]
-        [HttpGet("admin-only")]
-        public IActionResult AdminOnlyEndpoint()
+        [HttpGet("tourist")]
+        public IActionResult TouristOnlyEndpoint()
         {
-            return Ok("You are admin!");
+            return Ok("You are tourist!");
+        }
+
+        [Authorize(Roles ="owner")]
+        [HttpGet("owner")]
+        public IActionResult OwnerOnlyEndpoint()
+        {
+            return Ok("You are owner");
         }
     }
 }

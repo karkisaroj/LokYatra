@@ -7,7 +7,6 @@ namespace backend.Models
     [Table("User")] 
     public class User
     {
-   
         public Guid UserId { get; set; }
 
         public string Name { get; set; } = string.Empty;
@@ -16,7 +15,7 @@ namespace backend.Models
 
         public string PasswordHash { get; set; } = string.Empty;
 
-        public string Role { get; set; } = string.Empty;
+        public string Role { get; set; } =string.Empty;
 
         public string? RefreshToken { get; set; }
 
