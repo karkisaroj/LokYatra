@@ -46,6 +46,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 }
+builder.WebHost.UseUrls("http://0.0.0.0:5257", "https://localhost:7200");
 app.UseAuthentication();
 //app.UseHttpsRedirection();
 app.UseAuthorization();

@@ -15,7 +15,7 @@ namespace backend.Models
 
         public string PasswordHash { get; set; } = string.Empty;
 
-        public string Role { get; set; } =string.Empty;
+        public string Role { get; set; } ="tourist";
 
         public string? RefreshToken { get; set; }
 
