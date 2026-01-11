@@ -16,10 +16,12 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   }
 
   final Dio dio = Dio(BaseOptions(
-    baseUrl: "http://192.168.1.68:7200/api/User/",
+    baseUrl: "http://192.168.1.68:7200/api/Auth/",
     connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
   ));
+
+
   Future<void> _onButtonClicked(ButtonClicked event, Emitter<UserState> emit) async {
     emit(UserLoading());
     try {
