@@ -1,6 +1,7 @@
 import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import '../../../../data/models/register.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
@@ -59,9 +60,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       });
 
       if (response.statusCode == 200) {
-        await storage.write(key: 'accessToken', value: response.data['accessToken']);
-        await storage.write(key: 'refreshToken', value: response.data['refreshToken']);
-        emit(LoginSuccess(response.data['accessToken']));
+        final accessToken=response.data['accessToken'];
+        final refreshToken=response.data['refreshToken'];
+        await storage.write(key: 'accessToken', value: accessToken);
+        await storage.write(key: 'refreshToken', value: refreshToken);
+
+        Map<String,dynamic> decodedToken=JwtDecoder.decode(accessToken);
+        String role=decodedToken['role'];
+        if(role=='admin'){
+          emit(AdminLoginSuccess(accessToken));
+        }
+        else if(role=='tourist'){
+          emit(TouristLoginSuccess(accessToken));
+        }
+        else if(role=='owner'){
+          emit(OwnerLoginSuccess(accessToken));
+        }
+        else{
+          emit(AuthError("Invalid role"));
+        }
 
       } else {
         emit(AuthError("Login failed: ${response.statusCode}"));

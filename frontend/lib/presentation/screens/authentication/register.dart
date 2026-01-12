@@ -322,12 +322,13 @@ class _RegisterState extends State<Register> {
                           passwordController.clear();
                           confirmPasswordController.clear();
                         });
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Registration Successful"),
-                          ),
-
-                        );
+                        // ScaffoldMessenger.of(context).showSnackBar(
+                        //   const SnackBar(
+                        //     duration: Duration(seconds: 3),
+                        //     content: Text("Registration Successful"),
+                        //   ),
+                        //
+                        // );
                         BlocProvider.of<AuthBloc>(context).add(RegisterButtonClicked(register));
                         Navigator.push(
                           context,

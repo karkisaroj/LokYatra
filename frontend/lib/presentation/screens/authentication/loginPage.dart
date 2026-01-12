@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:lokyatra_frontend/presentation/screens/authentication/forgot_password.dart';
 import 'package:lokyatra_frontend/presentation/screens/authentication/register.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
@@ -25,11 +24,11 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
-            if (state is LoginSuccess) {
+            if (state is AdminLoginSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                     duration: Duration(seconds: 5),
-                    content: Text("Login Success")),
+                    content: Text("Admin Login Success")),
               );
               Navigator.pushReplacementNamed(context, '/splash');
             }

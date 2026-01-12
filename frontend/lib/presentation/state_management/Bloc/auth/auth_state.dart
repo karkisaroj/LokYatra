@@ -21,13 +21,30 @@ class RegisterSuccess extends AuthState{
   List<Object?> get props => [user];
 }
 
-class LoginSuccess extends AuthState{
+class AdminLoginSuccess extends AuthState{
   final String accessToken;
-  LoginSuccess(this.accessToken);
+  AdminLoginSuccess(this.accessToken);
 
   @override
   List<Object?> get props => [accessToken];
 }
+
+class TouristLoginSuccess extends AuthState{
+  final String accessToken;
+  TouristLoginSuccess(this.accessToken);
+
+  @override
+  List<Object?> get props => [accessToken];
+}
+
+class OwnerLoginSuccess extends AuthState{
+  final String accessToken;
+  OwnerLoginSuccess(this.accessToken);
+
+  @override
+  List<Object?> get props => [accessToken];
+}
+
 
 class AuthError extends AuthState{
   final String message;

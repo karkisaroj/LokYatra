@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerHome.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/touristHome.dart';
+import 'package:lokyatra_frontend/presentation/screens/admin/admin_dashboard.dart';
 import 'package:lokyatra_frontend/presentation/screens/authentication/loginPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/authentication/register.dart';
 import 'package:lokyatra_frontend/presentation/splash/splash_screen.dart';
@@ -30,6 +31,7 @@ class MyAppRunner extends StatelessWidget {
               '/login':(context)=>const LoginPage(),
               '/splash':(context)=>const SplashScreen(),
               '/register':(context)=>const Register(),
+              '/adminDashboard':(context)=>const AdminDashboard(),
             },
             debugShowCheckedModeBanner: false,
             home: SplashScreen(),
