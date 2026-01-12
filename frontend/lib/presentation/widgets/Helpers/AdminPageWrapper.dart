@@ -59,7 +59,6 @@ class AdminPageWrapper extends StatelessWidget {
             const Divider(),
             const SizedBox(height: 20),
 
-            // Menu items inside Expanded
             Expanded(
               child: ListView(
                 padding: EdgeInsets.zero,
