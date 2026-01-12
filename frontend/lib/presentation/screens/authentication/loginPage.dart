@@ -28,7 +28,7 @@ class _LoginPageState extends State<LoginPage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                     duration: Duration(seconds: 5),
-                    content: Text("Admin Login Success")),
+                    content: Text("Login Success")),
               );
               Navigator.pushReplacementNamed(context, '/splash');
             }

@@ -4,7 +4,6 @@ import 'package:lokyatra_frontend/data/models/register.dart';
 import 'package:lokyatra_frontend/presentation/screens/authentication/loginPage.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_state.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../state_management/Bloc/auth/auth_event.dart';
 enum UserRole{tourist,owner}

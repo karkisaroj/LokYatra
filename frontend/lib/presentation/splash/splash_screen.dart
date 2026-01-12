@@ -1,6 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import '../widgets/Helpers/SecureStorageService.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -10,7 +11,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final storage = const FlutterSecureStorage();
+
 
   @override
   void initState() {
@@ -19,25 +20,33 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    final token = await storage.read(key: 'accessToken');
+    final token=await SecureStorageService.getAccessToken();
+
     if (!mounted) return;
 
     if (token == null || JwtDecoder.isExpired(token)) {
       Navigator.pushReplacementNamed(context, '/login');
     } else {
+      try{
       final decoded = JwtDecoder.decode(token);
-      final role = decoded['role']
-          ?? decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-
+      final role = decoded['role'] ??
+          decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
 
       if (role == 'tourist') {
         Navigator.pushReplacementNamed(context, '/touristHome');
       } else if (role == 'owner') {
         Navigator.pushReplacementNamed(context, '/ownerHome');
-      }else if(role=='admin'){
+      } else if (role == 'admin') {
         Navigator.pushReplacementNamed(context, '/adminDashboard');
+      }else if(kIsWeb && role!="admin"){
+        Navigator.pushReplacementNamed(context, '/login');
       }
       else {
+        Navigator.pushReplacementNamed(context, '/login');
+      }
+    }
+      catch(e){
+        debugPrint("JWT decode error: $e");
         Navigator.pushReplacementNamed(context, '/login');
       }
     }

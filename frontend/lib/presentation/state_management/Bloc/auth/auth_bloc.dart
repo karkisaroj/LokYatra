@@ -1,13 +1,17 @@
+import 'dart:io';
+
 import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
 import '../../../../data/models/register.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
+
+
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  final FlutterSecureStorage storage = const FlutterSecureStorage();
 
   AuthBloc() : super(AuthInitial()) {
     on<RegisterButtonClicked>(_onRegister);
@@ -15,7 +19,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutButtonClicked>(_onLogout);
   }
 
-  final Dio dio=Dio(BaseOptions(baseUrl: "http://10.0.2.2:5257/api/Auth/"
+
+
+  final Dio dio=Dio(BaseOptions(baseUrl: getBaseUrl()
     ,connectTimeout: const Duration(seconds: 10),
     receiveTimeout: const Duration(seconds: 10),
     contentType: "application/json",
@@ -54,32 +60,31 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onLogin(LoginButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final response = await dio.post('login', data: {
-        'email': event.email,
-        'password': event.password,
-      });
+      final loginData = {
+        'Email': event.email,
+        'Password': event.password,
+      };
+
+      final response = await dio.post('login', data: loginData);
 
       if (response.statusCode == 200) {
-        final accessToken=response.data['accessToken'];
-        final refreshToken=response.data['refreshToken'];
-        await storage.write(key: 'accessToken', value: accessToken);
-        await storage.write(key: 'refreshToken', value: refreshToken);
+        final accessToken = response.data['accessToken'];
+        final refreshToken = response.data['refreshToken'];
+        await SecureStorageService.saveTokens(accessToken, refreshToken);
 
-        Map<String,dynamic> decodedToken=JwtDecoder.decode(accessToken);
-        String role=decodedToken['role'];
-        if(role=='admin'){
+        final decodedToken = JwtDecoder.decode(accessToken);
+        final role = decodedToken['role'];
+
+        if (role == 'admin') {
           emit(AdminLoginSuccess(accessToken));
-        }
-        else if(role=='tourist'){
+        } else if (role == 'tourist') {
           emit(TouristLoginSuccess(accessToken));
-        }
-        else if(role=='owner'){
+        } else if (role == 'owner') {
           emit(OwnerLoginSuccess(accessToken));
         }
-        else{
+        else {
           emit(AuthError("Invalid role"));
         }
-
       } else {
         emit(AuthError("Login failed: ${response.statusCode}"));
       }
@@ -93,7 +98,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onLogout(LogoutButtonClicked event,Emitter<AuthState> emit)async{
     emit(AuthLoading());
     try{
-      await storage.delete(key: 'accessToken');
+      await SecureStorageService.deleteTokens();
       emit(LogoutSuccess());
     }catch(e){
       emit(AuthError("Failed to logout: $e"));
@@ -101,3 +106,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 }
 
+String getBaseUrl() {
+  if (kIsWeb) {
+    return "http://localhost:5257/api/Auth/";
+  } else if (Platform.isAndroid) {
+    return "http://192.168.1.66:5257/api/Auth/";
+  } else {
+    return "https://localhost:7200/api/Auth/";
+  }
+}
