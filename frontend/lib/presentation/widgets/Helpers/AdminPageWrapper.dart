@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../state_management/Bloc/auth/auth_bloc.dart';
+import '../../state_management/Bloc/auth/auth_event.dart';
 
 class PageConfig {
   final String title;
@@ -36,34 +40,63 @@ class AdminPageWrapper extends StatelessWidget {
         actions: currentPage.actions,
       ),
       drawer: Drawer(
-        child: ListView(
+        child: Column(
           children: [
-             Column(
-               crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: const [
                   Text(
-                    "Dashboard",
-                    style: TextStyle(fontSize: 30),
+                    "Welcome Admin",
+                    style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
                   ),
-               SizedBox(height: 10,),
-               Text("Welcome to LokYatra Admin Panel",style: TextStyle(fontSize: 10),)
+                  SizedBox(width: 10),
+                  Icon(Icons.admin_panel_settings),
                 ],
               ),
-            Divider(),
-            SizedBox(height: 20,),
+            ),
+            const Divider(),
+            const SizedBox(height: 20),
 
-            for (int i = 0; i < pages.length; i++)
-              ListTile(
-                leading: pages[i].icon,
-                title: Text(pages[i].title),
-                selected: selectedIndex == i,
-                onTap: () {
-                  onItemTapped(i);
-                  Navigator.pop(context);
-                },
-
-
+            // Menu items inside Expanded
+            Expanded(
+              child: ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  for (int i = 0; i < pages.length; i++)
+                    ListTile(
+                      leading: pages[i].icon,
+                      title: Text(pages[i].title),
+                      selected: selectedIndex == i,
+                      trailing: const Icon(Icons.arrow_right),
+                      onTap: () {
+                        onItemTapped(i);
+                        Navigator.pop(context);
+                      },
+                    ),
+                ],
               ),
+            ),
+
+            const Divider(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+              child: TextButton.icon(
+                onPressed: () {
+                  BlocProvider.of<AuthBloc>(context).add(LogoutButtonClicked());
+                  Navigator.pushNamed(context, '/login');
+                },
+                icon: const Icon(Icons.logout),
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.black,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                label: const Text("Logout" ,style: TextStyle(color: Colors.black),),
+              ),
+            ),
           ],
         ),
       ),
