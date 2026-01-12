@@ -1,6 +1,5 @@
-<img width="500" height="500" alt="lokyatra_logo" src="https://github.com/user-attachments/assets/810b00ca-a7c2-45d6-9e1f-1a98c0eec78f" /><div align="center">
-  <img src="<img width="500" height="500" alt="lokyatra_logo" src="https://github.com/user-attachments/assets/3e9fbf2e-1f21-41ac-9219-a15b64d28bcc" />
-" alt="LokYatra Logo" width="120" height="120">
+<div align="center">
+  <img width="120" height="120" alt="lokyatra_logo" src="https://github.com/user-attachments/assets/c15e5722-1110-4ea0-aace-3c89a0c10f14" />
   
   # LokYatra
   
