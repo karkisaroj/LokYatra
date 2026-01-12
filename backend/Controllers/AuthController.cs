@@ -54,11 +54,11 @@ namespace backend.Controllers
         }
 
 
-        [Authorize]
-        [HttpGet]
-        public IActionResult AuthenticatedOnlyEndpoint()
+        [Authorize(Roles ="admin")]
+        [HttpGet("admin")]
+        public IActionResult AdminOnlyEndpoint()
         {
-            return Ok("You are authenticated!");
+            return Ok("You are admin!");
         }
 
         [Authorize(Roles ="tourist")]
