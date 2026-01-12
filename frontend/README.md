@@ -5,7 +5,7 @@
   
   **Explore Nepal's Cultural Heritage**
   
-  [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev/)
+  [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B? logo=flutter&logoColor=white)](https://flutter.dev/)
   [![Dart](https://img.shields.io/badge/Dart-3.x-0175C2? logo=dart&logoColor=white)](https://dart.dev/)
   [![. NET](https://img.shields.io/badge/.NET-API-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
   [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -18,7 +18,7 @@
 
 ## 📖 About
 
-LokYatra is a mobile application designed to promote and preserve Nepal's rich cultural heritage while providing travelers with authentic local experiences. The platform connects tourists with heritage sites, local homestays, and cultural knowledge through interactive features.
+LokYatra is a mobile application designed to promote and preserve Nepal's rich cultural heritage while providing travelers with authentic local experiences. The platform connects tourists with heritage sites, local homestays, and cultural knowledge through interactive features. 
 
 ### ✨ Key Features
 
