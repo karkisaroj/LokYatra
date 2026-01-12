@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="frontend/assets/images/lokyatra_logo.png" alt="LokYatra Logo" width="120" height="120">
+  <img src="assets/images/lokyatra_logo.png" alt="LokYatra Logo" width="120" height="120">
   
   # LokYatra
   
@@ -8,7 +8,7 @@
   [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev/)
   [![Dart](https://img.shields.io/badge/Dart-3.x-0175C2? logo=dart&logoColor=white)](https://dart.dev/)
   [![. NET](https://img.shields.io/badge/.NET-API-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
-  [![License](https://img.shields.io/badge/License-MIT-green. svg)](LICENSE)
+  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
   
   *A comprehensive tourism platform connecting travelers with Nepal's ancient temples, mountains, cultural landmarks, and authentic homestay experiences.*
 
@@ -39,6 +39,23 @@ LokYatra is a mobile application designed to promote and preserve Nepal's rich c
 LokYatra/
 ├── frontend/                 # Flutter mobile application
 │   ├── lib/
+│   │   ├── data/            # Data models and repositories
+│   │   ├── presentation/    # UI screens and widgets
+│   │   │   ├── screens/
+│   │   │   │   ├── admin/          # Admin dashboard screens
+│   │   │   │   ├── authentication/ # Login & registration
+│   │   │   │   ├── Onboarding/     # User onboarding flow
+│   │   │   │   ├── OwnerScreen/    # Homestay owner interface
+│   │   │   │   └── TouristScreen/  # Tourist interface
+│   │   │   ├── splash/      # Splash & onboarding indicators
+│   │   │   ├── state_management/   # BLoC state management
+│   │   │   └── widgets/     # Reusable UI components
+│   │   └── main. dart        # Application entry point
+│   ├── android/             # Android-specific code
+│   ├── ios/                 # iOS-specific code
+│   ├── web/                 # Web-specific code
+│   └── assets/              # Images and resources
+│
 └── backend/                 # .NET API server
     └── *.sln               # Visual Studio solution
 ```
@@ -52,7 +69,6 @@ LokYatra/
 - **Flutter SDK** (3.x or higher)
 - **Dart SDK** (3.x or higher)
 - **.NET SDK** (for backend)
-- **Visual Studio** or **VS Code**
 - **Android Studio** / **Xcode** (for mobile development)
 
 ### Installation
@@ -73,6 +89,7 @@ flutter run
 ```
 
 **Run on specific platform:**
+
 ```bash
 # Android
 flutter run -d android
@@ -90,7 +107,7 @@ flutter run -d windows  # or macos, linux
 #### 3. Backend Setup
 
 1. Open `backend/YourSolution.sln` in Visual Studio
-2.  Restore NuGet packages
+2. Restore NuGet packages
 3. Configure the database connection string in `appsettings.json`
 4. Run the application (F5 or Ctrl+F5)
 
@@ -132,22 +149,9 @@ flutter run -d windows  # or macos, linux
 
 ---
 
-## 📦 Dependencies
-
-Key packages used in the frontend: 
-
-```yaml
-dependencies:
-  flutter_bloc: ^latest       # State management
-  flutter_screenutil: ^latest # Responsive UI
-  # Add other major dependencies
-```
-
----
-
 ## 🤝 Contributing
 
-Contributions are welcome! Please follow these steps:
+Contributions are welcome! Please follow these steps: 
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
