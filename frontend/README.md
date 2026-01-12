@@ -5,7 +5,7 @@
   
   **Explore Nepal's Cultural Heritage**
   
-  [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B? logo=flutter&logoColor=white)](https://flutter.dev/)
+  [![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white)](https://flutter.dev/)
   [![Dart](https://img.shields.io/badge/Dart-3.x-0175C2?logo=dart&logoColor=white)](https://dart.dev/)
   [![.NET](https://img.shields.io/badge/.NET-API-512BD4?logo=dotnet&logoColor=white)](https://dotnet.microsoft.com/)
   [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
