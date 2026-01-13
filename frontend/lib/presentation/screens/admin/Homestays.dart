@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class Homestays extends StatelessWidget {
-  const Homestays({super.key});
+  final ValueNotifier subtitleNotifier;
+  const Homestays({super.key,required this.subtitleNotifier});
 
   @override
   Widget build(BuildContext context) {

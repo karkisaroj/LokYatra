@@ -21,22 +21,33 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
+  final ValueNotifier<String?> subtitleNotifier = ValueNotifier(null);
 
-  final List<PageConfig> _pages = [
-    PageConfig(icon: Icon(Icons.dashboard),title: "Dashboard", child: Dashboard()),
-    PageConfig(icon: Icon(Icons.people),title: "Users", child: UserManagementPage(), actions: [Text("Total Users: 120")]),
-    PageConfig(icon: Icon(Icons.map_outlined),title: "Sites", child: Sites()),
-    PageConfig(icon: Icon(Icons.menu_book_outlined),title: "Stories", child: Stories()),
-    PageConfig(icon: Icon(Icons.house),title: "Homestays", child: Homestays()),
-    PageConfig(icon: Icon(Icons.calendar_month),title: "Bookings", child: Bookings(), actions: [Text("Today: 35")]),
-    PageConfig(icon: Icon(Icons.payment),title: "Payments", child: Payments()),
-    PageConfig(icon: Icon(Icons.quiz),title: "Quizzes", child: Quizzes()),
-    PageConfig(icon: Icon(Icons.reviews),title: "Reviews", child: Reviews()),
-    PageConfig(icon: Icon(Icons.report_sharp),title: "Reports", child: Reports()),
-    PageConfig(icon: Icon(Icons.settings),title: "Settings", child: Settings()),
+  late final List<PageConfig> _pages = [
+    PageConfig(
+      icon: const Icon(Icons.dashboard),
+      title: "Dashboard",
+      subtitle: "Welcome to LokYatra Admin Panel",
+      child: const Dashboard(),
+    ),
+    PageConfig(
+      icon: const Icon(Icons.people),
+      title: "Users",
+      child: UserManagementPage(subtitleNotifier: subtitleNotifier),
+    ),
+    PageConfig(icon: const Icon(Icons.map_outlined), title: "Sites", child: const Sites()),
+    PageConfig(icon: const Icon(Icons.menu_book_outlined), title: "Stories", child: const Stories()),
+    PageConfig(icon: const Icon(Icons.house), title: "Homestays", child: Homestays(subtitleNotifier: subtitleNotifier)),
+    PageConfig(icon: const Icon(Icons.calendar_month), title: "Bookings", child: const Bookings()),
+    PageConfig(icon: const Icon(Icons.payment), title: "Payments", child: const Payments()),
+    PageConfig(icon: const Icon(Icons.quiz), title: "Quizzes", child: const Quizzes()),
+    PageConfig(icon: const Icon(Icons.reviews), title: "Reviews", child: const Reviews()),
+    PageConfig(icon: const Icon(Icons.report_sharp), title: "Reports", child: const Reports()),
+    PageConfig(icon: const Icon(Icons.settings), title: "Settings", child: const Settings()),
   ];
 
   void _onItemTapped(int index) {
+    subtitleNotifier.value = null;
     setState(() {
       _selectedIndex = index;
     });
@@ -48,6 +59,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       selectedIndex: _selectedIndex,
       onItemTapped: _onItemTapped,
       pages: _pages,
+      subtitleNotifier: subtitleNotifier,
     );
   }
 }
