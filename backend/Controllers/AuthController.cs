@@ -14,11 +14,12 @@ using System.Threading.Tasks;
 
 namespace backend.Controllers
 {
+
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController(IAuthService authService) : ControllerBase
     {
-
+       
 
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register(RegisterDto request)

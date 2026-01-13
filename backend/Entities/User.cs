@@ -17,6 +17,8 @@ namespace backend.Models
 
         public string Role { get; set; } ="tourist";
 
+        public string?PhoneNumber {  get; set; } = string.Empty;
+
         public string? RefreshToken { get; set; }
 
         public DateTime? RefreshTokenExpiryTime { get; set; }

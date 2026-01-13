@@ -89,7 +89,7 @@ namespace backend.Services
             return Convert.ToBase64String(randomNumber);    
         }
 
-      
+        
 
         private async Task<string> GenerateAndSaveRefreshTokenAsync(User user)
         {
@@ -123,6 +123,9 @@ namespace backend.Services
 
         }
 
-     
+        public async Task<IEnumerable<User>> getUserAsync()
+        {
+            return await context.Users.ToListAsync();
+        }
     }
 }

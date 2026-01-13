@@ -53,7 +53,7 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-builder.WebHost.UseUrls("http://localhost:5257", "https://localhost:7200");
+builder.WebHost.UseUrls("http://0.0.0.0:5257");
 
 app.UseAuthentication();
 app.UseAuthorization();

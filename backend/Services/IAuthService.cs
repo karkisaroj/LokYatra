@@ -6,6 +6,7 @@ namespace backend.Services
     {
         Task<User?> RegisterAsync(RegisterDto request);
 
+        Task<IEnumerable<User>> getUserAsync();
         Task<TokenResponseDto?> LoginAsync(LoginDto request);
         Task<TokenResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request);
     }
