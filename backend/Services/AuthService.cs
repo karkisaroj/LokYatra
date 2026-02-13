@@ -47,7 +47,6 @@ namespace backend.Services
 
             var user = new User
             {
-                UserId=Guid.NewGuid(),
                 Email = request.Email,
                 Name = request.Name,
                 Role = request.Role,
@@ -81,7 +80,7 @@ namespace backend.Services
             return user;
         }
 
-        private string GenerateRefreshToken()
+        private static string GenerateRefreshToken()
         {
             var randomNumber = new byte[32];
             using var rng=RandomNumberGenerator.Create();
@@ -93,7 +92,7 @@ namespace backend.Services
 
         private async Task<string> GenerateAndSaveRefreshTokenAsync(User user)
         {
-            var refreshToken=GenerateRefreshToken();
+            var refreshToken= GenerateRefreshToken();
             user.RefreshToken = refreshToken;
             user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
             await context.SaveChangesAsync();
@@ -103,9 +102,9 @@ namespace backend.Services
         private string CreateToken(User user)
         {
             var claims = new List<Claim> {
-                new Claim(ClaimTypes.NameIdentifier,user.UserId.ToString()),
-                new Claim(ClaimTypes.Email,user.Email),
-                new Claim("role",user.Role)
+                new(ClaimTypes.NameIdentifier,user.UserId.ToString()),
+                new(ClaimTypes.Email,user.Email),
+                new("role",user.Role)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration.GetValue<string>("AppSettings:Token")!));

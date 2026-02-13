@@ -7,7 +7,8 @@ namespace backend.Models
     [Table("User")] 
     public class User
     {
-        public Guid UserId { get; set; }
+        [Key]
+        public int UserId { get; set; }
 
         public string Name { get; set; } = string.Empty;
 
