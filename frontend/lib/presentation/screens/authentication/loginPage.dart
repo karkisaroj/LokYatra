@@ -16,7 +16,8 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final _formkey=GlobalKey<FormState>();
+  final _formkey = GlobalKey<FormState>();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -25,28 +26,37 @@ class _LoginPageState extends State<LoginPage> {
         child: BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
             if (state is AdminLoginSuccess) {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    duration: Duration(seconds: 5),
-                    content: Text("Login Success")),
+                const SnackBar(content: Text("Admin Login Success")),
               );
               Navigator.pushReplacementNamed(context, '/splash');
-            }
-            else if (state is AuthError) {
+            } else if (state is TouristLoginSuccess) {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Tourist Login Success")),
+              );
+              Navigator.pushReplacementNamed(context, '/touristHome');
+            } else if (state is OwnerLoginSuccess) {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Owner Login Success")),
+              );
+              Navigator.pushReplacementNamed(context, '/ownerDashboard');
+            } else if (state is AuthError) {
+              ScaffoldMessenger.of(context).hideCurrentSnackBar();
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
                   content: Text("Login failed: Invalid credentials or bad request."),
                   backgroundColor: Colors.redAccent,
                 ),
               );
-
             }
           },
           builder: (context, state) {
             if (state is AuthLoading) {
               return const Center(child: CircularProgressIndicator());
             }
-
             return Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -159,22 +169,20 @@ class _LoginPageState extends State<LoginPage> {
                                   elevation: 4,
                                 ),
                                 onPressed: () {
-                                  if(_formkey.currentState!.validate()){
+                                  if (_formkey.currentState!.validate()) {
                                     _formkey.currentState!.save();
-                                  context.read<AuthBloc>().add(
-                                    LoginButtonClicked(
-                                      emailController.text.trim(),
-                                      passwordController.text.trim(),
-                                    ),
-                                  );
-                                  }
-                                  else{
+                                    context.read<AuthBloc>().add(
+                                      LoginButtonClicked(
+                                        emailController.text.trim(),
+                                        passwordController.text.trim(),
+                                      ),
+                                    );
+                                  } else {
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(content: Text("Invalid Credentials")),
                                     );
                                   }
                                 },
-
                                 child: const Text(
                                   "LOGIN",
                                   style: TextStyle(

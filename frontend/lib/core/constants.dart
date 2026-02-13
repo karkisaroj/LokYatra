@@ -6,11 +6,11 @@ const int _serverPort = 5257;
 
 String getBaseUrl() {
   if (kIsWeb) {
-    return "http://localhost:$_serverPort/api/Auth/";
+    return "http://localhost:$_serverPort/";
   } else if (Platform.isAndroid) {
-    return "http://$_serverIp:$_serverPort/api/Auth/";
+    return "http://$_serverIp:$_serverPort/";
   } else {
-    return "http://localhost:$_serverPort/api/Auth/";
+    return "http://localhost:$_serverPort/";
   }
 }
 
@@ -19,7 +19,7 @@ String get apiBaseUrl => getBaseUrl().replaceAll("/api/Auth/", "");
 //below are endpoints paths
 const String loginEndpoint = "/api/Auth/login";
 const String registerEndpoint = "/api/Auth/register";
-const String getUsersEndpoint = "/api/Auth/getUsers";
+const String getUsersEndpoint = "/api/User/getUsers";
 
 const Map<String, String> headers = {
   "Content-Type": "application/json",

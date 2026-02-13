@@ -26,7 +26,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onRegister(RegisterButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final response = await dio.post('register', data: event.user.toJson());
+      final response = await dio.post(registerEndpoint, data: event.user.toJson());
       if (response.statusCode == 200 || response.statusCode == 201) {
         final Map<String, dynamic> json = response.data;
         final registeredUser = RegisterUser.fromJson(json);
@@ -55,11 +55,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoading());
     try {
       final loginData = {
-        'Email': event.email,
-        'Password': event.password,
+        'email': event.email,
+        'password': event.password,
       };
 
-      final response = await dio.post('login', data: loginData);
+      final response = await dio.post(loginEndpoint, data: loginData);
 
       if (response.statusCode == 200) {
         final accessToken = response.data['accessToken'];

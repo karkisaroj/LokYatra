@@ -262,7 +262,7 @@ class _RegisterState extends State<Register> {
                         return "Please confirm your password";
                       }
                       if (value != passwordController.text) {
-                        return "Password donot match";
+                        return "Password don't match";
                       }
                       return null;
                     },
@@ -303,7 +303,7 @@ class _RegisterState extends State<Register> {
                         final register = RegisterUser(
                           name: nameController.text.trim(),
                           email: emailController.text.trim(),
-                          phone: phoneController.text.isEmpty
+                          phoneNumber: phoneController.text.isEmpty
                               ? null
                               : phoneController.text.trim(),
                           password: passwordController.text,
