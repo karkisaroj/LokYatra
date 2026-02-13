@@ -1,15 +1,11 @@
-import 'dart:io';
-
 import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:lokyatra_frontend/core/constants.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
 import '../../../../data/models/register.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
-
-
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
@@ -19,15 +15,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutButtonClicked>(_onLogout);
   }
 
-
-
-  final Dio dio=Dio(BaseOptions(baseUrl: getBaseUrl()
-    ,connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
+  final Dio dio = Dio(BaseOptions(
+    baseUrl: getBaseUrl(),
+    connectTimeout: connectTimeout,
+    receiveTimeout: receiveTimeout,
     contentType: "application/json",
     responseType: ResponseType.json,
-  ),
-  );
+  ));
 
   Future<void> _onRegister(RegisterButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
@@ -81,8 +75,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           emit(TouristLoginSuccess(accessToken));
         } else if (role == 'owner') {
           emit(OwnerLoginSuccess(accessToken));
-        }
-        else {
+        } else {
           emit(AuthError("Invalid role"));
         }
       } else {
@@ -95,23 +88,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onLogout(LogoutButtonClicked event,Emitter<AuthState> emit)async{
+  Future<void> _onLogout(LogoutButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
-    try{
+    try {
       await SecureStorageService.deleteTokens();
       emit(LogoutSuccess());
-    }catch(e){
+    } catch (e) {
       emit(AuthError("Failed to logout: $e"));
     }
-  }
-}
-
-String getBaseUrl() {
-  if (kIsWeb) {
-    return "http://localhost:5257/api/Auth/";
-  } else if (Platform.isAndroid) {
-    return "http://192.168.1.66:5257/api/Auth/";
-  } else {
-    return "https://localhost:7200/api/Auth/";
   }
 }

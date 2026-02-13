@@ -81,8 +81,8 @@ class MetricCard extends StatelessWidget {
     final isMobile = width < 600;
 
     return Container(
-      width: isMobile ? double.infinity : 400,
-      height: isMobile? 80:180,
+      width: isMobile ? double.infinity : 350,
+      height: isMobile? 80:140,
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
@@ -192,7 +192,7 @@ class StatCard extends StatelessWidget {
     final isMobile = width < 600;
 
     return SizedBox(
-      width: isMobile ? (width / 2) : 360, // half screen width in the phone from the web
+      width: isMobile ? (width / 2) : 320, // half screen width in the phone from the web
       height: 100,
       child: Card(
         elevation: 2,

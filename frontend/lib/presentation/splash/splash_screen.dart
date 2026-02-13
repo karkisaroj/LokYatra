@@ -47,7 +47,7 @@ class _SplashScreenState extends State<SplashScreen> {
     }
       catch(e){
         debugPrint("JWT decode error: $e");
-        Navigator.pushReplacementNamed(context, '/login');
+        Navigator.pushReplacementNamed(context, '/onboarding');
       }
     }
   }
