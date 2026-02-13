@@ -43,6 +43,9 @@ namespace backend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("text");
+
                     b.Property<string>("ProfileImage")
                         .IsRequired()
                         .HasColumnType("text");
