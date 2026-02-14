@@ -24,6 +24,7 @@ namespace backend.Controllers
                 Email = u.Email,
                 Role = u.Role,
                 PhoneNumber = u.PhoneNumber,
+                IsActive = u.IsActive,
                 ProfileImage = u.ProfileImage,
                 CreatedAt = u.CreatedAt,
             }).ToList();

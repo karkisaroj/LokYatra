@@ -24,7 +24,8 @@ namespace backend.Services
             {
                 return null;
             }
-            
+            user.IsActive = true;
+            await context.SaveChangesAsync();
             return await CreateTokenResponse(user);
 
         }
@@ -50,6 +51,7 @@ namespace backend.Services
                 Email = request.Email,
                 Name = request.Name,
                 Role = request.Role,
+                PhoneNumber=request.PhoneNumber,
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow,
             };
@@ -105,6 +107,7 @@ namespace backend.Services
                 new(ClaimTypes.NameIdentifier,user.UserId.ToString()),
                 new(ClaimTypes.Email,user.Email),
                 new("role",user.Role)
+                
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(configuration.GetValue<string>("AppSettings:Token")!));
@@ -122,9 +125,24 @@ namespace backend.Services
 
         }
 
-        public async Task<IEnumerable<User>> getUserAsync()
+        public async Task<IEnumerable<User>> GetUserAsync()
         {
             return await context.Users.ToListAsync();
+        }
+
+        public async Task<bool> LogoutAsync(int userId)
+        {
+            var user = await context.Users.FindAsync(userId);
+            if (user is null)
+            {
+                return false;
+            }
+
+            user.IsActive = false;
+            user.RefreshToken = null;
+            user.RefreshTokenExpiryTime = null;
+            await context.SaveChangesAsync();
+            return true;
         }
     }
 }

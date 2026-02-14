@@ -9,6 +9,7 @@ namespace backend.Models
     {
         [Key]
         public int UserId { get; set; }
+        public bool IsActive { get; set; } = false;
 
         public string Name { get; set; } = string.Empty;
 

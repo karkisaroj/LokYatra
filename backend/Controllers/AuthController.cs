@@ -75,5 +75,24 @@ namespace backend.Controllers
         {
             return Ok("You are owner");
         }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+            if (userIdClaim is null || !int.TryParse(userIdClaim, out var userId))
+            {
+                return Unauthorized("Invalid token");
+            }
+
+            var result = await authService.LogoutAsync(userId);
+            if (!result)
+            {
+                return NotFound("User not found");
+            }
+
+            return Ok("Logged out successfully");
+        }
     }
 }
