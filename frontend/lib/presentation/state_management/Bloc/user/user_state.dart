@@ -25,3 +25,12 @@ class UserError extends UserState{
   @override
   List<Object?> get props => [message];
 }
+
+class UserDeleted extends UserState{
+  final int userId;
+  UserDeleted(this.userId);
+
+  @override
+  List<Object?> get props => [userId];
+
+}

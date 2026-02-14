@@ -13,6 +13,7 @@ import '../../../../data/models/user.dart';
 class UserBloc extends Bloc<UserEvent, UserState>{
   UserBloc():super(UserInitial()){
     on<FetchUsers>(_onFetchUsers);
+    on<DeleteUsers>(_onDeleteUser);
   }
 
   final Dio dio=Dio(BaseOptions(
@@ -23,21 +24,40 @@ class UserBloc extends Bloc<UserEvent, UserState>{
     responseType: ResponseType.json,
     headers: headers
   ));
-  
+
   Future<void> _onFetchUsers(FetchUsers event, Emitter<UserState> emit) async {
     emit(UserLoading());
-    try{
-      final response=await dio.get(getUsersEndpoint);
-      if(response.statusCode==200){
-        final List<dynamic>data=response.data;
-        final users=data.map((json)=>User.fromJson(json)).toList();
+    try {
+      final response = await dio.get(getUsersEndpoint);
+
+      if (response.statusCode == 200) {
+        // handle both array and object response
+        final data = response.data is List
+            ? response.data as List<dynamic>
+            : response.data['users'] as List<dynamic>;
+
+        final users = data.map((json) => User.fromJson(json)).toList();
         emit(UserLoaded(users));
-      }else{
+      } else {
         emit(UserError("Failed to fetch Users: Status code: ${response.statusCode}"));
       }
-    }
-    catch(e){
+    } catch (e) {
       emit(UserError("Error occurred $e"));
+    }
+  }
+
+    Future<void> _onDeleteUser(DeleteUsers event, Emitter<UserState> emit) async {
+    emit(UserLoading());
+    try {
+      final response = await dio.delete('$deleteUserEndpoint/${event.userId}');
+
+      if (response.statusCode == 200) {
+        emit(UserDeleted(event.userId));
+      } else {
+        emit(UserError("Failed to delete User: Status code: ${response.statusCode}"));
+      }
+      } catch (e) {
+      emit(UserError("Error deleting users $e"));
     }
   }
 
