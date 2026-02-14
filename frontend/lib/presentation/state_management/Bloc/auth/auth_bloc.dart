@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:lokyatra_frontend/core/constants.dart';
+import 'package:lokyatra_frontend/data/models/user.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
 import '../../../../data/models/register.dart';
 import 'auth_event.dart';
@@ -91,6 +92,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onLogout(LogoutButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
+      final accessToken=await SecureStorageService.getAccessToken();
+      await dio.post(
+        logoutEndpoint,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $accessToken'
+          }
+        )
+      );
       await SecureStorageService.deleteTokens();
       emit(LogoutSuccess());
     } catch (e) {

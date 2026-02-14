@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:lokyatra_frontend/data/models/register.dart';
+import 'package:lokyatra_frontend/data/models/user.dart';
 
 abstract class AuthEvent extends Equatable{
   @override
@@ -26,5 +27,6 @@ class LoginButtonClicked extends AuthEvent{
 }
 
 class LogoutButtonClicked extends AuthEvent{
-
+  @override
+  List<Object?> get props => [];
 }

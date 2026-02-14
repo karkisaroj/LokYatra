@@ -20,6 +20,7 @@ String get apiBaseUrl => getBaseUrl().replaceAll("/api/Auth/", "");
 const String loginEndpoint = "/api/Auth/login";
 const String registerEndpoint = "/api/Auth/register";
 const String getUsersEndpoint = "/api/User/getUsers";
+const String logoutEndpoint="/api/Auth/logout";
 
 const Map<String, String> headers = {
   "Content-Type": "application/json",
