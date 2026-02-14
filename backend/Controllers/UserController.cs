@@ -7,11 +7,9 @@ namespace backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UserController : ControllerBase
+    public class UserController(AppDbContext context) : ControllerBase
     {
-        private readonly AppDbContext _context;
-        public UserController(AppDbContext context) => _context = context;
-
+        private readonly AppDbContext _context = context;
 
         [HttpGet("getUsers")]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
@@ -30,5 +28,19 @@ namespace backend.Controllers
             }).ToList();
             return Ok(DtoList);
         }
+
+
+
+        [HttpDelete("deleteUser/{userId}")]
+        public async Task<ActionResult<UserDto>> DeleteUser(int userId)
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user == null) return NotFound();
+
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            return Ok(new UserDto { UserId = user.UserId, Name = user.Name, Email = user.Email, Role = user.Role });
+        }
     }
-}
+    }
