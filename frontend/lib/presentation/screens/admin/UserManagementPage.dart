@@ -31,14 +31,12 @@ class _UserManagementPageState extends State<UserManagementPage> {
             widget.subtitleNotifier.value = state.users.isEmpty
                 ? "No users yet"
                 : "Total: ${state.users.length} users";
-          }
-          else if(state is UserDeleted){
+          } else if (state is UserDeleted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text("User deleted successfully")),
             );
             context.read<UserBloc>().add(FetchUsers());
-          }
-          else if(state is UserError){
+          } else if (state is UserError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message)),
             );
@@ -95,6 +93,7 @@ class _UserManagementPageState extends State<UserManagementPage> {
                       ),
                       if (_focusNode.hasFocus && suggestions.isNotEmpty)
                         Container(
+                          color: const Color(0xFFF5F5F5),
                           margin: const EdgeInsets.only(top: 4),
                           decoration: BoxDecoration(
                             color: Colors.white,
@@ -140,81 +139,125 @@ class _UserManagementPageState extends State<UserManagementPage> {
                         final User user = filteredUsers[index];
                         return Card(
                           color: const Color(0xFFF5F5F5),
+                          elevation: 2,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                           margin: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 6),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              child: Text(user.name[0].toUpperCase()),
-                            ),
-                            title: Text(user.name,
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.bold)),
-                            subtitle: Column(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    Chip(
-                                      label: Text(user.role),
-                                      backgroundColor: _getRoleColor(user.role),
-                                      labelStyle: TextStyle(
-                                        color: _getTextColor(user.role),
-                                        fontWeight: FontWeight.bold,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 24,
+                                            child: Text(
+                                                user.name[0].toUpperCase()),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              user.name,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Chip(
-                                      label: Text(
-                                          (user.isActive ?? false)
-                                              ? "Active"
-                                              : "Inactive"),
-                                      backgroundColor: (user.isActive ?? false)
-                                          ? Colors.lightGreenAccent.shade100
-                                          : Colors.red.shade100,
-                                      labelStyle: TextStyle(
-                                        color: (user.isActive ?? false)
-                                            ? Colors.green
-                                            : Colors.red,
-                                        fontWeight: FontWeight.bold,
+                                      const SizedBox(height: 8),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.email,
+                                              size: 16, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              user.email,
+                                              softWrap: true,
+                                              style: const TextStyle(
+                                                  fontSize: 14),
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 4),
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.phone,
+                                              size: 16, color: Colors.grey),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              (user.phone != null &&
+                                                  user.phone!.isNotEmpty)
+                                                  ? user.phone!
+                                                  : "Phone number not set",
+                                              style: const TextStyle(
+                                                color: Colors.black,
+                                                fontStyle: FontStyle.italic,
+                                                fontWeight: FontWeight.w400,
+                                                fontSize: 14,
+                                              ),
+                                              softWrap: true,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                                const SizedBox(height: 4),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.email,
-                                        size: 16, color: Colors.grey),
-                                    const SizedBox(width: 4),
-                                    Text(user.email),
-                                  ],
-                                ),
-                                Row(
-                                  children: [
-                                    const Icon(Icons.phone,
-                                        size: 16, color: Colors.grey),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      (user.phone != null &&
-                                          user.phone!.isNotEmpty)
-                                          ? user.phone!
-                                          : "Phone number not set",
-                                      style: const TextStyle(
-                                        color: Colors.black,
-                                        fontStyle: FontStyle.italic,
-                                        fontWeight: FontWeight.w400,
+                                SizedBox(
+                                  width: 140,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    children: [
+                                      Chip(
+                                        label: Text(user.role),
+                                        backgroundColor:
+                                        _getRoleColor(user.role),
+                                        labelStyle: TextStyle(
+                                          color: _getTextColor(user.role),
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
-                                    ),
-                                  ],
+                                      const SizedBox(height: 4),
+                                      Chip(
+                                        label: Text((user.isActive ?? false)
+                                            ? "Active"
+                                            : "Inactive"),
+                                        backgroundColor: (user.isActive ?? false)
+                                            ? Colors.lightGreenAccent.shade100
+                                            : Colors.red.shade100,
+                                        labelStyle: TextStyle(
+                                          color: (user.isActive ?? false)
+                                              ? Colors.green
+                                              : Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.delete,
+                                            color: Colors.red),
+                                        onPressed: () {
+                                          context
+                                              .read<UserBloc>()
+                                              .add(DeleteUsers(user.id));
+                                        },
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete, color: Colors.red),
-                              onPressed: () {
-                                context.read<UserBloc>().add(DeleteUsers(user.id));
-                              },
                             ),
                           ),
                         );
