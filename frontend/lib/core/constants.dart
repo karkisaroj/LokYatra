@@ -16,12 +16,19 @@ String getBaseUrl() {
 
 String get apiBaseUrl => getBaseUrl().replaceAll("/api/Auth/", "");
 
+const Duration kGetConnectTimeout = Duration(seconds: 10);
+const Duration kGetReceiveTimeout = Duration(seconds: 20);
+const Duration kPostSendTimeout = Duration(seconds: 120);
+const Duration kPostReceiveTimeout = Duration(seconds: 120);
+
 //below are endpoints paths
 const String loginEndpoint = "/api/Auth/login";
 const String registerEndpoint = "/api/Auth/register";
 const String getUsersEndpoint = "/api/User/getUsers";
 const String logoutEndpoint="/api/Auth/logout";
 const String deleteUserEndpoint="/api/User/deleteUser";
+const String sitesBasePath = "/api/Sites";
+const String storiesBasePath = "/api/Stories";
 
 const Map<String, String> headers = {
   "Content-Type": "application/json",

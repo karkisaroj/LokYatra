@@ -21,7 +21,7 @@ class PageConfig {
   });
 }
 
-class AdminPageWrapper extends StatelessWidget {
+class AdminPageWrapper extends StatefulWidget {
   final int selectedIndex;
   final Function(int) onItemTapped;
   final List<PageConfig> pages;
@@ -36,15 +36,53 @@ class AdminPageWrapper extends StatelessWidget {
   });
 
   @override
+  State<AdminPageWrapper> createState() => _AdminPageWrapperState();
+}
+
+class _AdminPageWrapperState extends State<AdminPageWrapper> {
+  bool _progressShown = false;
+
+  void _openProgress() {
+    if (_progressShown) return;
+    _progressShown = true;
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Dialog(
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        child: Center(
+          child: SizedBox(
+            width: 48,
+            height: 48,
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      ),
+    ).then((_) {
+      _progressShown = false;
+    });
+  }
+
+  void _closeProgress() {
+    if (_progressShown) {
+      Navigator.of(context, rootNavigator: true).pop();
+      _progressShown = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final currentPage = pages[selectedIndex];
+    final currentPage = widget.pages[widget.selectedIndex];
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
         if (state is LogoutSuccess) {
+          _closeProgress();
           // Navigate only when logout succeeds
           Navigator.pushReplacementNamed(context, '/login');
         } else if (state is AuthError) {
+          _closeProgress();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message)),
           );
@@ -56,7 +94,7 @@ class AdminPageWrapper extends StatelessWidget {
         appBar: AppBar(
           backgroundColor: Colors.white54,
           title: ValueListenableBuilder<String?>(
-            valueListenable: subtitleNotifier,
+            valueListenable: widget.subtitleNotifier,
             builder: (context, subtitle, _) => Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -108,14 +146,14 @@ class AdminPageWrapper extends StatelessWidget {
                     child: ListView(
                       padding: EdgeInsets.zero,
                       children: [
-                        for (int i = 0; i < pages.length; i++)
+                        for (int i = 0; i < widget.pages.length; i++)
                           ListTile(
-                            leading: pages[i].icon,
-                            title: Text(pages[i].title),
-                            selected: selectedIndex == i,
+                            leading: widget.pages[i].icon,
+                            title: Text(widget.pages[i].title),
+                            selected: widget.selectedIndex == i,
                             selectedColor: Colors.blueGrey,
                             onTap: () {
-                              onItemTapped(i);
+                              widget.onItemTapped(i);
                               Navigator.pop(context); // close drawer
                             },
                           ),
@@ -128,8 +166,12 @@ class AdminPageWrapper extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
                     child: TextButton.icon(
-                      onPressed: () {
-                        // Dispatch logout event only
+                      onPressed: _progressShown
+                          ? null
+                          : () {
+                        // Show a blocking progress indicator immediately
+                        _openProgress();
+                        // Dispatch logout event
                         context.read<AuthBloc>().add(LogoutButtonClicked());
                       },
                       icon: const Icon(Icons.logout),
