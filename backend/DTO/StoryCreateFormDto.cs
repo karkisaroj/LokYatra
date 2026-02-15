@@ -1,8 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace backend.DTOs
+namespace backend.DTO
 {
-    public class CreateStoryDto
+    public class StoryCreateFormDto
     {
         [Required] public int CulturalSiteId { get; set; }
         [Required, MaxLength(160)] public string Title { get; set; } = default!;
