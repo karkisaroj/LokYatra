@@ -132,7 +132,7 @@ namespace backend.Services
 
         public async Task<bool> LogoutAsync(int userId)
         {
-            var user = await context.Users.FindAsync(userId);
+            var user = await context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
             if (user is null)
             {
                 return false;

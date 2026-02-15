@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
+using System.Security.Claims;
 using System.Text;
 
 
@@ -29,7 +30,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             Encoding.UTF8.GetBytes(builder.Configuration["AppSettings:Token"]!)
         ),
         ValidateIssuerSigningKey = true,
-        RoleClaimType = "role"
+        RoleClaimType = ClaimTypes.Role
     };
     options.Events = new JwtBearerEvents
     {
