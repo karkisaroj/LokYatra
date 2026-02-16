@@ -172,6 +172,31 @@ namespace backend.Controllers
             });
         }
 
+        [HttpGet("proxy-image")]
+        [ResponseCache(Duration = 3600)] 
+        public async Task<ActionResult> ProxyImage([FromQuery] string url)
+        {
+            if (string.IsNullOrWhiteSpace(url)) return BadRequest("url required");
+
+            try
+            {
+                using var http = new HttpClient();
+                http.Timeout = TimeSpan.FromSeconds(30);
+                var response = await http.GetAsync(url);
+
+                if (!response.IsSuccessStatusCode)
+                    return StatusCode((int)response.StatusCode, "Image fetch failed");
+
+                var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/jpeg";
+                var bytes = await response.Content.ReadAsByteArrayAsync();
+                return File(bytes, contentType);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(502, $"Proxy error: {ex.Message}");
+            }
+        }
+
         [Authorize(Roles = "admin")]
         [HttpDelete("{id:int}")]
         public async Task<ActionResult> Delete(int id)

@@ -40,6 +40,26 @@ namespace backend.Controllers
             return Ok(list);
         }
 
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<object>> GetStory(int id)
+        {
+            var story = await db.Stories.FindAsync(id);
+            if (story is null) return NotFound("Story not found");
+
+            return Ok(new
+            {
+                id = story.Id,
+                culturalSiteId = story.CulturalSiteId,
+                title = story.Title,
+                storyType = story.StoryType,
+                estimatedReadTimeMinutes = story.EstimatedReadTimeMinutes,
+                fullContent = story.FullContent,
+                historicalContext = story.HistoricalContext,
+                culturalSignificance = story.CulturalSignificance,
+                imageUrls = story.ImageUrls
+            });
+        }
+
         [Authorize(Roles = "admin")]
         [HttpPost]
         [RequestSizeLimit(25_000_000)]
