@@ -1,70 +1,114 @@
 import 'package:flutter/material.dart';
+import 'package:lokyatra_frontend/core/image_proxy.dart';
 
 class StoryDetailPage extends StatelessWidget {
   final Map<String, dynamic> story;
   const StoryDetailPage({super.key, required this.story});
 
-  String _fmtDate(dynamic d) {
-    if (d == null) return '—';
-    final dt = DateTime.tryParse(d.toString());
-    if (dt == null) return d.toString();
-    final local = dt.toLocal();
-    return '${local.year}-${local.month.toString().padLeft(2, '0')}-${local.day.toString().padLeft(2, '0')} ${local.hour.toString().padLeft(2, '0')}:${local.minute.toString().padLeft(2, '0')}';
+  /// Formats a date string like "2026-02-15 10:30"
+  String formatDate(dynamic date) {
+    if (date == null) return '—';
+    DateTime? parsed = DateTime.tryParse(date.toString());
+    if (parsed == null) return date.toString();
+    DateTime local = parsed.toLocal();
+    String year = local.year.toString();
+    String month = local.month.toString().padLeft(2, '0');
+    String day = local.day.toString().padLeft(2, '0');
+    String hour = local.hour.toString().padLeft(2, '0');
+    String minute = local.minute.toString().padLeft(2, '0');
+    return '$year-$month-$day $hour:$minute';
   }
 
   @override
   Widget build(BuildContext context) {
-    final imgs = (story['imageUrls'] as List?)?.cast<String>() ?? const [];
-    final cover = imgs.isNotEmpty ? imgs.first : null;
+    // Get all image URLs from the story data
+    List<String> imageUrls = [];
+    if (story['imageUrls'] != null && story['imageUrls'] is List) {
+      for (var url in story['imageUrls']) {
+        if (url != null && url.toString().isNotEmpty) {
+          imageUrls.add(url.toString());
+        }
+      }
+    }
+    String? coverImage = imageUrls.isNotEmpty ? imageUrls.first : null;
+
+    String title = (story['title'] ?? '').toString();
+    String storyType = (story['storyType'] ?? '').toString();
+    int readTime = story['estimatedReadTimeMinutes'] ?? 0;
+    String fullContent = (story['fullContent'] ?? '').toString();
+    String historicalContext = (story['historicalContext'] ?? '').toString();
+    String culturalSignificance = (story['culturalSignificance'] ?? '').toString();
 
     return Scaffold(
-      appBar: AppBar(title: Text((story['title'] ?? '').toString())),
+      appBar: AppBar(title: Text(title)),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          if (cover != null)
-            ClipRRect(borderRadius: BorderRadius.circular(12), child: Image.network(cover, height: 220, fit: BoxFit.cover)),
+          // Cover image
+          if (coverImage != null)
+            ProxyImage(
+              imageUrl: coverImage,
+              width: double.infinity,
+              height: 220,
+              borderRadiusValue: 12,
+            ),
           const SizedBox(height: 16),
+
+          // Type and read time chips
           Wrap(spacing: 8, runSpacing: 8, children: [
-            Chip(label: Text('Type: ${(story['storyType'] ?? '').toString()}')),
-            Chip(label: Text('Read: ${(story['estimatedReadTimeMinutes'] ?? 0)} min')),
+            Chip(label: Text('Type: $storyType')),
+            Chip(label: Text('Read: $readTime min')),
           ]),
           const SizedBox(height: 12),
+
+          // Full story content
           const Text('Story', style: TextStyle(fontWeight: FontWeight.w600)),
           const SizedBox(height: 6),
-          Text((story['fullContent'] ?? '').toString()),
+          Text(fullContent),
           const SizedBox(height: 12),
-          if ((story['historicalContext'] ?? '').toString().isNotEmpty) ...[
+
+          // Historical context
+          if (historicalContext.isNotEmpty) ...[
             const Text('Historical Context', style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
-            Text((story['historicalContext'] ?? '').toString()),
+            Text(historicalContext),
             const SizedBox(height: 12),
           ],
-          if ((story['culturalSignificance'] ?? '').toString().isNotEmpty) ...[
+
+          // Cultural significance
+          if (culturalSignificance.isNotEmpty) ...[
             const Text('Cultural Significance', style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 6),
-            Text((story['culturalSignificance'] ?? '').toString()),
+            Text(culturalSignificance),
             const SizedBox(height: 12),
           ],
-          Text('Created: ${_fmtDate(story['createdAt'])}'),
-          Text('Updated: ${_fmtDate(story['updatedAt'])}'),
+
+          // Dates
+          Text('Created: ${formatDate(story['createdAt'])}'),
+          Text('Updated: ${formatDate(story['updatedAt'])}'),
           const SizedBox(height: 16),
-          if (imgs.length > 1) const Text('More Images', style: TextStyle(fontWeight: FontWeight.w600)),
-          if (imgs.length > 1)
+
+          // More images
+          if (imageUrls.length > 1) ...[
+            const Text('More Images', style: TextStyle(fontWeight: FontWeight.w600)),
+            const SizedBox(height: 8),
             SizedBox(
               height: 120,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: imgs.length,
+                itemCount: imageUrls.length,
                 separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, i) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.network(imgs[i], width: 180, height: 120, fit: BoxFit.cover),
+                itemBuilder: (_, index) {
+                  return ProxyImage(
+                    imageUrl: imageUrls[index],
+                    width: 180,
+                    height: 120,
+                    borderRadiusValue: 8,
                   );
                 },
               ),
             ),
+          ],
         ],
       ),
     );

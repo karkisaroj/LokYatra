@@ -7,9 +7,9 @@ class SitesRemoteDatasource {
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: apiBaseUrl,
-      connectTimeout: Duration(seconds: 10),
-      receiveTimeout: Duration(seconds: 20), // GETs ok
-      sendTimeout: Duration(seconds: 20),
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 20), // GETs ok
+      sendTimeout: const Duration(seconds: 20),
       headers: headers,
       responseType: ResponseType.json,
     ),
@@ -21,6 +21,8 @@ class SitesRemoteDatasource {
       queryParameters: q != null && q.isNotEmpty ? {'q': q} : null,
     );
   }
+
+  Future<Response<dynamic>> getSite(int id) => _dio.get('$sitesBasePath/$id');
 
   Future<Response<dynamic>> createSite({
     required Map<String, dynamic> fields,
@@ -52,6 +54,47 @@ class SitesRemoteDatasource {
         sendTimeout: const Duration(seconds: 120),
         receiveTimeout: const Duration(seconds: 120),
       ),
+    );
+  }
+
+  Future<Response<dynamic>> updateSite({
+    required int id,
+    required Map<String, dynamic> fields,
+    required List<PlatformFile> files,
+  }) async {
+    final token = await SecureStorageService.getAccessToken();
+    final formData = FormData();
+
+    fields.forEach((key, value) {
+      if (value != null) {
+        formData.fields.add(MapEntry(key, value.toString()));
+      }
+    });
+
+    for (final f in files) {
+      if (f.bytes != null) {
+        formData.files.add(MapEntry('files', MultipartFile.fromBytes(f.bytes!, filename: f.name)));
+      } else if (f.path != null) {
+        formData.files.add(MapEntry('files', await MultipartFile.fromFile(f.path!, filename: f.name)));
+      }
+    }
+
+    return _dio.put(
+      '$sitesBasePath/$id',
+      data: formData,
+      options: Options(
+        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+        sendTimeout: const Duration(seconds: 120),
+        receiveTimeout: const Duration(seconds: 120),
+      ),
+    );
+  }
+
+  Future<Response<dynamic>> deleteSite(int id) async {
+    final token = await SecureStorageService.getAccessToken();
+    return _dio.delete(
+      '$sitesBasePath/$id',
+      options: Options(headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'}),
     );
   }
 }
