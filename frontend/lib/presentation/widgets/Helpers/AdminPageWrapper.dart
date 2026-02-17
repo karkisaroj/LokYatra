@@ -77,11 +77,19 @@ class _AdminPageWrapperState extends State<AdminPageWrapper> {
 
     return BlocListener<AuthBloc, AuthState>(
       listener: (context, state) {
+        // Inside your BlocListener for AuthBloc
         if (state is LogoutSuccess) {
-          _closeProgress();
-          // Navigate only when logout succeeds
-          Navigator.pushReplacementNamed(context, '/login');
-        } else if (state is AuthError) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            // 1. Close the progress dialog first if it's still open
+            if (_progressShown) {
+              Navigator.of(context).pop();
+            }
+            // 2. Then navigate to Login and clear the stack
+            Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+          });
+
+
+      } else if (state is AuthError) {
           _closeProgress();
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(state.message)),

@@ -29,6 +29,7 @@ const String logoutEndpoint="/api/Auth/logout";
 const String deleteUserEndpoint="/api/User/deleteUser";
 const String sitesBasePath = "/api/Sites";
 const String storiesBasePath = "/api/Stories";
+const String homestaysBasePath = "/api/Homestays";
 
 const Map<String, String> headers = {
   "Content-Type": "application/json",
