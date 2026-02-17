@@ -23,9 +23,9 @@ namespace backend.Controllers
             {
                 var qq = q.ToLower();
                 query = query.Where(s =>
-                    (s.Name ?? "").ToLower().Contains(qq) ||
-                    (s.Category ?? "").ToLower().Contains(qq) ||
-                    (s.District ?? "").ToLower().Contains(qq));
+                    (s.Name ?? "").Contains(qq, StringComparison.CurrentCultureIgnoreCase) ||
+                    (s.Category ?? "").Contains(qq, StringComparison.CurrentCultureIgnoreCase) ||
+                    (s.District ?? "").Contains(qq, StringComparison.CurrentCultureIgnoreCase));
             }
 
             var list = await query
@@ -93,7 +93,7 @@ namespace backend.Controllers
             var files = Request.Form.Files;
             var urls = files is { Count: > 0 }
                 ? await imageService.UploadFilesAsync("lokyatra/sites", files)
-                : new List<string>();
+                : [];
 
             var entity = new CulturalSite
             {
@@ -142,7 +142,7 @@ namespace backend.Controllers
             if (files.Count > 0)
             {
                 var urls = await imageService.UploadFilesAsync("lokyatra/sites", files);
-                entity.ImageUrls = urls.ToArray();
+                entity.ImageUrls = [.. urls];
             }
 
             entity.Name = form.Name;

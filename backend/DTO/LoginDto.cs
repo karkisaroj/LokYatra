@@ -1,4 +1,4 @@
-﻿namespace backend.Models
+﻿namespace backend.DTO
 {
     public class LoginDto
     {
