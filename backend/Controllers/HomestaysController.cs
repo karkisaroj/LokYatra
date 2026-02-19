@@ -19,7 +19,6 @@ namespace backend.Controllers
             return int.TryParse(claim, out int userId) ? userId : null;
         }
 
-        // GET Owner Homestays
         [Authorize(Roles = "owner")]
         [HttpGet("OwnerStay")]
         public async Task<IActionResult> GetMyHomestays()
@@ -62,7 +61,6 @@ namespace backend.Controllers
             return Ok(list);
         }
 
-        // CREATE
         [Authorize(Roles = "owner")]
         [HttpPost]
         [RequestSizeLimit(25_000_000)]
@@ -107,10 +105,10 @@ namespace backend.Controllers
 
             return Ok(entity);
         }
-       
+
         [Authorize(Roles = "owner")]
         [HttpPut("{id}")]
-        [RequestSizeLimit(25_000_000)]  
+        [RequestSizeLimit(25_000_000)]
         public async Task<IActionResult> Update(int id, [FromForm] HomestayUpdateFormDto form)
         {
             var ownerId = GetCurrentUserId();
@@ -120,15 +118,13 @@ namespace backend.Controllers
                 .FirstOrDefaultAsync(h => h.Id == id && h.OwnerId == ownerId.Value);
 
             if (homestay == null) return NotFound("Homestay not found or you don't own it.");
-
             if (!ModelState.IsValid) return BadRequest(ModelState);
-
 
             homestay.Name = form.Name ?? homestay.Name;
             homestay.Location = form.Location ?? homestay.Location;
             homestay.Description = form.Description ?? homestay.Description;
             homestay.Category = form.Category ?? homestay.Category;
-            homestay.PricePerNight = form.PricePerNight;      
+            homestay.PricePerNight = form.PricePerNight;
             homestay.BuildingHistory = form.BuildingHistory ?? homestay.BuildingHistory;
             homestay.CulturalSignificance = form.CulturalSignificance ?? homestay.CulturalSignificance;
             homestay.TraditionalFeatures = form.TraditionalFeatures ?? homestay.TraditionalFeatures;
@@ -149,28 +145,49 @@ namespace backend.Controllers
             if (newFiles.Count > 0)
             {
                 var newUrls = await imageService.UploadFilesAsync("lokyatra/homestays", newFiles);
-              
                 homestay.ImageUrls = homestay.ImageUrls.Concat(newUrls).ToArray();
-
-                // Alternative: REPLACE (if you want to overwrite all images)
-                // homestay.ImageUrls = newUrls.ToArray();
             }
 
             homestay.UpdatedAt = DateTimeOffset.UtcNow;
-
             await db.SaveChangesAsync();
 
-            // Return updated entity (similar shape as GET)
             return Ok(new
             {
                 id = homestay.Id,
                 name = homestay.Name,
-                // ... include all fields you want in response
+                location = homestay.Location,
+                description = homestay.Description,
+                category = homestay.Category,
+                pricePerNight = homestay.PricePerNight,
+                numberOfRooms = homestay.NumberOfRooms,
+                maxGuests = homestay.MaxGuests,
+                bathrooms = homestay.Bathrooms,
+                amenities = homestay.Amenities,
                 imageUrls = homestay.ImageUrls,
                 isVisible = homestay.IsVisible,
-                updatedAt = homestay.UpdatedAt,
-                // etc.
+                updatedAt = homestay.UpdatedAt
             });
+        }
+
+        // This was the missing route causing the 404
+        [Authorize(Roles = "owner")]
+        [HttpPatch("{id}/visibility")]
+        public async Task<IActionResult> ToggleVisibility(int id, [FromBody] ToggleVisibilityDto dto)
+        {
+            var ownerId = GetCurrentUserId();
+            if (ownerId == null) return Unauthorized();
+
+            var homestay = await db.Homestays
+                .FirstOrDefaultAsync(h => h.Id == id && h.OwnerId == ownerId.Value);
+
+            if (homestay == null) return NotFound("Homestay not found or you don't own it.");
+
+            homestay.IsVisible = dto.IsVisible;
+            homestay.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await db.SaveChangesAsync();
+
+            return Ok(new { id = homestay.Id, isVisible = homestay.IsVisible });
         }
     }
 }
