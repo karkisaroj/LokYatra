@@ -243,7 +243,7 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
         decoration: BoxDecoration(
           color: Colors.grey[100],
           border: Border.all(
-            color: hasContent ? Colors.orange : Colors.grey.shade300,
+            color: hasContent ? Colors.blueGrey : Colors.grey.shade300,
             width: hasContent ? 2 : 1,
           ),
           borderRadius: BorderRadius.circular(12),
@@ -325,10 +325,10 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
               }
             });
           },
-          selectedColor: Colors.orange.withOpacity(0.2),
-          checkmarkColor: Colors.orange,
+          selectedColor: Colors.blueGrey.withValues(alpha: 0.2),
+          checkmarkColor: Colors.black,
           side: BorderSide(
-            color: selected ? Colors.orange : Colors.grey.shade300,
+            color: selected ? Colors.blue : Colors.grey.shade300,
           ),
           showCheckmark: true,
         );
@@ -365,7 +365,7 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
             leading: CircleAvatar(
               radius: 16,
               backgroundColor:
-              isSelected ? Colors.orange : Colors.grey.shade200,
+              isSelected ? Colors.black: Colors.grey.shade200,
               child: Icon(
                 Icons.temple_hindu,
                 size: 16,
@@ -376,11 +376,11 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
                 style: TextStyle(
                   fontWeight:
                   isSelected ? FontWeight.bold : FontWeight.normal,
-                  color: isSelected ? Colors.orange : Colors.black87,
+                  color: isSelected ? Colors.black : Colors.black87,
                 )),
             trailing: isSelected
                 ? const Icon(Icons.check_circle,
-                color: Colors.orange, size: 20)
+                color: Colors.blueGrey, size: 20)
                 : null,
             onTap: () => setState(() => _selectedSiteId = siteId),
           );
@@ -413,8 +413,8 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
         actions: [
           TextButton.icon(
             onPressed: _isLoading ? null : _submit,
-            icon: const Icon(Icons.save, color: Colors.orange),
-            label: const Text('Save', style: TextStyle(color: Colors.orange)),
+            icon: const Icon(Icons.save, color: Colors.black45),
+            label: const Text('Save', style: TextStyle(color: Colors.black45)),
           ),
         ],
       ),
@@ -426,7 +426,7 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
 
-              // ── Visibility Toggle ─────────────────────────────────────
+              // Visibility Toggle
               Card(
                 margin: const EdgeInsets.only(bottom: 16),
                 shape: RoundedRectangleBorder(
@@ -438,7 +438,7 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
                       ? 'Visible to guests'
                       : 'Hidden from guests'),
                   value: _isVisible,
-                  activeColor: Colors.orange,
+                  activeThumbColor: Colors.indigo,
                   onChanged: (val) => setState(() => _isVisible = val),
                 ),
               ),
@@ -535,7 +535,7 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
                   label: const Text('Save Changes',
                       style: TextStyle(fontSize: 16)),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
+                    backgroundColor: Colors.blueGrey,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12)),

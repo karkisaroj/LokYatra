@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/data/datasources/homestays_remote_datasource.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
 
 class HomestayDetailPage extends StatefulWidget {
-  // ✅ Accept typed Homestay, not raw Map
   final Homestay homestay;
 
   const HomestayDetailPage({super.key, required this.homestay});
@@ -15,11 +15,14 @@ class HomestayDetailPage extends StatefulWidget {
 class _HomestayDetailPageState extends State<HomestayDetailPage> {
   int _currentImage = 0;
   late final PageController _pageController;
+  late bool _isVisible;
+  bool _togglingVisibility = false;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController();
+    _isVisible = widget.homestay.isVisible;
   }
 
   @override
@@ -28,9 +31,49 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
     super.dispose();
   }
 
+  Future<void> _toggleVisibility() async {
+    final newValue = !_isVisible;
+
+    // Optimistic update
+    setState(() {
+      _isVisible = newValue;
+      _togglingVisibility = true;
+    });
+
+    try {
+      final response = await HomestaysRemoteDatasource()
+          .toggleVisibility(widget.homestay.id, newValue);
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        setState(() => _isVisible = !newValue);
+        _showSnack('Failed to update visibility');
+      } else {
+        _showSnack(
+          newValue ? 'Homestay is now Active' : 'Homestay is now Inactive',
+          isError: false,
+        );
+      }
+    } catch (e) {
+      setState(() => _isVisible = !newValue);
+      _showSnack('Error: $e');
+    } finally {
+      if (mounted) setState(() => _togglingVisibility = false);
+    }
+  }
+
+  void _showSnack(String msg, {bool isError = true}) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: isError ? Colors.red : Colors.green,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
-    final h = widget.homestay; // shorthand
+    final h = widget.homestay;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
@@ -41,27 +84,31 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Homestay Details', style: TextStyle(color: Colors.white)),
+        title: const Text('Homestay Details',
+            style: TextStyle(color: Colors.white)),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Image Carousel ──────────────────────────────────────────
+
+            // Image Carousel
             SizedBox(
               height: 260,
               child: h.imageUrls.isEmpty
                   ? Container(
                 color: Colors.grey[300],
                 alignment: Alignment.center,
-                child: const Icon(Icons.image_not_supported, size: 60, color: Colors.grey),
+                child: const Icon(Icons.image_not_supported,
+                    size: 60, color: Colors.grey),
               )
                   : Stack(
                 children: [
                   PageView.builder(
                     controller: _pageController,
                     itemCount: h.imageUrls.length,
-                    onPageChanged: (i) => setState(() => _currentImage = i),
+                    onPageChanged: (i) =>
+                        setState(() => _currentImage = i),
                     itemBuilder: (_, i) => ProxyImage(
                       imageUrl: h.imageUrls[i],
                       width: double.infinity,
@@ -73,14 +120,16 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
                     right: 12,
                     bottom: 12,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
                         color: Colors.black54,
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
                         '${_currentImage + 1} / ${h.imageUrls.length}',
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 12),
                       ),
                     ),
                   ),
@@ -88,7 +137,7 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
               ),
             ),
 
-            // ── Thumbnail Strip ─────────────────────────────────────────
+            // Thumbnail Strip
             if (h.imageUrls.length > 1)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
@@ -98,17 +147,17 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
                     scrollDirection: Axis.horizontal,
                     itemCount: h.imageUrls.length,
                     itemBuilder: (_, i) => GestureDetector(
-                      onTap: () => _pageController.animateToPage(
-                        i,
-                        duration: const Duration(milliseconds: 300),
-                        curve: Curves.easeInOut,
-                      ),
+                      onTap: () => _pageController.animateToPage(i,
+                          duration: const Duration(milliseconds: 300),
+                          curve: Curves.easeInOut),
                       child: Container(
                         margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: _currentImage == i ? Colors.orange : Colors.transparent,
+                            color: _currentImage == i
+                                ? Colors.blueGrey
+                                : Colors.transparent,
                             width: 2,
                           ),
                         ),
@@ -129,79 +178,193 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
 
             const SizedBox(height: 12),
 
-            // ── Name & Status ───────────────────────────────────────────
+            // Name row with tappable status badge
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
-                    child: Text(
-                      h.name,
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    child: Text(h.name,
+                        style: const TextStyle(
+                            fontSize: 22, fontWeight: FontWeight.bold)),
+                  ),
+                  GestureDetector(
+                    onTap: _togglingVisibility ? null : _toggleVisibility,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: _isVisible
+                            ? Colors.green
+                            : Colors.grey.shade400,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: _togglingVisibility
+                          ? const SizedBox(
+                        width: 14,
+                        height: 14,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                          : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            _isVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                            color: Colors.white,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _isVisible ? 'Active' : 'Inactive',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                  if (h.isVisible)
-                    const Chip(
-                      label: Text('Active', style: TextStyle(color: Colors.white, fontSize: 12)),
-                      backgroundColor: Colors.green,
-                      padding: EdgeInsets.zero,
-                    ),
                 ],
               ),
             ),
 
-            // ── Category badge ──────────────────────────────────────────
+            // Visibility control card
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: _isVisible
+                      ? Colors.green.withValues(alpha:0.07)
+                      : Colors.grey.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: _isVisible
+                        ? Colors.green.withValues(alpha: 0.3)
+                        : Colors.grey.shade300,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      _isVisible
+                          ? Icons.check_circle_outline
+                          : Icons.pause_circle_outline,
+                      color: _isVisible ? Colors.green : Colors.grey,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _isVisible
+                                ? 'Listing is Active'
+                                : 'Listing is Inactive',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: _isVisible
+                                  ? Colors.green
+                                  : Colors.grey[600],
+                            ),
+                          ),
+                          Text(
+                            _isVisible
+                                ? 'Guests can find and book this homestay'
+                                : 'Hidden from guests — no new bookings',
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _togglingVisibility
+                        ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                          strokeWidth: 2),
+                    )
+                        : Switch(
+                      value: _isVisible,
+                      activeThumbColor: Colors.green,
+                      onChanged: (_) => _toggleVisibility(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Category badge
             if (h.category != null && h.category!.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.15),
+                    color: Colors.grey.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.orange.withOpacity(0.4)),
+                    border: Border.all(
+                        color: Colors.black.withValues(alpha: 0.4)),
                   ),
-                  child: Text(
-                    h.category!,
-                    style: const TextStyle(fontSize: 12, color: Colors.orange, fontWeight: FontWeight.w600),
-                  ),
+                  child: Text(h.category!,
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.black45,
+                          fontWeight: FontWeight.w600)),
                 ),
               ),
 
-            // ── Location ────────────────────────────────────────────────
+            // Location
             if (h.location.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
                 child: Row(
                   children: [
-                    const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                    const Icon(Icons.location_on,
+                        size: 16, color: Colors.black),
                     const SizedBox(width: 4),
                     Expanded(
                       child: Text(h.location,
-                          style: const TextStyle(fontSize: 14, color: Colors.grey)),
+                          style: const TextStyle(
+                              fontSize: 14, color: Colors.black)),
                     ),
                   ],
                 ),
               ),
 
-            // ── Near Cultural Site ──────────────────────────────────────
-            if (h.nearCulturalSite != null && h.nearCulturalSite!.name.isNotEmpty)
+            // Near Cultural Site
+            if (h.nearCulturalSite != null &&
+                h.nearCulturalSite!.name.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                 child: Row(
                   children: [
-                    const Icon(Icons.temple_hindu, size: 16, color: Colors.grey),
+                    const Icon(Icons.temple_hindu,
+                        size: 16, color: Colors.black),
                     const SizedBox(width: 4),
-                    Text(
-                      'Near ${h.nearCulturalSite!.name}',
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
+                    Text('Near ${h.nearCulturalSite!.name}',
+                        style: const TextStyle(
+                            fontSize: 14, color: Colors.black)),
                   ],
                 ),
               ),
 
-            // ── Price ───────────────────────────────────────────────────
+            // Price
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
               child: Row(
@@ -209,14 +372,17 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
                   Text(
                     'Rs. ${h.pricePerNight.toStringAsFixed(0)}',
                     style: const TextStyle(
-                        fontSize: 26, fontWeight: FontWeight.bold, color: Colors.orange),
+                        fontSize: 26,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.redAccent),
                   ),
-                  const Text(' / night', style: TextStyle(color: Colors.grey, fontSize: 14)),
+                  const Text(' / night',
+                      style: TextStyle(color: Colors.black87, fontSize: 14)),
                 ],
               ),
             ),
 
-            // ── Capacity chips ──────────────────────────────────────────
+            // Capacity chips
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
               child: Row(
@@ -225,14 +391,15 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
                   const SizedBox(width: 8),
                   _infoChip(Icons.people, '${h.maxGuests} Guests'),
                   const SizedBox(width: 8),
-                  _infoChip(Icons.bathtub_outlined, '${h.bathrooms} Baths'),
+                  _infoChip(
+                      Icons.bathtub_outlined, '${h.bathrooms} Baths'),
                 ],
               ),
             ),
 
             const Divider(height: 32, indent: 16, endIndent: 16),
 
-            // ── Performance ─────────────────────────────────────────────
+            // Performance
             _sectionTitle('Performance'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -251,15 +418,17 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
 
             const Divider(height: 32, indent: 16, endIndent: 16),
 
-            // ── About ───────────────────────────────────────────────────
+            // About
             _sectionTitle('About This Homestay'),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(h.description, style: const TextStyle(fontSize: 14, height: 1.6)),
+              child: Text(h.description,
+                  style: const TextStyle(fontSize: 14, height: 1.6)),
             ),
 
-            // ── Cultural Significance ───────────────────────────────────
-            if (h.culturalSignificance != null && h.culturalSignificance!.isNotEmpty) ...[
+            // Cultural Significance
+            if (h.culturalSignificance != null &&
+                h.culturalSignificance!.isNotEmpty) ...[
               const SizedBox(height: 20),
               _sectionTitle('Cultural Significance'),
               Padding(
@@ -269,8 +438,9 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
               ),
             ],
 
-            // ── Building History ────────────────────────────────────────
-            if (h.buildingHistory != null && h.buildingHistory!.isNotEmpty) ...[
+            // Building History
+            if (h.buildingHistory != null &&
+                h.buildingHistory!.isNotEmpty) ...[
               const SizedBox(height: 20),
               _sectionTitle('Building History'),
               Padding(
@@ -280,8 +450,9 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
               ),
             ],
 
-            // ── Traditional Features ────────────────────────────────────
-            if (h.traditionalFeatures != null && h.traditionalFeatures!.isNotEmpty) ...[
+            // Traditional Features
+            if (h.traditionalFeatures != null &&
+                h.traditionalFeatures!.isNotEmpty) ...[
               const SizedBox(height: 20),
               _sectionTitle('Traditional Features'),
               Padding(
@@ -293,7 +464,7 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
 
             const Divider(height: 32, indent: 16, endIndent: 16),
 
-            // ── Cultural Experiences ────────────────────────────────────
+            // Cultural Experiences
             _sectionTitle('Cultural Experiences'),
             if (h.culturalExperiences.isEmpty)
               const Padding(
@@ -307,23 +478,22 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: h.culturalExperiences
-                      .map(
-                        (exp) => Padding(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('🎭  ',
-                              style: TextStyle(fontSize: 14)),
-                          Expanded(
-                            child: Text(exp,
-                                style: const TextStyle(
-                                    fontSize: 14, height: 1.5)),
-                          ),
-                        ],
-                      ),
+                      .map((exp) => Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Row(
+                      crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                      children: [
+                        const Text('🎭  ',
+                            style: TextStyle(fontSize: 14)),
+                        Expanded(
+                          child: Text(exp,
+                              style: const TextStyle(
+                                  fontSize: 14, height: 1.5)),
+                        ),
+                      ],
                     ),
-                  )
+                  ))
                       .toList(),
                 ),
               ),
@@ -331,7 +501,7 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
             const SizedBox(height: 8),
             const Divider(height: 32, indent: 16, endIndent: 16),
 
-            // ── Amenities ───────────────────────────────────────────────
+            // Amenities
             _sectionTitle('Amenities'),
             if (h.amenities.isEmpty)
               const Padding(
@@ -346,22 +516,24 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: h.amenities
-                      .map(
-                        (a) => Chip(
-                      avatar: const Icon(Icons.check_circle_outline,
-                          size: 16, color: Colors.orange),
-                      label: Text(a,
-                          style: const TextStyle(fontSize: 13)),
-                      backgroundColor: Colors.orange.withOpacity(0.08),
-                      side: const BorderSide(
-                          color: Colors.orange, width: 0.5),
-                    ),
-                  )
+                      .map((a) => Chip(
+                    avatar: const Icon(
+                        Icons.check_circle_outline,
+                        size: 16,
+                        color: Colors.orange),
+                    label: Text(a,
+                        style:
+                        const TextStyle(fontSize: 13)),
+                    backgroundColor:
+                    Colors.orange.withValues(alpha: 0.08),
+                    side: const BorderSide(
+                        color: Colors.orange, width: 0.5),
+                  ))
                       .toList(),
                 ),
               ),
 
-            // ── Timestamps ──────────────────────────────────────────────
+            // Timestamps
             if (h.createdAt != null || h.updatedAt != null) ...[
               const Divider(height: 32, indent: 16, endIndent: 16),
               Padding(
@@ -372,12 +544,14 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
                     if (h.createdAt != null)
                       Text(
                         'Listed on ${_formatDate(h.createdAt!)}',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.grey),
                       ),
                     if (h.updatedAt != null)
                       Text(
                         'Last updated ${_formatDate(h.updatedAt!)}',
-                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                        style: const TextStyle(
+                            fontSize: 12, color: Colors.grey),
                       ),
                   ],
                 ),
@@ -388,20 +562,7 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: Colors.orange,
-        unselectedItemColor: Colors.grey,
-        currentIndex: 1,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.list_alt), label: 'Listings'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today), label: 'Bookings'),
-          BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet), label: 'Balance'),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
-        ],
-      ),
+
     );
   }
 
@@ -438,7 +599,7 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
   Widget _statCard(String value, String label) => Expanded(
     child: Card(
       elevation: 0,
-      color: Colors.orange.withOpacity(0.07),
+      color: Colors.grey.withValues(alpha: 0.07),
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10)),
       child: Padding(

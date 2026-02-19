@@ -18,21 +18,25 @@ class HomestaysRemoteDatasource {
     responseBody: true,
   ));
 
-  // Get all homestays for the logged-in owner
-  Future<Response<dynamic>> getMyHomestays() async {
+  Future<Options> _authOptions() async {
     final token = await SecureStorageService.getAccessToken();
+    return Options(headers: {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+    });
+  }
+
+  Future<Response<dynamic>> getMyHomestays() async {
     return _dio.get(
       '$homestaysBasePath/OwnerStay',
-      options: Options(headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'}),
+      options: await _authOptions(),
     );
   }
 
-  // Get single homestay
   Future<Response<dynamic>> getHomestay(int id) async {
-    final token = await SecureStorageService.getAccessToken();
     return _dio.get(
       '$homestaysBasePath/$id',
-      options: Options(headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'}),
+      options: await _authOptions(),
     );
   }
 
@@ -40,8 +44,6 @@ class HomestaysRemoteDatasource {
     required Map<String, dynamic> fields,
     required List<PlatformFile> files,
   }) async {
-    final token = await SecureStorageService.getAccessToken();
-
     final formData = FormData();
 
     fields.forEach((key, value) {
@@ -52,18 +54,14 @@ class HomestaysRemoteDatasource {
 
     for (final file in files) {
       if (file.path != null) {
-        formData.files.add(
-          MapEntry(
-            'files',
-            await MultipartFile.fromFile(
-              file.path!,
-              filename: file.name,
-            ),
-          ),
-        );
+        formData.files.add(MapEntry(
+          'files',
+          await MultipartFile.fromFile(file.path!, filename: file.name),
+        ));
       }
     }
 
+    final token = await SecureStorageService.getAccessToken();
     return _dio.post(
       homestaysBasePath,
       data: formData,
@@ -79,89 +77,58 @@ class HomestaysRemoteDatasource {
     );
   }
 
-  Future<Response> updateHomestay({
+  Future<Response<dynamic>> updateHomestay({
     required int id,
     required Map<String, dynamic> fields,
     List<PlatformFile> files = const [],
   }) async {
     final token = await SecureStorageService.getAccessToken();
-
-    // Use the constant like all your other methods
-    final path = '$homestaysBasePath/$id';
-
-    // Debug print – very useful right now
-    final fullUrl = '${_dio.options.baseUrl}$path';
-    print('Attempting PUT to: $fullUrl');
-
     final formData = FormData();
 
-    // Text fields – PascalCase to match C# DTO
     fields.forEach((key, value) {
       if (value != null && value.toString().isNotEmpty) {
         formData.fields.add(MapEntry(key, value.toString()));
       }
     });
 
-    // Images – using 'images' key (change to 'files' if backend expects that)
     for (final file in files) {
       if (file.path != null) {
-        formData.files.add(
-          MapEntry(
-            'images',
-            await MultipartFile.fromFile(
-              file.path!,
-              filename: file.name ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg',
-            ),
+        formData.files.add(MapEntry(
+          'files',
+          await MultipartFile.fromFile(
+            file.path!,
+            filename: file.name ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg',
           ),
-        );
+        ));
       }
     }
 
-    try {
-      final response = await _dio.put(
-        path,                           // ← important: use path variable here
-        data: formData,
-        options: Options(
-          headers: {
-            'Authorization': 'Bearer $token',
-            'Accept': 'application/json',
-          },
-          sendTimeout: const Duration(minutes: 3),
-          receiveTimeout: const Duration(minutes: 3),
-        ),
-      );
-
-      print('Update success - status: ${response.statusCode}');
-      return response;
-    } on DioException catch (e) {
-      print('Update failed: ${e.message}');
-      if (e.response != null) {
-        print('Status: ${e.response?.statusCode}');
-        print('Response body: ${e.response?.data}');
-        print('Full response headers: ${e.response?.headers}');
-      }
-      rethrow;
-    }
+    return _dio.put(
+      '$homestaysBasePath/$id',
+      data: formData,
+      options: Options(
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+        sendTimeout: const Duration(minutes: 3),
+        receiveTimeout: const Duration(minutes: 3),
+      ),
+    );
   }
 
-  // Toggle visibility (active/paused)
   Future<Response<dynamic>> toggleVisibility(int id, bool isVisible) async {
-    final token = await SecureStorageService.getAccessToken();
     return _dio.patch(
       '$homestaysBasePath/$id/visibility',
       data: {'isVisible': isVisible},
-      options: Options(headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'}),
+      options: await _authOptions(),
     );
   }
 
-  // Delete a homestay
   Future<Response<dynamic>> deleteHomestay(int id) async {
-    final token = await SecureStorageService.getAccessToken();
     return _dio.delete(
       '$homestaysBasePath/$id',
-      options: Options(headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'}),
+      options: await _authOptions(),
     );
   }
-
 }
-
