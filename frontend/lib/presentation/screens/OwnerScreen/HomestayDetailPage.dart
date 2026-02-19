@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/datasources/homestays_remote_datasource.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
 
 class HomestayDetailPage extends StatefulWidget {
   final Homestay homestay;
-
   const HomestayDetailPage({super.key, required this.homestay});
 
   @override
@@ -13,15 +14,16 @@ class HomestayDetailPage extends StatefulWidget {
 }
 
 class _HomestayDetailPageState extends State<HomestayDetailPage> {
+  final PageController _pageController = PageController();
   int _currentImage = 0;
-  late final PageController _pageController;
-  late bool _isVisible;
-  bool _togglingVisibility = false;
+  bool _isVisible = false;
+  bool _toggling = false;
+
+  static const _brown = Color(0xFF5C4033);
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
     _isVisible = widget.homestay.isVisible;
   }
 
@@ -32,42 +34,34 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
   }
 
   Future<void> _toggleVisibility() async {
-    final newValue = !_isVisible;
-
-    // Optimistic update
-    setState(() {
-      _isVisible = newValue;
-      _togglingVisibility = true;
-    });
-
+    final newVal = !_isVisible;
+    setState(() { _isVisible = newVal; _toggling = true; });
     try {
-      final response = await HomestaysRemoteDatasource()
-          .toggleVisibility(widget.homestay.id, newValue);
-
-      if (response.statusCode != 200 && response.statusCode != 204) {
-        setState(() => _isVisible = !newValue);
-        _showSnack('Failed to update visibility');
+      final res = await HomestaysRemoteDatasource()
+          .toggleVisibility(widget.homestay.id, newVal);
+      if (res.statusCode != 200 && res.statusCode != 204) {
+        if (mounted) setState(() => _isVisible = !newVal);
+        _snack('Failed to update visibility');
       } else {
-        _showSnack(
-          newValue ? 'Homestay is now Active' : 'Homestay is now Inactive',
-          isError: false,
-        );
+        _snack(newVal ? 'Homestay is now Active' : 'Homestay is now Inactive',
+            isError: false);
       }
-    } catch (e) {
-      setState(() => _isVisible = !newValue);
-      _showSnack('Error: $e');
+    } catch (_) {
+      if (mounted) setState(() => _isVisible = !newVal);
+      _snack('Connection error. Try again.');
     } finally {
-      if (mounted) setState(() => _togglingVisibility = false);
+      if (mounted) setState(() => _toggling = false);
     }
   }
 
-  void _showSnack(String msg, {bool isError = true}) {
+  void _snack(String msg, {bool isError = true}) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg),
-      backgroundColor: isError ? Colors.red : Colors.green,
+      content: Text(msg, style: GoogleFonts.dmSans()),
+      backgroundColor: isError ? Colors.red[700] : Colors.green[600],
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
+      margin: EdgeInsets.all(12.w),
     ));
   }
 
@@ -84,65 +78,58 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Homestay Details',
-            style: TextStyle(color: Colors.white)),
+        title: Text('Homestay Details',
+            style: GoogleFonts.dmSans(color: Colors.white, fontSize: 16.sp)),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // Image Carousel
+            // Carousel
             SizedBox(
-              height: 260,
+              height: 260.h,
               child: h.imageUrls.isEmpty
                   ? Container(
-                color: Colors.grey[300],
-                alignment: Alignment.center,
-                child: const Icon(Icons.image_not_supported,
-                    size: 60, color: Colors.grey),
-              )
-                  : Stack(
-                children: [
-                  PageView.builder(
-                    controller: _pageController,
-                    itemCount: h.imageUrls.length,
-                    onPageChanged: (i) =>
-                        setState(() => _currentImage = i),
-                    itemBuilder: (_, i) => ProxyImage(
-                      imageUrl: h.imageUrls[i],
-                      width: double.infinity,
-                      height: 260,
-                      borderRadiusValue: 0,
-                    ),
+                  color: Colors.grey[200],
+                  child: Icon(Icons.image_not_supported,
+                      size: 60.sp, color: Colors.grey))
+                  : Stack(children: [
+                PageView.builder(
+                  controller: _pageController,
+                  itemCount: h.imageUrls.length,
+                  onPageChanged: (i) =>
+                      setState(() => _currentImage = i),
+                  itemBuilder: (_, i) => ProxyImage(
+                    imageUrl: h.imageUrls[i],
+                    width: double.infinity,
+                    height: 260.h,
+                    borderRadiusValue: 0,
                   ),
-                  Positioned(
-                    right: 12,
-                    bottom: 12,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
+                ),
+                Positioned(
+                  right: 12.w,
+                  bottom: 12.h,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 10.w, vertical: 5.h),
+                    decoration: BoxDecoration(
                         color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
+                        borderRadius: BorderRadius.circular(20.r)),
+                    child: Text(
                         '${_currentImage + 1} / ${h.imageUrls.length}',
-                        style: const TextStyle(
-                            color: Colors.white, fontSize: 12),
-                      ),
-                    ),
+                        style: GoogleFonts.dmSans(
+                            color: Colors.white, fontSize: 12.sp)),
                   ),
-                ],
-              ),
+                ),
+              ]),
             ),
 
-            // Thumbnail Strip
+            // Thumbnails
             if (h.imageUrls.length > 1)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 0),
                 child: SizedBox(
-                  height: 64,
+                  height: 64.h,
                   child: ListView.builder(
                     scrollDirection: Axis.horizontal,
                     itemCount: h.imageUrls.length,
@@ -151,24 +138,23 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
                           duration: const Duration(milliseconds: 300),
                           curve: Curves.easeInOut),
                       child: Container(
-                        margin: const EdgeInsets.only(right: 8),
+                        margin: EdgeInsets.only(right: 8.w),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8.r),
                           border: Border.all(
                             color: _currentImage == i
-                                ? Colors.blueGrey
+                                ? _brown
                                 : Colors.transparent,
                             width: 2,
                           ),
                         ),
                         child: ClipRRect(
-                          borderRadius: BorderRadius.circular(6),
+                          borderRadius: BorderRadius.circular(6.r),
                           child: ProxyImage(
-                            imageUrl: h.imageUrls[i],
-                            width: 60,
-                            height: 60,
-                            borderRadiusValue: 0,
-                          ),
+                              imageUrl: h.imageUrls[i],
+                              width: 60.w,
+                              height: 60.h,
+                              borderRadiusValue: 0),
                         ),
                       ),
                     ),
@@ -176,40 +162,35 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
                 ),
               ),
 
-            const SizedBox(height: 12),
+            SizedBox(height: 14.h),
 
-            // Name row with tappable status badge
+            // Name + visibility badge
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Text(h.name,
-                        style: const TextStyle(
-                            fontSize: 22, fontWeight: FontWeight.bold)),
+                        style: GoogleFonts.playfairDisplay(
+                            fontSize: 22.sp, fontWeight: FontWeight.bold)),
                   ),
                   GestureDetector(
-                    onTap: _togglingVisibility ? null : _toggleVisibility,
+                    onTap: _toggling ? null : _toggleVisibility,
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 300),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 12.w, vertical: 6.h),
                       decoration: BoxDecoration(
-                        color: _isVisible
-                            ? Colors.green
-                            : Colors.grey.shade400,
-                        borderRadius: BorderRadius.circular(20),
+                        color: _isVisible ? Colors.green : Colors.grey,
+                        borderRadius: BorderRadius.circular(20.r),
                       ),
-                      child: _togglingVisibility
-                          ? const SizedBox(
-                        width: 14,
-                        height: 14,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
+                      child: _toggling
+                          ? SizedBox(
+                          width: 14.w,
+                          height: 14.h,
+                          child: const CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
                           : Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -218,14 +199,14 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
                                 ? Icons.visibility
                                 : Icons.visibility_off,
                             color: Colors.white,
-                            size: 14,
+                            size: 13.sp,
                           ),
-                          const SizedBox(width: 4),
+                          SizedBox(width: 4.w),
                           Text(
                             _isVisible ? 'Active' : 'Inactive',
-                            style: const TextStyle(
+                            style: GoogleFonts.dmSans(
                                 color: Colors.white,
-                                fontSize: 12,
+                                fontSize: 12.sp,
                                 fontWeight: FontWeight.w600),
                           ),
                         ],
@@ -236,18 +217,17 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
               ),
             ),
 
-            // Visibility control card
+            // Visibility card
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
+                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
                 decoration: BoxDecoration(
                   color: _isVisible
-                      ? Colors.green.withValues(alpha:0.07)
+                      ? Colors.green.withValues(alpha: 0.07)
                       : Colors.grey.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(12.r),
                   border: Border.all(
                     color: _isVisible
                         ? Colors.green.withValues(alpha: 0.3)
@@ -261,43 +241,37 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
                           ? Icons.check_circle_outline
                           : Icons.pause_circle_outline,
                       color: _isVisible ? Colors.green : Colors.grey,
-                      size: 22,
+                      size: 22.sp,
                     ),
-                    const SizedBox(width: 10),
+                    SizedBox(width: 10.w),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            _isVisible
-                                ? 'Listing is Active'
-                                : 'Listing is Inactive',
-                            style: TextStyle(
+                            _isVisible ? 'Listing is Active' : 'Listing is Inactive',
+                            style: GoogleFonts.dmSans(
                               fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: _isVisible
-                                  ? Colors.green
-                                  : Colors.grey[600],
+                              fontSize: 13.sp,
+                              color: _isVisible ? Colors.green : Colors.grey[600],
                             ),
                           ),
                           Text(
                             _isVisible
                                 ? 'Guests can find and book this homestay'
                                 : 'Hidden from guests — no new bookings',
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.grey),
+                            style: GoogleFonts.dmSans(
+                                fontSize: 11.sp, color: Colors.grey),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    _togglingVisibility
-                        ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2),
-                    )
+                    SizedBox(width: 8.w),
+                    _toggling
+                        ? SizedBox(
+                        width: 24.w,
+                        height: 24.h,
+                        child: const CircularProgressIndicator(strokeWidth: 2))
                         : Switch(
                       value: _isVisible,
                       activeThumbColor: Colors.green,
@@ -308,314 +282,268 @@ class _HomestayDetailPageState extends State<HomestayDetailPage> {
               ),
             ),
 
-            // Category badge
+            // Category
             if (h.category != null && h.category!.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                padding: EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 0),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: Colors.black.withValues(alpha: 0.4)),
+                    color: _brown.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(color: _brown.withValues(alpha: 0.3)),
                   ),
                   child: Text(h.category!,
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.black45,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12.sp,
+                          color: _brown,
                           fontWeight: FontWeight.w600)),
                 ),
               ),
 
             // Location
-            if (h.location.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                child: Row(
-                  children: [
-                    const Icon(Icons.location_on,
-                        size: 16, color: Colors.black),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Text(h.location,
-                          style: const TextStyle(
-                              fontSize: 14, color: Colors.black)),
-                    ),
-                  ],
-                ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
+              child: Row(
+                children: [
+                  Icon(Icons.location_on, size: 15.sp, color: Colors.grey),
+                  SizedBox(width: 4.w),
+                  Expanded(
+                    child: Text(h.location,
+                        style: GoogleFonts.dmSans(
+                            fontSize: 13.sp, color: Colors.grey[700])),
+                  ),
+                ],
               ),
+            ),
 
-            // Near Cultural Site
             if (h.nearCulturalSite != null &&
                 h.nearCulturalSite!.name.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+                padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 0),
                 child: Row(
                   children: [
-                    const Icon(Icons.temple_hindu,
-                        size: 16, color: Colors.black),
-                    const SizedBox(width: 4),
+                    Icon(Icons.temple_hindu, size: 15.sp, color: Colors.grey),
+                    SizedBox(width: 4.w),
                     Text('Near ${h.nearCulturalSite!.name}',
-                        style: const TextStyle(
-                            fontSize: 14, color: Colors.black)),
+                        style: GoogleFonts.dmSans(
+                            fontSize: 13.sp, color: Colors.grey[700])),
                   ],
                 ),
               ),
 
             // Price
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Text('Rs. ${h.pricePerNight.toStringAsFixed(0)}',
+                      style: GoogleFonts.playfairDisplay(
+                          fontSize: 26.sp,
+                          fontWeight: FontWeight.bold,
+                          color: _brown)),
+                  SizedBox(width: 4.w),
+                  Text('/ night',
+                      style:
+                      GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey)),
+                ],
+              ),
+            ),
+
+            // Capacity
+            Padding(
+              padding: EdgeInsets.fromLTRB(14.w, 10.h, 14.w, 0),
               child: Row(
                 children: [
-                  Text(
-                    'Rs. ${h.pricePerNight.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.redAccent),
+                  _chip(Icons.bed_outlined, '${h.numberOfRooms} Rooms'),
+                  SizedBox(width: 8.w),
+                  _chip(Icons.people_outline, '${h.maxGuests} Guests'),
+                  SizedBox(width: 8.w),
+                  _chip(Icons.bathtub_outlined, '${h.bathrooms} Baths'),
+                ],
+              ),
+            ),
+
+            _divider(),
+            _heading('Performance'),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Row(
+                children: [
+                  _stat('12', 'Total\nBookings'),
+                  SizedBox(width: 8.w),
+                  _stat('3', 'This\nMonth'),
+                  SizedBox(width: 8.w),
+                  _stat('4.8 ★', 'Avg.\nRating'),
+                  SizedBox(width: 8.w),
+                  _stat('67%', 'Occupancy'),
+                ],
+              ),
+            ),
+
+            _divider(),
+            _heading('About This Homestay'),
+            _bodyText(h.description),
+
+            if (h.culturalSignificance != null && h.culturalSignificance!.isNotEmpty) ...[
+              SizedBox(height: 16.h),
+              _heading('Cultural Significance'),
+              _bodyText(h.culturalSignificance!),
+            ],
+            if (h.buildingHistory != null && h.buildingHistory!.isNotEmpty) ...[
+              SizedBox(height: 16.h),
+              _heading('Building History'),
+              _bodyText(h.buildingHistory!),
+            ],
+            if (h.traditionalFeatures != null && h.traditionalFeatures!.isNotEmpty) ...[
+              SizedBox(height: 16.h),
+              _heading('Traditional Features'),
+              _bodyText(h.traditionalFeatures!),
+            ],
+
+            _divider(),
+            _heading('Cultural Experiences'),
+            h.culturalExperiences.isEmpty
+                ? Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Text('No cultural experiences listed.',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13.sp, color: Colors.grey)),
+            )
+                : Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Column(
+                children: h.culturalExperiences
+                    .map((e) => Padding(
+                  padding: EdgeInsets.only(bottom: 8.h),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('🎭  ',
+                          style: TextStyle(fontSize: 14.sp)),
+                      Expanded(
+                        child: Text(e,
+                            style: GoogleFonts.dmSans(
+                                fontSize: 13.sp, height: 1.5)),
+                      ),
+                    ],
                   ),
-                  const Text(' / night',
-                      style: TextStyle(color: Colors.black87, fontSize: 14)),
-                ],
+                ))
+                    .toList(),
               ),
             ),
 
-            // Capacity chips
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Row(
-                children: [
-                  _infoChip(Icons.bed, '${h.numberOfRooms} Rooms'),
-                  const SizedBox(width: 8),
-                  _infoChip(Icons.people, '${h.maxGuests} Guests'),
-                  const SizedBox(width: 8),
-                  _infoChip(
-                      Icons.bathtub_outlined, '${h.bathrooms} Baths'),
-                ],
+            _divider(),
+            _heading('Amenities'),
+            h.amenities.isEmpty
+                ? Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Text('No amenities listed.',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13.sp, color: Colors.grey)),
+            )
+                : Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              child: Wrap(
+                spacing: 8.w,
+                runSpacing: 8.h,
+                children: h.amenities
+                    .map((a) => Chip(
+                  avatar: Icon(Icons.check_circle_outline,
+                      size: 15.sp, color: _brown),
+                  label: Text(a,
+                      style: GoogleFonts.dmSans(fontSize: 12.sp)),
+                  backgroundColor: _brown.withValues(alpha: 0.07),
+                  side: BorderSide(
+                      color: _brown.withValues(alpha: 0.3), width: 0.5),
+                ))
+                    .toList(),
               ),
             ),
 
-            const Divider(height: 32, indent: 16, endIndent: 16),
-
-            // Performance
-            _sectionTitle('Performance'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Row(
-                children: [
-                  _statCard('12', 'Total\nBookings'),
-                  const SizedBox(width: 8),
-                  _statCard('3', 'This\nMonth'),
-                  const SizedBox(width: 8),
-                  _statCard('4.8 ★', 'Avg.\nRating'),
-                  const SizedBox(width: 8),
-                  _statCard('67%', 'Occupancy'),
-                ],
-              ),
-            ),
-
-            const Divider(height: 32, indent: 16, endIndent: 16),
-
-            // About
-            _sectionTitle('About This Homestay'),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Text(h.description,
-                  style: const TextStyle(fontSize: 14, height: 1.6)),
-            ),
-
-            // Cultural Significance
-            if (h.culturalSignificance != null &&
-                h.culturalSignificance!.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              _sectionTitle('Cultural Significance'),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(h.culturalSignificance!,
-                    style: const TextStyle(fontSize: 14, height: 1.6)),
-              ),
-            ],
-
-            // Building History
-            if (h.buildingHistory != null &&
-                h.buildingHistory!.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              _sectionTitle('Building History'),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(h.buildingHistory!,
-                    style: const TextStyle(fontSize: 14, height: 1.6)),
-              ),
-            ],
-
-            // Traditional Features
-            if (h.traditionalFeatures != null &&
-                h.traditionalFeatures!.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              _sectionTitle('Traditional Features'),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Text(h.traditionalFeatures!,
-                    style: const TextStyle(fontSize: 14, height: 1.6)),
-              ),
-            ],
-
-            const Divider(height: 32, indent: 16, endIndent: 16),
-
-            // Cultural Experiences
-            _sectionTitle('Cultural Experiences'),
-            if (h.culturalExperiences.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text('No cultural experiences listed.',
-                    style: TextStyle(color: Colors.grey, fontSize: 14)),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: h.culturalExperiences
-                      .map((exp) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      crossAxisAlignment:
-                      CrossAxisAlignment.start,
-                      children: [
-                        const Text('🎭  ',
-                            style: TextStyle(fontSize: 14)),
-                        Expanded(
-                          child: Text(exp,
-                              style: const TextStyle(
-                                  fontSize: 14, height: 1.5)),
-                        ),
-                      ],
-                    ),
-                  ))
-                      .toList(),
-                ),
-              ),
-
-            const SizedBox(height: 8),
-            const Divider(height: 32, indent: 16, endIndent: 16),
-
-            // Amenities
-            _sectionTitle('Amenities'),
-            if (h.amenities.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Text('No amenities listed.',
-                    style: TextStyle(color: Colors.grey, fontSize: 14)),
-              )
-            else
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: h.amenities
-                      .map((a) => Chip(
-                    avatar: const Icon(
-                        Icons.check_circle_outline,
-                        size: 16,
-                        color: Colors.orange),
-                    label: Text(a,
-                        style:
-                        const TextStyle(fontSize: 13)),
-                    backgroundColor:
-                    Colors.orange.withValues(alpha: 0.08),
-                    side: const BorderSide(
-                        color: Colors.orange, width: 0.5),
-                  ))
-                      .toList(),
-                ),
-              ),
-
-            // Timestamps
             if (h.createdAt != null || h.updatedAt != null) ...[
-              const Divider(height: 32, indent: 16, endIndent: 16),
+              _divider(),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     if (h.createdAt != null)
-                      Text(
-                        'Listed on ${_formatDate(h.createdAt!)}',
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.grey),
-                      ),
+                      Text('Listed on ${_fmt(h.createdAt!)}',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 11.sp, color: Colors.grey)),
                     if (h.updatedAt != null)
-                      Text(
-                        'Last updated ${_formatDate(h.updatedAt!)}',
-                        style: const TextStyle(
-                            fontSize: 12, color: Colors.grey),
-                      ),
+                      Text('Last updated ${_fmt(h.updatedAt!)}',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 11.sp, color: Colors.grey)),
                   ],
                 ),
               ),
             ],
 
-            const SizedBox(height: 100),
+            SizedBox(height: 80.h),
           ],
         ),
       ),
-
     );
   }
 
-  String _formatDate(DateTime dt) =>
-      '${dt.day}/${dt.month}/${dt.year}';
+  String _fmt(DateTime d) => '${d.day}/${d.month}/${d.year}';
 
-  Widget _sectionTitle(String title) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-    child: Text(title,
-        style: const TextStyle(
-            fontSize: 18, fontWeight: FontWeight.bold)),
+  Widget _divider() => Divider(height: 32.h, indent: 16.w, endIndent: 16.w);
+
+  Widget _heading(String t) => Padding(
+    padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 10.h),
+    child: Text(t,
+        style: GoogleFonts.playfairDisplay(
+            fontSize: 17.sp, fontWeight: FontWeight.bold)),
   );
 
-  Widget _infoChip(IconData icon, String label) => Container(
-    padding:
-    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+  Widget _bodyText(String t) => Padding(
+    padding: EdgeInsets.symmetric(horizontal: 16.w),
+    child: Text(t,
+        style: GoogleFonts.dmSans(fontSize: 13.sp, height: 1.6)),
+  );
+
+  Widget _chip(IconData icon, String label) => Container(
+    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
     decoration: BoxDecoration(
       color: Colors.grey[100],
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: Colors.grey[300]!),
+      borderRadius: BorderRadius.circular(20.r),
+      border: Border.all(color: Colors.grey.shade300),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: Colors.grey[600]),
-        const SizedBox(width: 4),
+        Icon(icon, size: 13.sp, color: Colors.grey[600]),
+        SizedBox(width: 4.w),
         Text(label,
-            style: TextStyle(
-                fontSize: 12, color: Colors.grey[700])),
+            style: GoogleFonts.dmSans(
+                fontSize: 11.sp, color: Colors.grey[700])),
       ],
     ),
   );
 
-  Widget _statCard(String value, String label) => Expanded(
+  Widget _stat(String val, String label) => Expanded(
     child: Card(
       elevation: 0,
-      color: Colors.grey.withValues(alpha: 0.07),
+      color: Colors.grey.withValues(alpha: 0.06),
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10)),
+          borderRadius: BorderRadius.circular(10.r)),
       child: Padding(
-        padding: const EdgeInsets.symmetric(
-            vertical: 12, horizontal: 4),
+        padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 4.w),
         child: Column(
           children: [
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold)),
-            const SizedBox(height: 4),
+            Text(val,
+                style: GoogleFonts.dmSans(
+                    fontSize: 15.sp, fontWeight: FontWeight.bold)),
+            SizedBox(height: 4.h),
             Text(label,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    fontSize: 10, color: Colors.grey)),
+                style: GoogleFonts.dmSans(
+                    fontSize: 9.sp, color: Colors.grey)),
           ],
         ),
       ),

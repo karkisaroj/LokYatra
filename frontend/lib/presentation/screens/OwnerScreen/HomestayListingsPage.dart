@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayDetailPage.dart';
@@ -17,57 +19,41 @@ class HomestayListingsPage extends StatefulWidget {
 }
 
 class _HomestayListingsPageState extends State<HomestayListingsPage> {
+  static const _brown = Color(0xFF5C4033);
+
   @override
   void initState() {
     super.initState();
     context.read<HomestayBloc>().add(const LoadMyHomestays());
   }
 
-  void _goToDetail(Homestay homestay) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => HomestayDetailPage(homestay: homestay),
-      ),
-    ).then((_) {
-      if (mounted) {
-        context.read<HomestayBloc>().add(const LoadMyHomestays());
-      }
-    });
+  void _reload() {
+    if (mounted) context.read<HomestayBloc>().add(const LoadMyHomestays());
   }
 
-  void _goToEdit(Homestay homestay) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => HomestayEditPage(homestay: homestay),
-      ),
-    ).then((updated) {
-      if (updated == true && mounted) {
-        context.read<HomestayBloc>().add(const LoadMyHomestays());
-      }
-    });
-  }
+  void _goToDetail(Homestay h) =>
+      Navigator.push(context, MaterialPageRoute(builder: (_) => HomestayDetailPage(homestay: h)))
+          .then((_) => _reload());
 
-  void _goToAdd() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const HomestayAddPage()),
-    ).then((added) {
-      if (added == true && mounted) {
-        context.read<HomestayBloc>().add(const LoadMyHomestays());
-      }
-    });
-  }
+  void _goToEdit(Homestay h) =>
+      Navigator.push(context, MaterialPageRoute(builder: (_) => HomestayEditPage(homestay: h)))
+          .then((updated) { if (updated == true) _reload(); });
+
+  void _goToAdd() =>
+      Navigator.push(context, MaterialPageRoute(builder: (_) => const HomestayAddPage()))
+          .then((added) { if (added == true) _reload(); });
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF5F4F2),
       appBar: AppBar(
-        title: const Text('My Homestays',
-            style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.white,
         elevation: 0,
+        title: Text('My Homestays',
+            style: GoogleFonts.playfairDisplay(
+                fontSize: 20.sp, fontWeight: FontWeight.bold,
+                color: const Color(0xFF2D1B10))),
       ),
       body: BlocBuilder<HomestayBloc, HomestayState>(
         builder: (context, state) {
@@ -80,17 +66,18 @@ class _HomestayListingsPageState extends State<HomestayListingsPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  const SizedBox(height: 12),
+                  Icon(Icons.error_outline, size: 48.sp, color: Colors.red),
+                  SizedBox(height: 12.h),
                   Text('Error: ${state.message}',
                       textAlign: TextAlign.center,
-                      style: const TextStyle(color: Colors.grey)),
-                  const SizedBox(height: 16),
+                      style: GoogleFonts.dmSans(
+                          fontSize: 14.sp, color: Colors.grey)),
+                  SizedBox(height: 16.h),
                   ElevatedButton(
-                    onPressed: () => context
-                        .read<HomestayBloc>()
-                        .add(const LoadMyHomestays()),
-                    child: const Text('Retry'),
+                    onPressed: _reload,
+                    style: ElevatedButton.styleFrom(backgroundColor: _brown),
+                    child: Text('Retry',
+                        style: GoogleFonts.dmSans(color: Colors.white)),
                   ),
                 ],
               ),
@@ -103,26 +90,25 @@ class _HomestayListingsPageState extends State<HomestayListingsPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.home_outlined, size: 64, color: Colors.grey[400]),
-                    const SizedBox(height: 16),
-                    const Text('No homestays yet',
-                        style:
-                        TextStyle(fontSize: 18, color: Colors.grey)),
-                    const SizedBox(height: 8),
-                    const Text('Tap + to add your first homestay',
-                        style:
-                        TextStyle(fontSize: 14, color: Colors.grey)),
+                    Icon(Icons.home_outlined, size: 64.sp, color: Colors.grey[300]),
+                    SizedBox(height: 16.h),
+                    Text('No homestays yet',
+                        style: GoogleFonts.playfairDisplay(
+                            fontSize: 20.sp, color: Colors.grey[600])),
+                    SizedBox(height: 8.h),
+                    Text('Tap + to add your first homestay',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 13.sp, color: Colors.grey)),
                   ],
                 ),
               );
             }
 
             return ListView.builder(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 12),
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
               itemCount: state.homestays.length,
-              itemBuilder: (context, index) {
-                final homestay = state.homestays[index];
+              itemBuilder: (_, i) {
+                final homestay = state.homestays[i];
                 return _HomestayCard(
                   homestay: homestay,
                   onTap: () => _goToDetail(homestay),
@@ -137,10 +123,11 @@ class _HomestayListingsPageState extends State<HomestayListingsPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _goToAdd,
-        icon: const Icon(Icons.add),
-        label: const Text('Add Homestay'),
-        backgroundColor: Colors.blueGrey,
+        backgroundColor: _brown,
         foregroundColor: Colors.white,
+        icon: Icon(Icons.add, size: 20.sp),
+        label: Text('Add Homestay',
+            style: GoogleFonts.dmSans(fontWeight: FontWeight.w600)),
       ),
     );
   }
@@ -159,110 +146,63 @@ class _HomestayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firstImage = homestay.imageUrls.isNotEmpty
-        ? homestay.imageUrls.first
-        : null;
+    final firstImage =
+    homestay.imageUrls.isNotEmpty ? homestay.imageUrls.first : null;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      shape:
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      elevation: 3,
+      margin: EdgeInsets.only(bottom: 16.h),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+      elevation: 2,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
+            // Image + badges
             Stack(
               children: [
                 firstImage != null
                     ? ProxyImage(
                   imageUrl: firstImage,
                   width: double.infinity,
-                  height: 180,
+                  height: 180.h,
                   borderRadiusValue: 0,
                 )
                     : Container(
                   width: double.infinity,
-                  height: 180,
+                  height: 180.h,
                   color: Colors.grey[200],
-                  child: const Icon(Icons.home,
-                      size: 64, color: Colors.grey),
+                  child: Icon(Icons.home, size: 64.sp, color: Colors.grey[400]),
                 ),
 
-                // Active / Inactive badge top-left
+                // Active / Inactive badge
                 Positioned(
-                  top: 10,
-                  left: 10,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: homestay.isVisible
-                          ? Colors.green
-                          : Colors.grey.shade600,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
-                          blurRadius: 4,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          homestay.isVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off,
-                          color: Colors.white,
-                          size: 12,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          homestay.isVisible ? 'Active' : 'Inactive',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                  top: 10.h,
+                  left: 10.w,
+                  child: _badge(
+                    label: homestay.isVisible ? 'Active' : 'Inactive',
+                    icon: homestay.isVisible ? Icons.visibility : Icons.visibility_off,
+                    color: homestay.isVisible ? Colors.green : Colors.grey.shade600,
                   ),
                 ),
 
-                if (homestay.category!.isNotEmpty)
+                // Category badge
+                if (homestay.category != null && homestay.category!.isNotEmpty)
                   Positioned(
-                    top: 10,
-                    right: 10,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        homestay.category!,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
+                    top: 10.h,
+                    right: 10.w,
+                    child: _badge(
+                      label: homestay.category!,
+                      color: const Color(0xFF5C4033),
                     ),
                   ),
               ],
             ),
 
-            // Details row
+            // Details
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
+              padding: EdgeInsets.fromLTRB(14.w, 12.h, 8.w, 12.h),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -270,67 +210,63 @@ class _HomestayCard extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          homestay.name,
-                          style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
+                        Text(homestay.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.playfairDisplay(
+                                fontSize: 17.sp, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 4.h),
                         Row(
                           children: [
-                            const Icon(Icons.location_on,
-                                size: 14, color: Colors.grey),
-                            const SizedBox(width: 2),
+                            Icon(Icons.location_on,
+                                size: 13.sp, color: Colors.grey),
+                            SizedBox(width: 2.w),
                             Expanded(
-                              child: Text(
-                                homestay.location,
-                                style: const TextStyle(
-                                    fontSize: 13, color: Colors.grey),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                              child: Text(homestay.location,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.dmSans(
+                                      fontSize: 12.sp, color: Colors.grey)),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: 6.h),
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text:
+                                'Rs. ${homestay.pricePerNight.toStringAsFixed(0)}',
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 15.sp,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF5C4033)),
                               ),
-                            ),
-                          ],
+                              TextSpan(
+                                text: ' / night',
+                                style: GoogleFonts.dmSans(
+                                    fontSize: 12.sp, color: Colors.grey),
+                              ),
+                            ],
+                          ),
                         ),
-                        const SizedBox(height: 6),
+                        SizedBox(height: 8.h),
                         Row(
                           children: [
-                            Text(
-                              'Rs. ${homestay.pricePerNight.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black54),
-                            ),
-                            const Text(' / night',
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey)),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            _miniChip(Icons.bed,
-                                '${homestay.numberOfRooms}'),
-                            const SizedBox(width: 6),
-                            _miniChip(Icons.people,
-                                '${homestay.maxGuests}'),
-                            const SizedBox(width: 6),
-                            _miniChip(Icons.bathtub_outlined,
-                                '${homestay.bathrooms}'),
+                            _miniChip(Icons.bed_outlined, '${homestay.numberOfRooms}'),
+                            SizedBox(width: 6.w),
+                            _miniChip(Icons.people_outline, '${homestay.maxGuests}'),
+                            SizedBox(width: 6.w),
+                            _miniChip(Icons.bathtub_outlined, '${homestay.bathrooms}'),
                           ],
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.edit_outlined,
-                        color: Colors.blueGrey),
+                    icon: Icon(Icons.edit_outlined,
+                        color: const Color(0xFF5C4033), size: 22.sp),
                     onPressed: onEdit,
-                    tooltip: 'Edit',
                   ),
                 ],
               ),
@@ -341,22 +277,51 @@ class _HomestayCard extends StatelessWidget {
     );
   }
 
+  Widget _badge({required String label, IconData? icon, required Color color}) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 4,
+              offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, color: Colors.white, size: 11.sp),
+            SizedBox(width: 4.w),
+          ],
+          Text(label,
+              style: GoogleFonts.dmSans(
+                  color: Colors.white,
+                  fontSize: 11.sp,
+                  fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
   Widget _miniChip(IconData icon, String label) => Container(
-    padding:
-    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
     decoration: BoxDecoration(
       color: Colors.grey[100],
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(20.r),
       border: Border.all(color: Colors.grey.shade300),
     ),
     child: Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 12, color: Colors.grey[600]),
-        const SizedBox(width: 3),
+        Icon(icon, size: 11.sp, color: Colors.grey[600]),
+        SizedBox(width: 3.w),
         Text(label,
-            style: TextStyle(
-                fontSize: 11, color: Colors.grey[700])),
+            style: GoogleFonts.dmSans(
+                fontSize: 10.sp, color: Colors.grey[700])),
       ],
     ),
   );

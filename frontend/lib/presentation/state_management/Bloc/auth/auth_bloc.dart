@@ -2,73 +2,71 @@ import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:lokyatra_frontend/core/constants.dart';
-import 'package:lokyatra_frontend/data/models/user.dart';
+import 'package:lokyatra_frontend/data/models/register.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
-import '../../../../data/models/register.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-
   AuthBloc() : super(AuthInitial()) {
     on<RegisterButtonClicked>(_onRegister);
     on<LoginButtonClicked>(_onLogin);
     on<LogoutButtonClicked>(_onLogout);
   }
 
+  // apiBaseUrl already has trailing slash: "http://192.168.1.66:5257/"
+  // endpoints have no leading slash: "api/Auth/login"
+  // Result: "http://192.168.1.66:5257/api/Auth/login" ✅
   final Dio dio = Dio(BaseOptions(
-    baseUrl: getBaseUrl(),
+    baseUrl: apiBaseUrl,
     connectTimeout: connectTimeout,
     receiveTimeout: receiveTimeout,
-    contentType: "application/json",
+    contentType: 'application/json',
     responseType: ResponseType.json,
+  ))..interceptors.add(LogInterceptor(
+    requestBody: true,
+    responseBody: true,
+    requestHeader: false,
   ));
 
-  Future<void> _onRegister(RegisterButtonClicked event, Emitter<AuthState> emit) async {
+  Future<void> _onRegister(
+      RegisterButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final response = await dio.post(registerEndpoint, data: event.user.toJson());
+      final response =
+      await dio.post(registerEndpoint, data: event.user.toJson());
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final Map<String, dynamic> json = response.data;
-        final registeredUser = RegisterUser.fromJson(json);
+        final registeredUser = RegisterUser.fromJson(response.data as Map<String, dynamic>);
         emit(RegisterSuccess(registeredUser));
       } else {
         emit(AuthError('Server error: ${response.statusCode}'));
       }
     } on DioException catch (e) {
-      String errorMessage = "Network error";
-      if (e.type == DioExceptionType.connectionTimeout) {
-        errorMessage = "Connection timeout";
-      } else if (e.type == DioExceptionType.receiveTimeout) {
-        errorMessage = "Receive timeout";
-      } else if (e.response != null) {
-        errorMessage = "Error: ${e.response?.statusCode} - ${e.response?.data}";
-      } else {
-        errorMessage = e.message ?? 'Unknown error';
-      }
-      emit(AuthError('Failed to register user: $errorMessage'));
+      emit(AuthError(_parseDioError(e)));
     } catch (e) {
       emit(AuthError('Unexpected error: $e'));
     }
   }
 
-  Future<void> _onLogin(LoginButtonClicked event, Emitter<AuthState> emit) async {
+  Future<void> _onLogin(
+      LoginButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final loginData = {
-        'email': event.email,
-        'password': event.password,
-      };
-
-      final response = await dio.post(loginEndpoint, data: loginData);
+      final response = await dio.post(
+        loginEndpoint,
+        data: {
+          'email': event.email,
+          'password': event.password,
+        },
+      );
 
       if (response.statusCode == 200) {
-        final accessToken = response.data['accessToken'];
-        final refreshToken = response.data['refreshToken'];
+        final accessToken = response.data['accessToken'] as String;
+        final refreshToken = response.data['refreshToken'] as String;
         await SecureStorageService.saveTokens(accessToken, refreshToken);
 
         final decodedToken = JwtDecoder.decode(accessToken);
-        final role = decodedToken['role'];
+        final role = decodedToken['role'] as String?;
 
         if (role == 'admin') {
           emit(AdminLoginSuccess(accessToken));
@@ -77,34 +75,49 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         } else if (role == 'owner') {
           emit(OwnerLoginSuccess(accessToken));
         } else {
-          emit(AuthError("Invalid role"));
+          emit(AuthError('Unknown role: $role'));
         }
       } else {
-        emit(AuthError("Login failed: ${response.statusCode}"));
+        emit(AuthError('Login failed: ${response.statusCode}'));
       }
     } on DioException catch (e) {
-      emit(AuthError("Network error: ${e.message}"));
+      emit(AuthError(_parseDioError(e)));
     } catch (e) {
-      emit(AuthError("Unexpected error: $e"));
+      emit(AuthError('Unexpected error: $e'));
     }
   }
 
-  Future<void> _onLogout(LogoutButtonClicked event, Emitter<AuthState> emit) async {
+  Future<void> _onLogout(
+      LogoutButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final accessToken=await SecureStorageService.getAccessToken();
+      final accessToken = await SecureStorageService.getAccessToken();
       await dio.post(
         logoutEndpoint,
         options: Options(
-          headers: {
-            'Authorization': 'Bearer $accessToken'
-          }
-        )
+          headers: {'Authorization': 'Bearer $accessToken'},
+        ),
       );
       await SecureStorageService.deleteTokens();
       emit(LogoutSuccess());
     } catch (e) {
-      emit(AuthError("Failed to logout: $e"));
+      // Clear tokens locally even if server call fails
+      await SecureStorageService.deleteTokens();
+      emit(LogoutSuccess());
     }
+  }
+
+  String _parseDioError(DioException e) {
+    if (e.type == DioExceptionType.connectionTimeout) return 'Connection timeout';
+    if (e.type == DioExceptionType.receiveTimeout) return 'Receive timeout';
+    if (e.type == DioExceptionType.connectionError) {
+      return 'Cannot reach server. Check your network.';
+    }
+    if (e.response != null) {
+      final data = e.response?.data;
+      if (data is String && data.isNotEmpty) return data;
+      return 'Error ${e.response?.statusCode}';
+    }
+    return e.message ?? 'Unknown error';
   }
 }
