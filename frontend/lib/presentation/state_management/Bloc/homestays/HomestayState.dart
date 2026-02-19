@@ -1,15 +1,35 @@
-abstract class HomestayState {}
+import 'package:equatable/equatable.dart';
+import 'package:lokyatra_frontend/data/models/Homestay.dart';
 
-class HomestayInitial extends HomestayState {}
+abstract class HomestayState extends Equatable {
+  const HomestayState();
 
-class HomestayLoading extends HomestayState {}
+  @override
+  List<Object> get props => [];
+}
+
+class HomestayInitial extends HomestayState {
+  const HomestayInitial();
+}
+
+class HomestayLoading extends HomestayState {
+  const HomestayLoading();
+}
 
 class HomestaysLoaded extends HomestayState {
-  final List<dynamic> homestays;
-  HomestaysLoaded(this.homestays);
+  final List<Homestay> homestays;
+
+  const HomestaysLoaded(this.homestays);
+
+  @override
+  List<Object> get props => [homestays];
 }
 
 class HomestayError extends HomestayState {
   final String message;
-  HomestayError(this.message);
+
+  const HomestayError(this.message);
+
+  @override
+  List<Object> get props => [message];
 }

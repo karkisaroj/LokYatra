@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 // Screens
 import 'package:lokyatra_frontend/presentation/screens/Onboarding/OnBoarding.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayEditPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerHome.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/touristHome.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/AdminDashboard.dart';
@@ -55,6 +56,7 @@ class MyAppRunner extends StatelessWidget {
               '/register': (context) => const Register(),
               '/adminDashboard': (context) => const AdminDashboard(),
               '/onboarding': (context) => const OnboardingScreen(),
+
             },
             home: const SplashScreen(),
             builder: (context, appChild) {

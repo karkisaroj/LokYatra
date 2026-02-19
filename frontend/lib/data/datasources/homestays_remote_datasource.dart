@@ -7,13 +7,16 @@ class HomestaysRemoteDatasource {
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: apiBaseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 20),
-      sendTimeout: const Duration(seconds: 20),
+      connectTimeout: connectTimeout,
+      receiveTimeout: receiveTimeout,
+      sendTimeout: sendTimeout,
       headers: headers,
       responseType: ResponseType.json,
     ),
-  )..interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
+  )..interceptors.add(LogInterceptor(
+    requestBody: true,
+    responseBody: true,
+  ));
 
   // Get all homestays for the logged-in owner
   Future<Response<dynamic>> getMyHomestays() async {
@@ -33,12 +36,12 @@ class HomestaysRemoteDatasource {
     );
   }
 
-  // Create a new homestay
   Future<Response<dynamic>> createHomestay({
     required Map<String, dynamic> fields,
     required List<PlatformFile> files,
   }) async {
     final token = await SecureStorageService.getAccessToken();
+
     final formData = FormData();
 
     fields.forEach((key, value) {
@@ -48,10 +51,16 @@ class HomestaysRemoteDatasource {
     });
 
     for (final file in files) {
-      if (file.bytes != null) {
-        formData.files.add(MapEntry('files', MultipartFile.fromBytes(file.bytes!, filename: file.name)));
-      } else if (file.path != null) {
-        formData.files.add(MapEntry('files', await MultipartFile.fromFile(file.path!, filename: file.name)));
+      if (file.path != null) {
+        formData.files.add(
+          MapEntry(
+            'files',
+            await MultipartFile.fromFile(
+              file.path!,
+              filename: file.name,
+            ),
+          ),
+        );
       }
     }
 
@@ -59,45 +68,80 @@ class HomestaysRemoteDatasource {
       homestaysBasePath,
       data: formData,
       options: Options(
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
-        sendTimeout: const Duration(seconds: 120),
-        receiveTimeout: const Duration(seconds: 120),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': 'multipart/form-data',
+        },
+        sendTimeout: const Duration(minutes: 2),
+        receiveTimeout: const Duration(minutes: 2),
       ),
     );
   }
 
-  // Update a homestay
-  Future<Response<dynamic>> updateHomestay({
+  Future<Response> updateHomestay({
     required int id,
     required Map<String, dynamic> fields,
-    required List<PlatformFile> files,
+    List<PlatformFile> files = const [],
   }) async {
     final token = await SecureStorageService.getAccessToken();
+
+    // Use the constant like all your other methods
+    final path = '$homestaysBasePath/$id';
+
+    // Debug print – very useful right now
+    final fullUrl = '${_dio.options.baseUrl}$path';
+    print('Attempting PUT to: $fullUrl');
+
     final formData = FormData();
 
+    // Text fields – PascalCase to match C# DTO
     fields.forEach((key, value) {
-      if (value != null) {
+      if (value != null && value.toString().isNotEmpty) {
         formData.fields.add(MapEntry(key, value.toString()));
       }
     });
 
+    // Images – using 'images' key (change to 'files' if backend expects that)
     for (final file in files) {
-      if (file.bytes != null) {
-        formData.files.add(MapEntry('files', MultipartFile.fromBytes(file.bytes!, filename: file.name)));
-      } else if (file.path != null) {
-        formData.files.add(MapEntry('files', await MultipartFile.fromFile(file.path!, filename: file.name)));
+      if (file.path != null) {
+        formData.files.add(
+          MapEntry(
+            'images',
+            await MultipartFile.fromFile(
+              file.path!,
+              filename: file.name ?? 'image_${DateTime.now().millisecondsSinceEpoch}.jpg',
+            ),
+          ),
+        );
       }
     }
 
-    return _dio.put(
-      '$homestaysBasePath/$id',
-      data: formData,
-      options: Options(
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
-        sendTimeout: const Duration(seconds: 120),
-        receiveTimeout: const Duration(seconds: 120),
-      ),
-    );
+    try {
+      final response = await _dio.put(
+        path,                           // ← important: use path variable here
+        data: formData,
+        options: Options(
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Accept': 'application/json',
+          },
+          sendTimeout: const Duration(minutes: 3),
+          receiveTimeout: const Duration(minutes: 3),
+        ),
+      );
+
+      print('Update success - status: ${response.statusCode}');
+      return response;
+    } on DioException catch (e) {
+      print('Update failed: ${e.message}');
+      if (e.response != null) {
+        print('Status: ${e.response?.statusCode}');
+        print('Response body: ${e.response?.data}');
+        print('Full response headers: ${e.response?.headers}');
+      }
+      rethrow;
+    }
   }
 
   // Toggle visibility (active/paused)
