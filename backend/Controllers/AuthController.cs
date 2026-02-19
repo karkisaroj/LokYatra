@@ -5,7 +5,6 @@ using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace backend.Controllers
 {
@@ -14,7 +13,7 @@ namespace backend.Controllers
     public class AuthController(IAuthService authService) : ControllerBase
     {
         [HttpPost("register")]
-        public async Task<ActionResult<User>> Register(RegisterDto request)
+        public async Task<ActionResult<User>> Register([FromBody] RegisterDto request)
         {
             var user = await authService.RegisterAsync(request);
             if (user == null) return BadRequest("Invalid registration data values.");
@@ -22,7 +21,7 @@ namespace backend.Controllers
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<TokenResponseDto>> Login(LoginDto request)
+        public async Task<ActionResult<TokenResponseDto>> Login([FromBody] LoginDto request)
         {
             var result = await authService.LoginAsync(request);
             if (result is null) return BadRequest("Invalid Username or password");
@@ -30,7 +29,7 @@ namespace backend.Controllers
         }
 
         [HttpPost("refresh-token")]
-        public async Task<ActionResult<TokenResponseDto>> RefreshToken(RefreshTokenRequestDto request)
+        public async Task<ActionResult<TokenResponseDto>> RefreshToken([FromBody] RefreshTokenRequestDto request)
         {
             var result = await authService.RefreshTokenAsync(request);
             if (result is null || result.AccessToken is null || result.RefreshToken is null)
@@ -54,23 +53,14 @@ namespace backend.Controllers
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            // Try both NameIdentifier and sub
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                               ?? User.FindFirst("sub")?.Value;
 
             if (userIdClaim is null || !int.TryParse(userIdClaim, out var userId))
-            {
-                // Token valid but missing user id -> treat as already logged out
                 return Ok("Logged out");
-            }
 
             var result = await authService.LogoutAsync(userId);
-
-            // Idempotent: if user not found, still return OK
-            if (!result)
-            {
-                return Ok("Logged out");
-            }
+            if (!result) return Ok("Logged out");
 
             return Ok("Logged out successfully");
         }

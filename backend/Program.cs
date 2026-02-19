@@ -7,8 +7,10 @@ using Scalar.AspNetCore;
 using System.Security.Claims;
 using System.Text;
 
-
 var builder = WebApplication.CreateBuilder(args);
+
+// Listen on all interfaces so Android phone can reach the dev machine
+builder.WebHost.UseUrls("http://0.0.0.0:5257");
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
@@ -57,7 +59,6 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICloudImageService, CloudinaryImageService>();
-
 
 var app = builder.Build();
 
