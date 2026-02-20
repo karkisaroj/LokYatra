@@ -5,9 +5,6 @@ using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace backend.Controllers
 {
@@ -15,6 +12,22 @@ namespace backend.Controllers
     [ApiController]
     public class StoriesController(AppDbContext db, ICloudImageService imageService) : ControllerBase
     {
+        // Shared mapping — one place to change fields
+        private static object MapStory(Story s) => new
+        {
+            id = s.Id,
+            culturalSiteId = s.CulturalSiteId,
+            title = s.Title,
+            storyType = s.StoryType,
+            estimatedReadTimeMinutes = s.EstimatedReadTimeMinutes,
+            fullContent = s.FullContent,
+            historicalContext = s.HistoricalContext,
+            culturalSignificance = s.CulturalSignificance,
+            imageUrls = s.ImageUrls,
+            createdAt = s.CreatedAt,   // ← was missing
+            updatedAt = s.UpdatedAt,   // ← was missing
+        };
+
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetStories([FromQuery] int? siteId = null)
         {
@@ -23,21 +36,9 @@ namespace backend.Controllers
 
             var list = await q
                 .OrderByDescending(s => s.CreatedAt)
-                .Select(st => new
-                {
-                    id = st.Id,
-                    culturalSiteId = st.CulturalSiteId,
-                    title = st.Title,
-                    storyType = st.StoryType,
-                    estimatedReadTimeMinutes = st.EstimatedReadTimeMinutes,
-                    fullContent = st.FullContent,
-                    historicalContext = st.HistoricalContext,
-                    culturalSignificance = st.CulturalSignificance,
-                    imageUrls = st.ImageUrls
-                })
                 .ToListAsync();
 
-            return Ok(list);
+            return Ok(list.Select(MapStory));
         }
 
         [HttpGet("{id:int}")]
@@ -45,19 +46,7 @@ namespace backend.Controllers
         {
             var story = await db.Stories.FindAsync(id);
             if (story is null) return NotFound("Story not found");
-
-            return Ok(new
-            {
-                id = story.Id,
-                culturalSiteId = story.CulturalSiteId,
-                title = story.Title,
-                storyType = story.StoryType,
-                estimatedReadTimeMinutes = story.EstimatedReadTimeMinutes,
-                fullContent = story.FullContent,
-                historicalContext = story.HistoricalContext,
-                culturalSignificance = story.CulturalSignificance,
-                imageUrls = story.ImageUrls
-            });
+            return Ok(MapStory(story));
         }
 
         [Authorize(Roles = "admin")]
@@ -65,11 +54,13 @@ namespace backend.Controllers
         [RequestSizeLimit(25_000_000)]
         public async Task<ActionResult<object>> Create([FromForm] StoryCreateFormDto form)
         {
-            var files = Request.Form.Files;
-            var urls = files is { Count: > 0 } ? await imageService.UploadFilesAsync("lokyatra/stories", files) : new List<string>();
-
             var site = await db.CulturalSites.FindAsync(form.CulturalSiteId);
             if (site is null) return NotFound("Related site not found");
+
+            var files = Request.Form.Files;
+            var urls = files.Count > 0
+                ? await imageService.UploadFilesAsync("lokyatra/stories", files)
+                : new List<string>();
 
             var entity = new Story
             {
@@ -87,15 +78,7 @@ namespace backend.Controllers
 
             db.Stories.Add(entity);
             await db.SaveChangesAsync();
-
-            return Ok(new
-            {
-                id = entity.Id,
-                culturalSiteId = entity.CulturalSiteId,
-                title = entity.Title,
-                storyType = entity.StoryType,
-                imageUrls = entity.ImageUrls
-            });
+            return Ok(MapStory(entity));
         }
 
         [Authorize(Roles = "admin")]
@@ -126,15 +109,7 @@ namespace backend.Controllers
             entity.UpdatedAt = DateTimeOffset.UtcNow;
 
             await db.SaveChangesAsync();
-
-            return Ok(new
-            {
-                id = entity.Id,
-                culturalSiteId = entity.CulturalSiteId,
-                title = entity.Title,
-                storyType = entity.StoryType,
-                imageUrls = entity.ImageUrls
-            });
+            return Ok(MapStory(entity));
         }
 
         [Authorize(Roles = "admin")]
@@ -146,7 +121,6 @@ namespace backend.Controllers
 
             db.Stories.Remove(entity);
             await db.SaveChangesAsync();
-
             return Ok(new { message = "Story deleted successfully" });
         }
     }
