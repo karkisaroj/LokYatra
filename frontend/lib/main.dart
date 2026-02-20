@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 // Screens
 import 'package:lokyatra_frontend/presentation/screens/Onboarding/OnBoarding.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayEditPage.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayListingsPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerHome.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/touristHome.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/AdminDashboard.dart';
@@ -36,7 +37,6 @@ class MyAppRunner extends StatelessWidget {
         return MultiBlocProvider(
           providers: [
             BlocProvider<AuthBloc>(create: (_) => AuthBloc()),
-            // Provide Sites and Stories blocs app-wide so pages can read them
             BlocProvider<SitesBloc>(create: (_) => SitesBloc()),
             BlocProvider<StoryBloc>(create: (_) => StoryBloc()),
           ],

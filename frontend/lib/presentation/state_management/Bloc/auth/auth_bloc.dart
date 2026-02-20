@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:lokyatra_frontend/core/constants.dart';
+import 'package:lokyatra_frontend/data/datasources/user_remote_datasource.dart';
 import 'package:lokyatra_frontend/data/models/register.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
 import 'auth_event.dart';
@@ -14,9 +15,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LogoutButtonClicked>(_onLogout);
   }
 
-  // apiBaseUrl already has trailing slash: "http://192.168.1.66:5257/"
-  // endpoints have no leading slash: "api/Auth/login"
-  // Result: "http://192.168.1.66:5257/api/Auth/login" ✅
   final Dio dio = Dio(BaseOptions(
     baseUrl: apiBaseUrl,
     connectTimeout: connectTimeout,
@@ -36,7 +34,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final response =
       await dio.post(registerEndpoint, data: event.user.toJson());
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final registeredUser = RegisterUser.fromJson(response.data as Map<String, dynamic>);
+        final registeredUser =
+        RegisterUser.fromJson(response.data as Map<String, dynamic>);
         emit(RegisterSuccess(registeredUser));
       } else {
         emit(AuthError('Server error: ${response.statusCode}'));
@@ -54,16 +53,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final response = await dio.post(
         loginEndpoint,
-        data: {
-          'email': event.email,
-          'password': event.password,
-        },
+        data: {'email': event.email, 'password': event.password},
       );
 
       if (response.statusCode == 200) {
         final accessToken = response.data['accessToken'] as String;
         final refreshToken = response.data['refreshToken'] as String;
+
         await SecureStorageService.saveTokens(accessToken, refreshToken);
+
+        try {
+          final profileRes = await UserRemoteDatasource().getMe();
+          if (profileRes.statusCode == 200) {
+            final data = profileRes.data as Map<String, dynamic>;
+            await SecureStorageService.saveUserProfile(
+              name: data['name'] ?? '',
+              email: data['email'] ?? '',
+              profileImage: data['profileImage'] ?? '',
+              phoneNumber: data['phoneNumber'] ?? '',
+            );
+          }
+        } catch (e) {
+          emit(AuthError('Error fetching user profile: $e'));
+        }
 
         final decodedToken = JwtDecoder.decode(accessToken);
         final role = decodedToken['role'] as String?;
@@ -100,8 +112,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       );
       await SecureStorageService.deleteTokens();
       emit(LogoutSuccess());
-    } catch (e) {
-      // Clear tokens locally even if server call fails
+    } catch (_) {
       await SecureStorageService.deleteTokens();
       emit(LogoutSuccess());
     }

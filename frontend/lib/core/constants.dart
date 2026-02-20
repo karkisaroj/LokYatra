@@ -33,6 +33,7 @@ const String deleteUserEndpoint = "api/User/deleteUser";
 const String sitesBasePath = "api/Sites";
 const String storiesBasePath = "api/Stories";
 const String homestaysBasePath = "api/Homestays";
+const String me="'api/User/me',";
 
 
 const Map<String, String> headers = {
