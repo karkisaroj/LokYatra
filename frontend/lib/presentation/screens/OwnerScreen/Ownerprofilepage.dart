@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lokyatra_frontend/data/datasources/user_remote_datasource.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_event.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
-
 import 'ProfileImageWidget.dart';
 
 class OwnerProfilePage extends StatefulWidget {
@@ -22,6 +22,7 @@ class _OwnerProfilePageState extends State<OwnerProfilePage> {
   String _name = '';
   String _email = '';
   String _phone = '';
+  bool _loading = true;
 
   @override
   void initState() {
@@ -30,17 +31,65 @@ class _OwnerProfilePageState extends State<OwnerProfilePage> {
   }
 
   Future<void> _loadProfile() async {
+    // First load from local SharedPreferences (fast)
     final name  = await SecureStorageService.getUserName();
     final email = await SecureStorageService.getUserEmail();
     final image = await SecureStorageService.getProfileImage();
     final phone = await SecureStorageService.getPhoneNumber();
-    if (!mounted) return;
-    setState(() {
-      _name  = name  ?? '';
-      _email = email ?? '';
-      _phone = phone ?? '';
-      _profileImageUrl = (image != null && image.isNotEmpty) ? image : null;
-    });
+
+    if (mounted) {
+      setState(() {
+        _name  = name  ?? '';
+        _email = email ?? '';
+        _phone = phone ?? '';
+        _profileImageUrl = (image != null && image.isNotEmpty) ? image : null;
+      });
+    }
+
+    // If profile image is missing locally, fetch fresh from backend
+    // This covers the case after logout → login where prefs were cleared
+    if (image == null || image.isEmpty) {
+      await _fetchFromServer();
+    } else {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _fetchFromServer() async {
+    try {
+      final res = await UserRemoteDatasource().getMe();
+      print('getMe status: ${res.statusCode}');
+      print('getMe data: ${res.data}');
+      if (res.statusCode == 200) {
+        final data = res.data as Map<String, dynamic>;
+        final serverName  = data['name']         as String? ?? '';
+        final serverEmail = data['email']        as String? ?? '';
+        final serverPhone = data['phoneNumber']  as String? ?? '';
+        final serverImage = data['profileImage'] as String? ?? '';
+
+        // Save fresh data back to SharedPreferences
+        await SecureStorageService.saveUserProfile(
+          name: serverName,
+          email: serverEmail,
+          profileImage: serverImage,
+          phoneNumber: serverPhone,
+        );
+
+        if (mounted) {
+          setState(() {
+            _name  = serverName;
+            _email = serverEmail;
+            _phone = serverPhone;
+            _profileImageUrl =
+            serverImage.isNotEmpty ? serverImage : null;
+          });
+        }
+      }
+    } catch (e) {
+      print('getMe error: $e');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -48,13 +97,16 @@ class _OwnerProfilePageState extends State<OwnerProfilePage> {
     return Scaffold(
       backgroundColor: const Color(0xFFFAF7F4),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : SingleChildScrollView(
+          padding:
+          EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
           child: Column(
             children: [
               SizedBox(height: 20.h),
 
-              // Profile image
+              // Profile image — tappable to change
               ProfileImageWidget(
                 initialImageUrl: _profileImageUrl,
                 accentColor: _brown,
@@ -64,7 +116,6 @@ class _OwnerProfilePageState extends State<OwnerProfilePage> {
 
               SizedBox(height: 14.h),
 
-              // Name
               Text(
                 _name.isEmpty ? 'Owner' : _name,
                 style: GoogleFonts.playfairDisplay(
@@ -74,12 +125,10 @@ class _OwnerProfilePageState extends State<OwnerProfilePage> {
               ),
               SizedBox(height: 4.h),
 
-              // Email
               Text(_email,
                   style: GoogleFonts.dmSans(
                       fontSize: 13.sp, color: Colors.grey[500])),
 
-              // Phone
               if (_phone.isNotEmpty) ...[
                 SizedBox(height: 2.h),
                 Text(_phone,
@@ -89,9 +138,9 @@ class _OwnerProfilePageState extends State<OwnerProfilePage> {
 
               SizedBox(height: 6.h),
 
-              // Role badge
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(
+                    horizontal: 12.w, vertical: 4.h),
                 decoration: BoxDecoration(
                   color: _brown.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20.r),
@@ -105,34 +154,38 @@ class _OwnerProfilePageState extends State<OwnerProfilePage> {
 
               SizedBox(height: 28.h),
 
-              // Menu items
               ...[
                 (Icons.person_outline_rounded, 'Edit Profile'),
                 (Icons.notifications_outlined, 'Notifications'),
                 (Icons.help_outline_rounded, 'Help & Support'),
                 (Icons.info_outline_rounded, 'About LokYatra'),
-              ].map((item) => _MenuItem(icon: item.$1, label: item.$2)),
+              ].map((item) =>
+                  _MenuItem(icon: item.$1, label: item.$2)),
 
               SizedBox(height: 24.h),
 
-              // Logout
               SizedBox(
                 width: double.infinity,
                 height: 48.h,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    context.read<AuthBloc>().add(LogoutButtonClicked());
-                    Navigator.pushReplacementNamed(context, '/login');
+                    context
+                        .read<AuthBloc>()
+                        .add(LogoutButtonClicked());
+                    Navigator.pushReplacementNamed(
+                        context, '/login');
                   },
                   icon: Icon(Icons.logout_rounded, size: 18.sp),
                   label: Text('Logout',
                       style: GoogleFonts.dmSans(
-                          fontSize: 14.sp, fontWeight: FontWeight.w600)),
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600)),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.red[600],
                     side: BorderSide(color: Colors.red.shade300),
                     shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r)),
+                        borderRadius:
+                        BorderRadius.circular(12.r)),
                   ),
                 ),
               ),

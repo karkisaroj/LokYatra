@@ -66,7 +66,9 @@ class _ProfileImageWidgetState extends State<ProfileImageWidget> {
         }
       }
     } catch (_) {
-      // silently fail — parent snackbar can handle if needed
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to upload image')),
+      );
     } finally {
       if (mounted) setState(() => _uploading = false);
     }
