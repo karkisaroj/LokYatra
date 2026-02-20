@@ -73,7 +73,7 @@ namespace backend.Controllers
             var files = Request.Form.Files;
             var urls = files.Count > 0
                 ? await imageService.UploadFilesAsync("lokyatra/homestays", files)
-                : new List<string>();
+                : [];
 
             var entity = new Homestay
             {
