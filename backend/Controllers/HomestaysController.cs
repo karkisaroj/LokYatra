@@ -19,8 +19,57 @@ namespace backend.Controllers
             return int.TryParse(claim, out int userId) ? userId : null;
         }
 
+      
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IActionResult> GetAllHomestays()
+        {
+            var isAdmin = User.Identity?.IsAuthenticated == true && User.IsInRole("admin");
+
+            var query = db.Homestays.Include(h => h.NearCulturalSite).AsQueryable();
+
+           
+            if (!isAdmin)
+            {
+                query = query.Where(h => h.IsVisible == true);
+            }
+
+            var list = await query
+                .OrderByDescending(h => h.CreatedAt)
+                .Select(h => new
+                {
+                    id = h.Id,
+                    name = h.Name,
+                    location = h.Location,
+                    description = h.Description,
+                    category = h.Category,
+                    pricePerNight = h.PricePerNight,
+                    nearCulturalSite = h.NearCulturalSite == null ? null : new
+                    {
+                        id = h.NearCulturalSite.Id,
+                        name = h.NearCulturalSite.Name
+                    },
+                    buildingHistory = h.BuildingHistory,
+                    culturalSignificance = h.CulturalSignificance,
+                    traditionalFeatures = h.TraditionalFeatures,
+                    culturalExperiences = h.CulturalExperiences,
+                    numberOfRooms = h.NumberOfRooms,
+                    maxGuests = h.MaxGuests,
+                    bathrooms = h.Bathrooms,
+                    amenities = h.Amenities,
+                    imageUrls = h.ImageUrls,
+                    isVisible = h.IsVisible,
+                    createdAt = h.CreatedAt,
+                    updatedAt = h.UpdatedAt
+                })
+                .ToListAsync();
+
+            return Ok(list);
+        }
+
+        
         [Authorize(Roles = "owner")]
-        [HttpGet("OwnerStay")]
+        [HttpGet("my-homestays")]
         public async Task<IActionResult> GetMyHomestays()
         {
             var ownerId = GetCurrentUserId();
@@ -169,18 +218,23 @@ namespace backend.Controllers
             });
         }
 
-        // This was the missing route causing the 404
-        [Authorize(Roles = "owner")]
-        [HttpPatch("{id}/visibility")]
+
+        [Authorize(Roles = "owner,admin")] 
+        [HttpPatch("{id}/toggle-visibility")]
         public async Task<IActionResult> ToggleVisibility(int id, [FromBody] ToggleVisibilityDto dto)
         {
-            var ownerId = GetCurrentUserId();
-            if (ownerId == null) return Unauthorized();
+            var userId = GetCurrentUserId();
+            if (userId == null) return Unauthorized();
 
-            var homestay = await db.Homestays
-                .FirstOrDefaultAsync(h => h.Id == id && h.OwnerId == ownerId.Value);
+            var homestay = await db.Homestays.FindAsync(id);
+            if (homestay == null) return NotFound("Homestay not found.");
 
-            if (homestay == null) return NotFound("Homestay not found or you don't own it.");
+            
+            var isAdmin = User.IsInRole("admin");
+            if (!isAdmin && homestay.OwnerId != userId.Value)
+            {
+                return Forbid();
+            }
 
             homestay.IsVisible = dto.IsVisible;
             homestay.UpdatedAt = DateTimeOffset.UtcNow;
@@ -189,5 +243,20 @@ namespace backend.Controllers
 
             return Ok(new { id = homestay.Id, isVisible = homestay.IsVisible });
         }
+
+        [Authorize(Roles = "admin")]
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var homestay = await db.Homestays.FindAsync(id);
+            if (homestay == null) return NotFound("Homestay not found");
+
+            db.Homestays.Remove(homestay);
+            await db.SaveChangesAsync();
+
+            return Ok(new { message = "Homestay deleted successfully" });
+        }
+
+
     }
 }

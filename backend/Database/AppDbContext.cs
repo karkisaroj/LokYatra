@@ -8,6 +8,7 @@ namespace backend.Database
         public DbSet<User> Users => Set<User>();
         public DbSet<CulturalSite> CulturalSites => Set<CulturalSite>();
         public DbSet<Story> Stories => Set<Story>();
+        public DbSet<Booking> Bookings { get; set; }
         public DbSet<Homestay> Homestays => Set<Homestay>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -29,6 +30,12 @@ namespace backend.Database
             modelBuilder.Entity<Homestay>(entity =>
             {
                 entity.Property(e => e.PricePerNight).HasColumnType("decimal(18,2)");
+            });
+            modelBuilder.Entity<Booking>(entity => {
+                entity.Property(b => b.SubTotal).HasColumnType("numeric(18,2)");
+                entity.Property(b => b.PointsDiscount).HasColumnType("numeric(18,2)");
+                entity.Property(b => b.TotalPrice).HasColumnType("numeric(18,2)");
+                entity.Property(b => b.PricePerNight).HasColumnType("numeric(18,2)");
             });
         }
     }

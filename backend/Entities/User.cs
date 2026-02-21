@@ -26,7 +26,7 @@ namespace backend.Models
         public DateTime? RefreshTokenExpiryTime { get; set; }
 
         public string ProfileImage { get; set; } = string.Empty;
-
+        public int QuizPoints { get; set; } = 0;
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
