@@ -16,18 +16,36 @@ class HomestayLoading extends HomestayState {
   const HomestayLoading();
 }
 
-class HomestaysLoaded extends HomestayState {
+// Owner: list of owner's own homestays
+class OwnerHomestaysLoaded extends HomestayState {
   final List<Homestay> homestays;
-
-  const HomestaysLoaded(this.homestays);
+  const OwnerHomestaysLoaded(this.homestays);
 
   @override
   List<Object> get props => [homestays];
 }
 
+// Tourist: all visible public homestays
+class TouristAllHomestaysLoaded extends HomestayState {
+  final List<Homestay> homestays;
+  const TouristAllHomestaysLoaded(this.homestays);
+
+  @override
+  List<Object> get props => [homestays];
+}
+
+// Tourist: homestays filtered near a specific cultural site
+class TouristNearbyHomestaysLoaded extends HomestayState {
+  final List<Homestay> homestays;
+  final String siteName;
+  const TouristNearbyHomestaysLoaded(this.homestays, this.siteName);
+
+  @override
+  List<Object> get props => [homestays, siteName];
+}
+
 class HomestayError extends HomestayState {
   final String message;
-
   const HomestayError(this.message);
 
   @override

@@ -4,8 +4,6 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 // Screens
 import 'package:lokyatra_frontend/presentation/screens/Onboarding/OnBoarding.dart';
-import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayEditPage.dart';
-import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayListingsPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerHome.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/touristHome.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/AdminDashboard.dart';
@@ -16,12 +14,33 @@ import 'package:lokyatra_frontend/presentation/splash/splash_screen.dart';
 // Blocs
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_state.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/stories/story_bloc.dart';
 
+import 'core/services/sqlite_service.dart';
+
 final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+
+  debugPrint(' Starting app initialization...');
+
+  try {
+    // Initialize SQLite
+    debugPrint(' Initializing SQLite...');
+    await SqliteService().database;
+    debugPrint('SQLite initialized successfully');
+
+    // Delete old cache (>7 days)
+    await SqliteService().deleteOldCache();
+    debugPrint(' Old cache cleaned');
+
+  } catch (e, stackTrace) {
+    debugPrint('Error during initialization: $e');
+    debugPrint('Stack trace: $stackTrace');
+  }
   runApp(const MyAppRunner());
 }
 
@@ -39,6 +58,7 @@ class MyAppRunner extends StatelessWidget {
             BlocProvider<AuthBloc>(create: (_) => AuthBloc()),
             BlocProvider<SitesBloc>(create: (_) => SitesBloc()),
             BlocProvider<StoryBloc>(create: (_) => StoryBloc()),
+            BlocProvider<HomestayBloc>(create: (_)=>HomestayBloc())
           ],
           child: MaterialApp(
             navigatorKey: _navKey,
@@ -56,6 +76,8 @@ class MyAppRunner extends StatelessWidget {
               '/register': (context) => const Register(),
               '/adminDashboard': (context) => const AdminDashboard(),
               '/onboarding': (context) => const OnboardingScreen(),
+              '/TouristHome': (context) => const TouristHome(),
+
 
             },
             home: const SplashScreen(),

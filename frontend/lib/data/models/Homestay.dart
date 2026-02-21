@@ -1,3 +1,6 @@
+import 'NearCulturalSite.dart';
+import 'Owner.dart';
+
 class Homestay {
   final int id;
   final String name;
@@ -8,24 +11,21 @@ class Homestay {
   final List<String> imageUrls;
   final bool isVisible;
 
-  // Cultural / heritage fields
   final String? buildingHistory;
   final String? culturalSignificance;
   final String? traditionalFeatures;
   final List<String> culturalExperiences;
 
-  // Capacity
   final int numberOfRooms;
   final int maxGuests;
   final int bathrooms;
 
-  // Amenities
   final List<String> amenities;
 
-  // Near cultural site (nested object from API)
   final NearCulturalSite? nearCulturalSite;
 
-  // Timestamps
+  final Owner? owner;
+
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -47,13 +47,14 @@ class Homestay {
     this.bathrooms = 0,
     this.amenities = const [],
     this.nearCulturalSite,
+    this.owner,
     this.createdAt,
     this.updatedAt,
   });
 
   factory Homestay.fromJson(Map<String, dynamic> json) {
     return Homestay(
-      id: json['id'] as int,
+      id: json['id'] as int? ?? 0,
       name: json['name']?.toString() ?? '',
       location: json['location']?.toString() ?? '',
       description: json['description']?.toString() ?? '',
@@ -72,6 +73,9 @@ class Homestay {
       nearCulturalSite: json['nearCulturalSite'] != null
           ? NearCulturalSite.fromJson(json['nearCulturalSite'] as Map<String, dynamic>)
           : null,
+      owner: json['owner'] != null
+          ? Owner.fromJson(json['owner'] as Map<String, dynamic>)
+          : null,
       createdAt: json['createdAt'] != null
           ? DateTime.tryParse(json['createdAt'].toString())
           : null,
@@ -81,7 +85,6 @@ class Homestay {
     );
   }
 
-  /// Handles String[], comma-separated string, or null safely
   static List<String> _parseStringList(dynamic raw) {
     if (raw is List) {
       return raw
@@ -118,24 +121,9 @@ class Homestay {
       'bathrooms': bathrooms,
       'amenities': amenities,
       'nearCulturalSite': nearCulturalSite?.toJson(),
+      'owner': owner?.toJson(),
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
   }
-}
-
-class NearCulturalSite {
-  final int id;
-  final String name;
-
-  NearCulturalSite({required this.id, required this.name});
-
-  factory NearCulturalSite.fromJson(Map<String, dynamic> json) {
-    return NearCulturalSite(
-      id: json['id'] as int? ?? 0,
-      name: json['name']?.toString() ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() => {'id': id, 'name': name};
 }

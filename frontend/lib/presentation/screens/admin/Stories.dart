@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/datasources/Stories_remote_datasource.dart';
+import 'package:lokyatra_frontend/data/models/Story.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/stories/story_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/stories/story_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/stories/story_state.dart';
@@ -22,7 +23,7 @@ class Stories extends StatefulWidget {
 }
 
 class _StoriesState extends State<Stories> {
-  static const _dark   = Color(0xFF1A1A2E);
+  static const _dark = Color(0xFF1A1A2E);
   static const _accent = Color(0xFF3D5A80);
 
   int? _selectedSiteId;
@@ -55,11 +56,13 @@ class _StoriesState extends State<Stories> {
     }
   }
 
-  Future<void> _editStory(Map<String, dynamic> story) async {
+  Future<void> _editStory(Story story) async {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => StoryEditDialog(story: story),
+      // Assuming StoryEditDialog expects a Map, we convert it here.
+      // If StoryEditDialog accepts a Story object, pass `story` directly.
+      builder: (_) => StoryEditDialog(story: story.toJson()),
     );
     if (result == true) {
       context.read<StoryBloc>().add(LoadStories(siteId: _selectedSiteId));
@@ -70,13 +73,12 @@ class _StoriesState extends State<Stories> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12.r)),
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
         title: Text('Delete Story',
             style: GoogleFonts.playfairDisplay(
                 fontSize: 16.sp, fontWeight: FontWeight.bold)),
-        content: Text(
-            'This action cannot be undone. Are you sure?',
+        content: Text('This action cannot be undone. Are you sure?',
             style: GoogleFonts.dmSans(fontSize: 13.sp)),
         actions: [
           TextButton(
@@ -116,8 +118,7 @@ class _StoriesState extends State<Stories> {
       content: Text(msg, style: GoogleFonts.dmSans()),
       backgroundColor: success ? Colors.green[700] : Colors.red[700],
       behavior: SnackBarBehavior.floating,
-      shape:
-      RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
       margin: EdgeInsets.all(12.w),
     ));
   }
@@ -159,12 +160,12 @@ class _StoriesState extends State<Stories> {
                                 fontSize: 13.sp, color: Colors.grey[600]),
                             border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8.r),
-                                borderSide: BorderSide(
-                                    color: Colors.grey.shade300)),
+                                borderSide:
+                                BorderSide(color: Colors.grey.shade300)),
                             enabledBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(8.r),
-                                borderSide: BorderSide(
-                                    color: Colors.grey.shade300)),
+                                borderSide:
+                                BorderSide(color: Colors.grey.shade300)),
                             contentPadding: EdgeInsets.symmetric(
                                 horizontal: 12.w, vertical: 10.h),
                             filled: true,
@@ -174,16 +175,14 @@ class _StoriesState extends State<Stories> {
                             DropdownMenuItem<int>(
                               value: null,
                               child: Text('All Sites',
-                                  style:
-                                  GoogleFonts.dmSans(fontSize: 13.sp)),
+                                  style: GoogleFonts.dmSans(fontSize: 13.sp)),
                             ),
                             ...state.sites.map((site) => DropdownMenuItem<int>(
                               value: site['id'] as int,
-                              child: Text(
-                                  (site['name'] ?? '').toString(),
+                              child: Text((site['name'] ?? '').toString(),
                                   overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 13.sp)),
+                                  style:
+                                  GoogleFonts.dmSans(fontSize: 13.sp)),
                             )),
                           ],
                           onChanged: _onSiteChanged,
@@ -208,12 +207,10 @@ class _StoriesState extends State<Stories> {
                           size: 18.sp, color: Colors.grey[500]),
                       border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.r),
-                          borderSide:
-                          BorderSide(color: Colors.grey.shade300)),
+                          borderSide: BorderSide(color: Colors.grey.shade300)),
                       enabledBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8.r),
-                          borderSide:
-                          BorderSide(color: Colors.grey.shade300)),
+                          borderSide: BorderSide(color: Colors.grey.shade300)),
                       contentPadding: EdgeInsets.symmetric(
                           horizontal: 12.w, vertical: 10.h),
                       filled: true,
@@ -230,8 +227,7 @@ class _StoriesState extends State<Stories> {
                     icon: Icon(Icons.add, size: 18.sp),
                     label: Text('Add Story',
                         style: GoogleFonts.dmSans(
-                            fontSize: 13.sp,
-                            fontWeight: FontWeight.w600)),
+                            fontSize: 13.sp, fontWeight: FontWeight.w600)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _accent,
                       foregroundColor: Colors.white,
@@ -272,8 +268,7 @@ class _StoriesState extends State<Stories> {
                   }
                   if (state is StoriesLoaded) {
                     final filtered = state.stories.where((s) {
-                      final title =
-                      (s['title'] ?? '').toString().toLowerCase();
+                      final title = s.title.toLowerCase();
                       return _search.isEmpty ||
                           title.contains(_search.toLowerCase());
                     }).toList();
@@ -288,13 +283,11 @@ class _StoriesState extends State<Stories> {
                             SizedBox(height: 12.h),
                             Text('No stories found',
                                 style: GoogleFonts.playfairDisplay(
-                                    fontSize: 18.sp,
-                                    color: Colors.grey[500])),
+                                    fontSize: 18.sp, color: Colors.grey[500])),
                             SizedBox(height: 6.h),
                             Text('Add a story to get started',
                                 style: GoogleFonts.dmSans(
-                                    fontSize: 13.sp,
-                                    color: Colors.grey[400])),
+                                    fontSize: 13.sp, color: Colors.grey[400])),
                           ],
                         ),
                       );
@@ -307,10 +300,9 @@ class _StoriesState extends State<Stories> {
                           context,
                           MaterialPageRoute(
                               builder: (_) =>
-                                  StoryDetailPage(story: s))),
+                                  StoryDetailPage(story: s.toJson()))),
                       onEdit: _editStory,
-                      onDelete: (s) =>
-                          _deleteStory(s['id'] as int),
+                      onDelete: (s) => _deleteStory(s.id),
                     )
                         : _MobileList(
                       stories: filtered,
@@ -318,10 +310,9 @@ class _StoriesState extends State<Stories> {
                           context,
                           MaterialPageRoute(
                               builder: (_) =>
-                                  StoryDetailPage(story: s))),
+                                  StoryDetailPage(story: s.toJson()))),
                       onEdit: _editStory,
-                      onDelete: (s) =>
-                          _deleteStory(s['id'] as int),
+                      onDelete: (s) => _deleteStory(s.id),
                     );
                   }
                   return const SizedBox.shrink();
@@ -338,10 +329,10 @@ class _StoriesState extends State<Stories> {
 // ── Wide screen table ─────────────────────────────────────────────────────────
 
 class _WideTable extends StatelessWidget {
-  final List<dynamic> stories;
-  final void Function(Map<String, dynamic>) onView;
-  final void Function(Map<String, dynamic>) onEdit;
-  final void Function(Map<String, dynamic>) onDelete;
+  final List<Story> stories;
+  final void Function(Story) onView;
+  final void Function(Story) onEdit;
+  final void Function(Story) onDelete;
 
   const _WideTable({
     required this.stories,
@@ -362,23 +353,19 @@ class _WideTable extends StatelessWidget {
         children: [
           // Table header
           Container(
-            padding:
-            EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
             decoration: BoxDecoration(
               color: Colors.grey.shade50,
               borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(12.r),
                   topRight: Radius.circular(12.r)),
-              border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade200)),
+              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
             ),
             child: Row(
               children: [
                 SizedBox(width: 60.w),
                 SizedBox(width: 12.w),
-                Expanded(
-                    flex: 3,
-                    child: _headerCell('Title')),
+                Expanded(flex: 3, child: _headerCell('Title')),
                 SizedBox(width: 120.w, child: _headerCell('Type')),
                 SizedBox(width: 100.w, child: _headerCell('Read Time')),
                 SizedBox(width: 120.w, child: _headerCell('Actions')),
@@ -393,12 +380,13 @@ class _WideTable extends StatelessWidget {
               separatorBuilder: (_, __) =>
                   Divider(height: 1, color: Colors.grey.shade100),
               itemBuilder: (context, i) {
-                final s = stories[i] as Map<String, dynamic>;
-                final imageUrl = getFirstImageUrl(s['imageUrls']);
+                final s = stories[i];
+                final imageUrl =
+                s.imageUrls.isNotEmpty ? s.imageUrls.first : null;
                 return Container(
                   color: Colors.white,
-                  padding: EdgeInsets.symmetric(
-                      horizontal: 16.w, vertical: 10.h),
+                  padding:
+                  EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
                   child: Row(
                     children: [
                       // Thumbnail
@@ -418,12 +406,11 @@ class _WideTable extends StatelessWidget {
                       Expanded(
                         flex: 3,
                         child: Text(
-                          (s['title'] ?? '').toString(),
+                          s.title,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: GoogleFonts.dmSans(
-                              fontSize: 13.sp,
-                              fontWeight: FontWeight.w600),
+                              fontSize: 13.sp, fontWeight: FontWeight.w600),
                         ),
                       ),
 
@@ -438,10 +425,9 @@ class _WideTable extends StatelessWidget {
                             borderRadius: BorderRadius.circular(20.r),
                           ),
                           child: Text(
-                            (s['storyType'] ?? '—').toString(),
+                            s.storyType,
                             style: GoogleFonts.dmSans(
-                                fontSize: 11.sp,
-                                color: Colors.grey[700]),
+                                fontSize: 11.sp, color: Colors.grey[700]),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -451,7 +437,7 @@ class _WideTable extends StatelessWidget {
                       SizedBox(
                         width: 100.w,
                         child: Text(
-                          '${s['estimatedReadTimeMinutes'] ?? 0} min',
+                          '${s.estimatedReadTimeMinutes} min',
                           style: GoogleFonts.dmSans(
                               fontSize: 12.sp, color: Colors.grey[600]),
                         ),
@@ -502,10 +488,10 @@ class _WideTable extends StatelessWidget {
 // ── Mobile list ───────────────────────────────────────────────────────────────
 
 class _MobileList extends StatelessWidget {
-  final List<dynamic> stories;
-  final void Function(Map<String, dynamic>) onView;
-  final void Function(Map<String, dynamic>) onEdit;
-  final void Function(Map<String, dynamic>) onDelete;
+  final List<Story> stories;
+  final void Function(Story) onView;
+  final void Function(Story) onEdit;
+  final void Function(Story) onDelete;
 
   const _MobileList({
     required this.stories,
@@ -520,11 +506,11 @@ class _MobileList extends StatelessWidget {
       itemCount: stories.length,
       separatorBuilder: (_, __) => SizedBox(height: 8.h),
       itemBuilder: (context, i) {
-        final s = stories[i] as Map<String, dynamic>;
-        final imageUrl = getFirstImageUrl(s['imageUrls']);
-        final title = (s['title'] ?? '').toString();
-        final type = (s['storyType'] ?? '').toString();
-        final readTime = s['estimatedReadTimeMinutes'] ?? 0;
+        final s = stories[i];
+        final imageUrl = s.imageUrls.isNotEmpty ? s.imageUrls.first : null;
+        final title = s.title;
+        final type = s.storyType;
+        final readTime = s.estimatedReadTimeMinutes;
 
         return Container(
           decoration: BoxDecoration(
@@ -561,8 +547,7 @@ class _MobileList extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.dmSans(
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w600)),
+                                fontSize: 13.sp, fontWeight: FontWeight.w600)),
                         SizedBox(height: 4.h),
                         Row(
                           children: [
@@ -572,8 +557,7 @@ class _MobileList extends StatelessWidget {
                                     horizontal: 7.w, vertical: 2.h),
                                 decoration: BoxDecoration(
                                   color: Colors.grey.shade100,
-                                  borderRadius:
-                                  BorderRadius.circular(20.r),
+                                  borderRadius: BorderRadius.circular(20.r),
                                 ),
                                 child: Text(type,
                                     style: GoogleFonts.dmSans(
@@ -584,8 +568,7 @@ class _MobileList extends StatelessWidget {
                             ],
                             Text('$readTime min read',
                                 style: GoogleFonts.dmSans(
-                                    fontSize: 11.sp,
-                                    color: Colors.grey[500])),
+                                    fontSize: 11.sp, color: Colors.grey[500])),
                           ],
                         ),
                       ],

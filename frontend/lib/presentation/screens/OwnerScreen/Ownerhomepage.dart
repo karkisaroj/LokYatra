@@ -6,12 +6,12 @@ import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/datasources/homestays_remote_datasource.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayAddPage.dart';
-import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayDetailPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayEditPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayListingsPage.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
 import '../../state_management/Bloc/homestays/HomestayState.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerHomestayDetailPage.dart';
 
 class OwnerHomePage extends StatefulWidget {
   const OwnerHomePage({super.key});
@@ -22,36 +22,32 @@ class OwnerHomePage extends StatefulWidget {
 
 class _OwnerHomePageState extends State<OwnerHomePage> {
   static const _brown = Color(0xFF5C4033);
-  static const _bg = Color(0xFFF5EFE9);
+  static const _bg    = Color(0xFFF5EFE9);
 
   @override
   void initState() {
     super.initState();
-    context.read<HomestayBloc>().add(const LoadMyHomestays());
+    context.read<HomestayBloc>().add(const OwnerLoadMyHomestays());
   }
 
   void _reload() {
-    if (mounted) context.read<HomestayBloc>().add(const LoadMyHomestays());
+    if (mounted) context.read<HomestayBloc>().add(const OwnerLoadMyHomestays());
   }
 
   void _goToDetail(Homestay h) =>
       Navigator.push(context,
-          MaterialPageRoute(builder: (_) => HomestayDetailPage(homestay: h)))
+          MaterialPageRoute(builder: (_) => OwnerHomestayDetailPage(homestay: h)))
           .then((_) => _reload());
 
   void _goToEdit(Homestay h) =>
       Navigator.push(context,
           MaterialPageRoute(builder: (_) => HomestayEditPage(homestay: h)))
-          .then((updated) {
-        if (updated == true) _reload();
-      });
+          .then((updated) { if (updated == true) _reload(); });
 
   void _goToAdd() =>
       Navigator.push(context,
           MaterialPageRoute(builder: (_) => const HomestayAddPage()))
-          .then((added) {
-        if (added == true) _reload();
-      });
+          .then((added) { if (added == true) _reload(); });
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +58,8 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Header ──────────────────────────────────────────────
+
+              // Header
               Padding(
                 padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
                 child: Row(
@@ -100,7 +97,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
 
               SizedBox(height: 16.h),
 
-              // ── Earnings Card ────────────────────────────────────────
+              // Earnings card
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: Container(
@@ -166,7 +163,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
 
               SizedBox(height: 16.h),
 
-              // ── Quick Actions ────────────────────────────────────────
+              // Quick actions
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: Row(
@@ -203,7 +200,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
 
               SizedBox(height: 24.h),
 
-              // ── My Homestays header ──────────────────────────────────
+              // My Homestays header
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: Row(
@@ -242,7 +239,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
 
               SizedBox(height: 12.h),
 
-              // ── Bloc-driven homestay list ────────────────────────────
+              // Homestay list from bloc
               BlocBuilder<HomestayBloc, HomestayState>(
                 builder: (context, state) {
                   if (state is HomestayLoading) {
@@ -277,7 +274,8 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                     );
                   }
 
-                  if (state is HomestaysLoaded) {
+                  // Correct state class — OwnerHomestaysLoaded (not the event)
+                  if (state is OwnerHomestaysLoaded) {
                     if (state.homestays.isEmpty) {
                       return Padding(
                         padding: EdgeInsets.all(24.h),
@@ -322,7 +320,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
                             child: TextButton(
                               onPressed: () {},
                               child: Text(
-                                'View all ${state.homestays.length} homestays →',
+                                'View all ${state.homestays.length} homestays',
                                 style: GoogleFonts.dmSans(
                                     fontSize: 13.sp, color: _brown),
                               ),
@@ -338,7 +336,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
 
               SizedBox(height: 20.h),
 
-              // ── Booking Requests ─────────────────────────────────────
+              // Booking requests section
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
                 child: Row(
@@ -410,8 +408,6 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
   }
 }
 
-// ── Quick Action Card ────────────────────────────────────────────────────────
-
 class _QuickActionCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -457,8 +453,6 @@ class _QuickActionCard extends StatelessWidget {
   }
 }
 
-// ── Homestay Row — StatefulWidget to handle optimistic toggle ────────────────
-
 class _HomestayRow extends StatefulWidget {
   final Homestay homestay;
   final VoidCallback onEdit;
@@ -489,7 +483,6 @@ class _HomestayRowState extends State<_HomestayRow> {
     _isVisible = widget.homestay.isVisible;
   }
 
-  // When parent rebuilds with new homestay data, sync local state
   @override
   void didUpdateWidget(_HomestayRow oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -502,10 +495,9 @@ class _HomestayRowState extends State<_HomestayRow> {
     if (_toggling) return;
     final newVal = !_isVisible;
 
-    // Optimistic update
     setState(() {
       _isVisible = newVal;
-      _toggling = true;
+      _toggling  = true;
     });
 
     try {
@@ -513,15 +505,15 @@ class _HomestayRowState extends State<_HomestayRow> {
           .toggleVisibility(widget.homestay.id, newVal);
 
       if (res.statusCode != 200 && res.statusCode != 204) {
-        // Revert on failure
         if (mounted) setState(() => _isVisible = !newVal);
         _snack('Failed to update visibility');
       } else {
         _snack(
-          newVal ? '${widget.homestay.name} is now Active' : '${widget.homestay.name} is now Inactive',
+          newVal
+              ? '${widget.homestay.name} is now Active'
+              : '${widget.homestay.name} is now Inactive',
           isError: false,
         );
-        // Tell parent to reload bloc so list stays in sync
         widget.onReload();
       }
     } catch (_) {
@@ -545,7 +537,7 @@ class _HomestayRowState extends State<_HomestayRow> {
 
   @override
   Widget build(BuildContext context) {
-    final h = widget.homestay;
+    final h          = widget.homestay;
     final firstImage = h.imageUrls.isNotEmpty ? h.imageUrls.first : null;
 
     return GestureDetector(
@@ -559,7 +551,6 @@ class _HomestayRowState extends State<_HomestayRow> {
         ),
         child: Row(
           children: [
-            // Thumbnail
             ClipRRect(
               borderRadius: BorderRadius.circular(10.r),
               child: firstImage != null
@@ -573,7 +564,8 @@ class _HomestayRowState extends State<_HomestayRow> {
                 width: 72.w,
                 height: 72.h,
                 color: const Color(0xFFF5EFE9),
-                child: Icon(Icons.home_outlined, size: 28.sp, color: _brown),
+                child: Icon(Icons.home_outlined,
+                    size: 28.sp, color: _brown),
               ),
             ),
             SizedBox(width: 12.w),
@@ -582,7 +574,6 @@ class _HomestayRowState extends State<_HomestayRow> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name + status pill
                   Row(
                     children: [
                       Expanded(
@@ -632,7 +623,6 @@ class _HomestayRowState extends State<_HomestayRow> {
                           fontSize: 11.sp, color: Colors.grey[500])),
                   SizedBox(height: 8.h),
 
-                  // Edit + Pause/Resume buttons
                   Row(
                     children: [
                       _ActionBtn(
@@ -653,7 +643,7 @@ class _HomestayRowState extends State<_HomestayRow> {
                             ? 'Pause'
                             : 'Resume',
                         onTap: _toggling ? () {} : _toggleVisibility,
-                        isActive: !_isVisible, // highlights Resume in brown
+                        isActive: !_isVisible,
                       ),
                     ],
                   ),
@@ -666,8 +656,6 @@ class _HomestayRowState extends State<_HomestayRow> {
     );
   }
 }
-
-// ── Action Button ────────────────────────────────────────────────────────────
 
 class _ActionBtn extends StatelessWidget {
   final IconData icon;
@@ -693,7 +681,9 @@ class _ActionBtn extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
         decoration: BoxDecoration(
           border: Border.all(
-            color: isActive ? _brown.withValues(alpha: 0.4) : Colors.grey.shade200,
+            color: isActive
+                ? _brown.withValues(alpha: 0.4)
+                : Colors.grey.shade200,
           ),
           borderRadius: BorderRadius.circular(20.r),
           color: isActive

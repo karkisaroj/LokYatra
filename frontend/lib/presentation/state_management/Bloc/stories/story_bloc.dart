@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import '../../../../data/datasources/Stories_remote_datasource.dart';
+import '../../../../data/models/Story.dart';
 import 'story_event.dart';
 import 'story_state.dart';
 
@@ -17,7 +18,8 @@ class StoryBloc extends Bloc<StoryEvent, StoryState> {
       final resp = await _remote.getStories(siteId: event.siteId);
       if (resp.statusCode == 200) {
         final data = resp.data as List<dynamic>;
-        emit(StoriesLoaded(data));
+        final stories = data.map((json) => Story.fromJson(json)).toList();
+        emit(StoriesLoaded(stories));
       } else {
         emit(StoryError('Failed to load stories: ${resp.statusCode}'));
       }

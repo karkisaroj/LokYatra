@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Bookings.dart';
-import 'package:lokyatra_frontend/presentation/screens/admin/Homestays.dart';
+import 'package:lokyatra_frontend/presentation/screens/admin/AdminHomestayPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Payments.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Quizzes.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Reports.dart';

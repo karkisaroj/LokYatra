@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:lokyatra_frontend/core/constants.dart';
 
-/// Converts a Cloudinary URL to a thumbnail using Cloudinary transformations.
-/// Instead of loading a full 4MB image, this serves a small cropped version.
-/// Use this for list views / thumbnails. For full-size images, use original URL.
+/// Converts Cloudinary URL to thumbnail
 String cloudinaryThumb(String url, {int w = 300, int h = 300}) {
   final idx = url.indexOf('/upload/');
-  if (idx == -1) return url; // not a cloudinary URL, return as-is
+  if (idx == -1) return url;
   final before = url.substring(0, idx + '/upload/'.length);
-  final after  = url.substring(idx + '/upload/'.length);
+  final after = url.substring(idx + '/upload/'.length);
   return '${before}c_fill,w_$w,h_$h,q_auto,f_auto/$after';
 }
 
-/// Routes image through your backend proxy.
-/// The emulator/phone can't reach Cloudinary directly,
-/// but it can reach your backend which fetches and forwards the image.
+/// Routes image through backend proxy
 String getProxyImageUrl(String originalUrl) {
   return '${apiBaseUrl}api/Sites/proxy-image?url=${Uri.encodeComponent(originalUrl)}';
 }
@@ -27,14 +23,12 @@ String? getFirstImageUrl(dynamic imageUrls) {
   return null;
 }
 
-/// Image widget that loads through your backend proxy.
-/// Pass [thumb: true] for list views to load a smaller Cloudinary thumbnail.
 class ProxyImage extends StatelessWidget {
   final String? imageUrl;
   final double width;
   final double height;
   final double borderRadiusValue;
-  final bool thumb; // if true, uses cloudinaryThumb for smaller payload
+  final bool thumb;
 
   const ProxyImage({
     super.key,
@@ -51,31 +45,48 @@ class ProxyImage extends StatelessWidget {
       return _placeholder();
     }
 
-    // If thumb mode, transform URL before proxying
+    // ✅ SAFETY FIX FOR INFINITY / NaN
+    final safeWidth =
+    (width.isInfinite || width.isNaN) ? MediaQuery.of(context).size.width : width;
+
+    final safeHeight =
+    (height.isInfinite || height.isNaN) ? 200.0 : height;
+
+    // ✅ Only convert to int AFTER safety check
     final urlToLoad = thumb
-        ? cloudinaryThumb(imageUrl!, w: width.toInt(), h: height.toInt())
+        ? cloudinaryThumb(
+      imageUrl!,
+      w: safeWidth.toInt(),
+      h: safeHeight.toInt(),
+    )
         : imageUrl!;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadiusValue),
       child: Image.network(
         getProxyImageUrl(urlToLoad),
-        width: width,
-        height: height,
+        width: safeWidth,
+        height: safeHeight,
         fit: BoxFit.cover,
         loadingBuilder: (context, child, progress) {
           if (progress == null) return child;
-          return _placeholder(loading: true);
+          return _placeholder(width: safeWidth, height: safeHeight, loading: true);
         },
-        errorBuilder: (_, __, ___) => _placeholder(broken: true),
+        errorBuilder: (_, __, ___) =>
+            _placeholder(width: safeWidth, height: safeHeight, broken: true),
       ),
     );
   }
 
-  Widget _placeholder({bool loading = false, bool broken = false}) {
+  Widget _placeholder({
+    double? width,
+    double? height,
+    bool loading = false,
+    bool broken = false,
+  }) {
     return Container(
-      width: width,
-      height: height,
+      width: width ?? this.width,
+      height: height ?? this.height,
       decoration: BoxDecoration(
         color: Colors.grey[200],
         borderRadius: BorderRadius.circular(borderRadiusValue),

@@ -1,3 +1,5 @@
+import '../../../../data/models/Story.dart';
+
 abstract class StoryState {}
 
 class StoryInitial extends StoryState {}
@@ -5,7 +7,7 @@ class StoryInitial extends StoryState {}
 class StoryLoading extends StoryState {}
 
 class StoriesLoaded extends StoryState {
-  final List<dynamic> stories; // each is Map<String, dynamic>
+  final List<Story> stories;
   StoriesLoaded(this.stories);
 }
 

@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
-import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayDetailPage.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerHomestayDetailPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayEditPage.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
@@ -24,15 +24,15 @@ class _HomestayListingsPageState extends State<HomestayListingsPage> {
   @override
   void initState() {
     super.initState();
-    context.read<HomestayBloc>().add(const LoadMyHomestays());
+    context.read<HomestayBloc>().add(const OwnerLoadMyHomestays());
   }
 
   void _reload() {
-    if (mounted) context.read<HomestayBloc>().add(const LoadMyHomestays());
+    if (mounted) context.read<HomestayBloc>().add(const OwnerLoadMyHomestays());
   }
 
   void _goToDetail(Homestay h) =>
-      Navigator.push(context, MaterialPageRoute(builder: (_) => HomestayDetailPage(homestay: h)))
+      Navigator.push(context, MaterialPageRoute(builder: (_) => OwnerHomestayDetailPage(homestay: h)))
           .then((_) => _reload());
 
   void _goToEdit(Homestay h) =>
@@ -84,7 +84,7 @@ class _HomestayListingsPageState extends State<HomestayListingsPage> {
             );
           }
 
-          if (state is HomestaysLoaded) {
+          if (state is OwnerHomestaysLoaded) {
             if (state.homestays.isEmpty) {
               return Center(
                 child: Column(

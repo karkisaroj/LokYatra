@@ -11,6 +11,7 @@ import 'SiteEditDialog.dart';
 
 class Sites extends StatefulWidget {
   const Sites({super.key});
+
   @override
   State<Sites> createState() => _SitesState();
 }
@@ -31,61 +32,146 @@ class _SitesState extends State<Sites> {
     super.dispose();
   }
 
-  // ─── Actions ───
-
+  // Method to add a new site
   Future<void> _addSite() async {
-    final result = await showDialog<bool>(
+    await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const SiteAddDialog(),
+      builder: (dialogContext) {
+        return BlocProvider.value(
+          value: context.read<SitesBloc>(),
+          child: BlocListener<SitesBloc, SitesState>(
+            listener: (ctx, state) {
+              if (state is SiteCreateSuccess) {
+                Navigator.of(ctx).pop(true);
+
+                // Use the context from the listener
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(
+                    content: Text('Site added successfully'),
+                    backgroundColor: Colors.green,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+
+                // Refresh the sites list
+                ctx.read<SitesBloc>().add(LoadSites());
+              }
+              if (state is SitesError) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  SnackBar(
+                    content: Text('Error: ${state.message}'),
+                    backgroundColor: Colors.red,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            child: const SiteAddDialog(),
+          ),
+        );
+      },
     );
-    if (result == true) {
-      context.read<SitesBloc>().add(LoadSites());
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Site added')));
-    }
   }
 
+  // Method to edit a site
   Future<void> _editSite(Map<String, dynamic> site) async {
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => SiteEditDialog(site: site),
+      builder: (dialogContext) => BlocProvider.value(
+        value: context.read<SitesBloc>(),
+        child: SiteEditDialog(site: site),
+      ),
     );
-    if (result == true) {
+
+    if (result == true && mounted) {
       context.read<SitesBloc>().add(LoadSites());
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Site updated')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Site updated successfully'),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
+  // Method to delete a site
   Future<void> _deleteSite(int id) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
         title: const Text('Delete Site'),
-        content: const Text('Are you sure you want to delete this site?'),
+        content: const Text('Are you sure you want to delete this site? This action cannot be undone.'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
         ],
       ),
     );
 
     if (confirmed != true) return;
 
+    // Show loading indicator
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Deleting site...'),
+          duration: Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+
     try {
       final response = await SitesRemoteDatasource().deleteSite(id);
+
+      if (!mounted) return;
+
       if (response.statusCode == 200 || response.statusCode == 204) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Deleted')));
-        context.read<SitesBloc>().add(LoadSites());
+        // Force refresh from API instead of relying on cache
+        context.read<SitesBloc>().add(const RefreshSites());
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Site deleted successfully'),
+            backgroundColor: Colors.green,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Delete failed: ${response.statusCode}')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Delete failed: ${response.statusCode}'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       }
     } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Network error: $error')));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Network error: $error'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
-
-  // ─── Build ───
 
   @override
   Widget build(BuildContext context) {
@@ -104,7 +190,7 @@ class _SitesState extends State<Sites> {
                     controller: _searchController,
                     decoration: const InputDecoration(
                       prefixIcon: Icon(Icons.search),
-                      hintText: 'Search sites...',
+                      hintText: 'Search by name, category, or district...',
                       border: OutlineInputBorder(),
                     ),
                     onChanged: (value) {
@@ -119,6 +205,10 @@ class _SitesState extends State<Sites> {
                   onPressed: _addSite,
                   icon: const Icon(Icons.add),
                   label: const Text('Add Site'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFCD6E4E),
+                    foregroundColor: Colors.white,
+                  ),
                 ),
               ],
             ),
@@ -127,13 +217,44 @@ class _SitesState extends State<Sites> {
             // Sites list
             Expanded(
               child: BlocBuilder<SitesBloc, SitesState>(
+                buildWhen: (previous, current) {
+                  // Always rebuild when state changes to ensure UI updates immediately
+                  return true;
+                },
                 builder: (context, state) {
                   if (state is SitesLoading) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text('Loading sites...'),
+                        ],
+                      ),
+                    );
                   }
+
                   if (state is SitesError) {
-                    return Center(child: Text(state.message));
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                          const SizedBox(height: 16),
+                          Text('Error: ${state.message}'),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              context.read<SitesBloc>().add(LoadSites());
+                            },
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    );
                   }
+
                   if (state is SitesLoaded) {
                     // Filter sites by search query
                     var sites = state.sites;
@@ -149,7 +270,37 @@ class _SitesState extends State<Sites> {
                     }
 
                     if (sites.isEmpty) {
-                      return const Center(child: Text('No sites'));
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              _searchQuery.isEmpty ? Icons.location_off : Icons.search_off,
+                              size: 48,
+                              color: Colors.grey[400],
+                            ),
+                            const SizedBox(height: 16),
+                            Text(
+                              _searchQuery.isEmpty
+                                  ? 'No sites available'
+                                  : 'No sites match your search',
+                              style: const TextStyle(fontSize: 16, color: Colors.grey),
+                            ),
+                            if (_searchQuery.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              TextButton(
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {
+                                    _searchQuery = '';
+                                  });
+                                },
+                                child: const Text('Clear search'),
+                              ),
+                            ],
+                          ],
+                        ),
+                      );
                     }
 
                     if (isWideScreen) {
@@ -157,6 +308,7 @@ class _SitesState extends State<Sites> {
                     }
                     return _buildMobileList(sites);
                   }
+
                   return const SizedBox.shrink();
                 },
               ),
@@ -167,8 +319,7 @@ class _SitesState extends State<Sites> {
     );
   }
 
-  // ─── Wide screen table ───
-
+  // Wide screen table view
   Widget _buildWideTable(List<dynamic> sites) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -185,23 +336,77 @@ class _SitesState extends State<Sites> {
         ],
         rows: sites.map<DataRow>((site) {
           String? imageUrl = getFirstImageUrl(site['imageUrls']);
+          int siteId = site['id'] as int? ?? 0;
 
           return DataRow(cells: [
             DataCell(
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8),
-                child: ProxyImage(imageUrl: imageUrl, width: 64, height: 64),
+                child: ProxyImage(
+                  imageUrl: imageUrl,
+                  width: 64,
+                  height: 64,
+                  borderRadiusValue: 8,
+                ),
               ),
             ),
-            DataCell(SizedBox(width: 240, child: Text((site['name'] ?? '').toString(), maxLines: 1, overflow: TextOverflow.ellipsis))),
-            DataCell(SizedBox(width: 160, child: Text((site['category'] ?? '').toString(), maxLines: 1, overflow: TextOverflow.ellipsis))),
-            DataCell(SizedBox(width: 160, child: Text((site['district'] ?? '').toString(), maxLines: 1, overflow: TextOverflow.ellipsis))),
             DataCell(
-              Row(children: [
-                IconButton(tooltip: 'View', icon: const Icon(Icons.remove_red_eye), onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site)))),
-                IconButton(tooltip: 'Edit', icon: const Icon(Icons.edit), onPressed: () => _editSite(site)),
-                IconButton(tooltip: 'Delete', icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteSite(site['id'] as int)),
-              ]),
+              SizedBox(
+                width: 240,
+                child: Text(
+                  (site['name'] ?? '').toString(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ),
+            ),
+            DataCell(
+              SizedBox(
+                width: 160,
+                child: Text(
+                  (site['category'] ?? '').toString(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            DataCell(
+              SizedBox(
+                width: 160,
+                child: Text(
+                  (site['district'] ?? '').toString(),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            DataCell(
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    tooltip: 'View',
+                    icon: const Icon(Icons.remove_red_eye, color: Color(0xFF3D5A80)),
+                    onPressed: () {
+                      Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))
+                      );
+                    },
+                  ),
+                  IconButton(
+                    tooltip: 'Edit',
+                    icon: const Icon(Icons.edit, color: Color(0xFF3D5A80)),
+                    onPressed: () => _editSite(site),
+                  ),
+                  IconButton(
+                    tooltip: 'Delete',
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => _deleteSite(siteId),
+                  ),
+                ],
+              ),
             ),
           ]);
         }).toList(),
@@ -209,8 +414,7 @@ class _SitesState extends State<Sites> {
     );
   }
 
-  // ─── Mobile list ───
-
+  // Mobile list view
   Widget _buildMobileList(List<dynamic> sites) {
     return ListView.separated(
       itemCount: sites.length,
@@ -218,24 +422,41 @@ class _SitesState extends State<Sites> {
       itemBuilder: (context, index) {
         Map<String, dynamic> site = sites[index] as Map<String, dynamic>;
         String? imageUrl = getFirstImageUrl(site['imageUrls']);
+        int siteId = site['id'] as int? ?? 0;
 
         String name = (site['name'] ?? '').toString();
-        String subtitle = [site['category'], site['district']]
-            .where((value) => (value ?? '').toString().isNotEmpty)
+        String category = (site['category'] ?? '').toString();
+        String district = (site['district'] ?? '').toString();
+
+        String subtitle = [category, district]
+            .where((value) => value.isNotEmpty)
             .join(' • ');
 
         return Card(
-          elevation: 0.5,
+          elevation: 1,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: InkWell(
             borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))),
+            onTap: () {
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))
+              );
+            },
             child: Padding(
               padding: const EdgeInsets.all(10),
               child: Row(
                 children: [
                   // Image
-                  ProxyImage(imageUrl: imageUrl, width: 60, height: 60),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: ProxyImage(
+                      imageUrl: imageUrl,
+                      width: 60,
+                      height: 60,
+                      borderRadiusValue: 8,
+                    ),
+                  ),
                   const SizedBox(width: 12),
 
                   // Name and category
@@ -243,16 +464,45 @@ class _SitesState extends State<Sites> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                        Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600
+                          ),
+                        ),
                         const SizedBox(height: 4),
-                        Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+                        Text(
+                          subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.grey[600]
+                          ),
+                        ),
                       ],
                     ),
                   ),
 
-                  // Edit and Delete buttons
-                  IconButton(tooltip: 'Edit', icon: const Icon(Icons.edit, size: 20), onPressed: () => _editSite(site)),
-                  IconButton(tooltip: 'Delete', icon: const Icon(Icons.delete, color: Colors.red, size: 20), onPressed: () => _deleteSite(site['id'] as int)),
+                  // Action buttons
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: 'Edit',
+                        icon: const Icon(Icons.edit, size: 20, color: Color(0xFF3D5A80)),
+                        onPressed: () => _editSite(site),
+                      ),
+                      IconButton(
+                        tooltip: 'Delete',
+                        icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                        onPressed: () => _deleteSite(siteId),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
