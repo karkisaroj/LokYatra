@@ -18,15 +18,25 @@ class HomestaysRemoteDatasource {
     return Options(headers: {'Authorization': 'Bearer $token'});
   }
 
+  // Public: sends token if available so admin sees ALL homestays,
+  // tourists/unauthenticated only see visible ones.
+  // The backend checks IsInRole("admin") — if token present and role = admin,
+  // it skips the isVisible filter.
   Future<Response> getAllHomestays() async {
-    return _dio.get('api/Homestays');
+    final token = await SecureStorageService.getAccessToken();
+    final options = token != null
+        ? Options(headers: {'Authorization': 'Bearer $token'})
+        : Options();
+    return _dio.get('api/Homestays', options: options);
   }
 
+  // Owner: only owner's own homestays
   Future<Response> getMyHomestays() async {
     return _dio.get('api/Homestays/my-homestays',
         options: await _authOptions());
   }
 
+  // Owner: create homestay
   Future<Response> createHomestay({
     required Map<String, dynamic> fields,
     required List<PlatformFile> files,
@@ -47,6 +57,7 @@ class HomestaysRemoteDatasource {
         data: formData, options: await _authOptions());
   }
 
+  // Owner: update homestay
   Future<Response> updateHomestay({
     required int id,
     required Map<String, dynamic> fields,
@@ -68,18 +79,17 @@ class HomestaysRemoteDatasource {
         data: formData, options: await _authOptions());
   }
 
-  Future<Response> deleteHomestay(int id) async {
-    return _dio.delete(
-      'api/Homestays/$id',
-      options: await _authOptions(),
-    );
-  }
-
+  // Owner/Admin: toggle visibility
   Future<Response> toggleVisibility(int id, bool isVisible) async {
     return _dio.patch(
       'api/Homestays/$id/toggle-visibility',
       data: {'isVisible': isVisible},
       options: await _authOptions(),
     );
+  }
+
+  // Admin: delete homestay
+  Future<Response> deleteHomestay(int id) async {
+    return _dio.delete('api/Homestays/$id', options: await _authOptions());
   }
 }

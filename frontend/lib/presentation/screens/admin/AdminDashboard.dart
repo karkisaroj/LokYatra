@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Bookings.dart';
-import 'package:lokyatra_frontend/presentation/screens/admin/AdminHomestayPage.dart';
+import 'package:lokyatra_frontend/presentation/screens/admin/Adminhomestaydetailpage.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Payments.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Quizzes.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Reports.dart';
@@ -11,6 +11,8 @@ import 'package:lokyatra_frontend/presentation/screens/admin/Stories.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/UserManagementPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/dashboard.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/AdminPageWrapper.dart';
+
+import 'Adminhomestays.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
