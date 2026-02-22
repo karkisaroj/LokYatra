@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristProfilePage.dart';
-import '../../../data/models/TouristSite.dart';
+import '../../../data/models/Site.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
 import '../../state_management/Bloc/homestays/HomestayState.dart';
@@ -111,23 +111,28 @@ class _HomeTab extends StatefulWidget {
   State<_HomeTab> createState() => _HomeTabState();
 }
 
-class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
+class _HomeTabState extends State<_HomeTab> {
   static const _dark = Color(0xFF2D1B10);
   final _searchController = TextEditingController();
-
-  @override
-  bool get wantKeepAlive => true; // Keep the state alive
 
   @override
   void initState() {
     super.initState();
     context.read<SitesBloc>().add(LoadSites());
+    // Don't load homestays here anymore - they're loaded when tab is selected
+    // This prevents double loading
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // This runs when dependencies change, but we need something else
+    // Load homestays when tab becomes visible
+    // This ensures they load if coming from another tab
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
+      }
+    });
   }
 
   @override
@@ -138,8 +143,6 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
 
   @override
   Widget build(BuildContext context) {
-    super.build(context); // Required for AutomaticKeepAliveClientMixin
-
     return SafeArea(
       child: CustomScrollView(
         slivers: [
@@ -228,18 +231,11 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                                   builder: (_) => BlocProvider.value(
                                     value: context.read<HomestayBloc>(),
                                     child: TouristSiteDetailPage(
-                                      site: TouristSite.fromJson(site),
+                                      site: CulturalSite.fromJson(site),
                                     ),
                                   ),
                                 ),
-                              ).then((_) {
-                                // When returning from site detail, reload homestays
-                                if (mounted) {
-                                  debugPrint('🏠 Returning from site detail - reloading homestays');
-                                  context.read<HomestayBloc>().add(const ResetHomestayState());
-                                  context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
-                                }
-                              }),
+                              ),
                             );
                           },
                         ),
@@ -266,7 +262,6 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                       child: const Center(child: CircularProgressIndicator()));
                 }
                 if (state is TouristAllHomestaysLoaded) {
-                  debugPrint('🏠 Home showing ${state.homestays.length} homestays');
                   final visible = state.homestays.where((h) => h.isVisible).take(5).toList();
                   if (visible.isEmpty) {
                     return Padding(
@@ -284,13 +279,7 @@ class _HomeTabState extends State<_HomeTab> with AutomaticKeepAliveClientMixin {
                           MaterialPageRoute(
                               builder: (_) =>
                                   TouristHomestayDetailPage(homestay: h.toJson())),
-                        ).then((_) {
-                          // When returning from homestay detail, reload homestays
-                          if (mounted) {
-                            debugPrint('🏠 Returning from homestay detail - reloading homestays');
-                            context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
-                          }
-                        }),
+                        ),
                       );
                     }).toList(),
                   );

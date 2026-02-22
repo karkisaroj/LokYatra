@@ -1,355 +1,398 @@
+import 'dart:io';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:lokyatra_frontend/data/datasources/sites_remote_datasource.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_state.dart';
 
-class SiteEditDialog extends StatefulWidget {
+class SiteEditPage extends StatefulWidget {
   final Map<String, dynamic> site;
-  const SiteEditDialog({super.key, required this.site});
+  const SiteEditPage({super.key, required this.site});
 
   @override
-  State<SiteEditDialog> createState() => _SiteEditDialogState();
+  State<SiteEditPage> createState() => _SiteEditPageState();
 }
 
-class _SiteEditDialogState extends State<SiteEditDialog> {
+class _SiteEditPageState extends State<SiteEditPage> {
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
 
-  // Text controllers - initialized with existing site data
-  late final _nameController = TextEditingController(text: (widget.site['name'] ?? '').toString());
-  late final _categoryController = TextEditingController(text: (widget.site['category'] ?? '').toString());
-  late final _districtController = TextEditingController(text: (widget.site['district'] ?? '').toString());
-  late final _addressController = TextEditingController(text: (widget.site['address'] ?? '').toString());
-  late final _shortDescController = TextEditingController(text: (widget.site['shortDescription'] ?? '').toString());
-  late final _historicalController = TextEditingController(text: (widget.site['historicalSignificance'] ?? '').toString());
-  late final _culturalController = TextEditingController(text: (widget.site['culturalImportance'] ?? '').toString());
-  late final _feeNprController = TextEditingController(text: (widget.site['entryFeeNPR'] ?? '').toString());
-  late final _feeSaarcController = TextEditingController(text: (widget.site['entryFeeSAARC'] ?? '').toString());
-  late final _openTimeController = TextEditingController(text: (widget.site['openingTime'] ?? '').toString());
-  late final _closeTimeController = TextEditingController(text: (widget.site['closingTime'] ?? '').toString());
-  late final _bestTimeController = TextEditingController(text: (widget.site['bestTimeToVisit'] ?? '').toString());
-  late bool _isUnesco = (widget.site['isUNESCO'] ?? false) == true;
+  late final TextEditingController _name;
+  late final TextEditingController _category;
+  late final TextEditingController _district;
+  late final TextEditingController _address;
+  late final TextEditingController _short;
+  late final TextEditingController _historical;
+  late final TextEditingController _cultural;
+  late final TextEditingController _feeNpr;
+  late final TextEditingController _feeSaarc;
+  late final TextEditingController _openTime;
+  late final TextEditingController _closeTime;
+  late final TextEditingController _bestTime;
+  late bool _isUnesco;
 
-  // Images
-  List<PlatformFile> _newFiles = [];
-  late List<String> _existingImageUrls = _getExistingImageUrls();
+  List<PlatformFile> _newImages = [];
+  List<String> _existingImages = [];
+  static const _brown = Color(0xFF5C4033);
 
-  /// Gets the existing image URLs from site data using a simple loop
-  List<String> _getExistingImageUrls() {
-    List<String> urls = [];
-    if (widget.site['imageUrls'] != null && widget.site['imageUrls'] is List) {
-      for (var url in widget.site['imageUrls']) {
-        if (url != null && url.toString().isNotEmpty) {
-          urls.add(url.toString());
-        }
-      }
+  @override
+  void initState() {
+    super.initState();
+    final s = widget.site;
+    _name = TextEditingController(text: s['name']?.toString() ?? '');
+    _category = TextEditingController(text: s['category']?.toString() ?? '');
+    _district = TextEditingController(text: s['district']?.toString() ?? '');
+    _address = TextEditingController(text: s['address']?.toString() ?? '');
+    _short = TextEditingController(text: s['shortDescription']?.toString() ?? '');
+    _historical = TextEditingController(text: s['historicalSignificance']?.toString() ?? '');
+    _cultural = TextEditingController(text: s['culturalImportance']?.toString() ?? '');
+    _feeNpr = TextEditingController(text: s['entryFeeNPR']?.toString() ?? '');
+    _feeSaarc = TextEditingController(text: s['entryFeeSAARC']?.toString() ?? '');
+    _openTime = TextEditingController(text: s['openingTime']?.toString() ?? '');
+    _closeTime = TextEditingController(text: s['closingTime']?.toString() ?? '');
+    _bestTime = TextEditingController(text: s['bestTimeToVisit']?.toString() ?? '');
+    _isUnesco = s['isUNESCO'] == true;
+
+    if (s['imageUrls'] is List) {
+      _existingImages = (s['imageUrls'] as List).map((e) => e.toString()).toList();
     }
-    return urls;
   }
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _categoryController.dispose();
-    _districtController.dispose();
-    _addressController.dispose();
-    _shortDescController.dispose();
-    _historicalController.dispose();
-    _culturalController.dispose();
-    _feeNprController.dispose();
-    _feeSaarcController.dispose();
-    _openTimeController.dispose();
-    _closeTimeController.dispose();
-    _bestTimeController.dispose();
+    _name.dispose(); _category.dispose(); _district.dispose(); _address.dispose();
+    _short.dispose(); _historical.dispose(); _cultural.dispose();
+    _feeNpr.dispose(); _feeSaarc.dispose(); _openTime.dispose();
+    _closeTime.dispose(); _bestTime.dispose();
     super.dispose();
   }
 
-  // ─── Pick files ───
-
-  Future<void> _pickFiles() async {
-    final result = await FilePicker.platform.pickFiles(
+  Future<void> _pickImages() async {
+    final res = await FilePicker.platform.pickFiles(
       allowMultiple: true,
       withData: true,
       type: FileType.custom,
       allowedExtensions: ['png', 'jpg', 'jpeg', 'webp'],
     );
-    if (result != null) {
+    if (res != null) {
       setState(() {
-        _newFiles.addAll(result.files.take(5));
+        _newImages.addAll(res.files);
+        if (_newImages.length > 5) {
+          _newImages = _newImages.take(5).toList();
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Maximum 5 new images allowed')),
+          );
+        }
       });
     }
   }
 
-  // ─── Pick time ───
+  void _removeNewImage(int index) => setState(() => _newImages.removeAt(index));
+  void _removeExistingImage(int index) => setState(() => _existingImages.removeAt(index));
 
-  Future<void> _pickTime(TextEditingController controller) async {
-    final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-    if (time != null) {
-      String hours = time.hour.toString().padLeft(2, '0');
-      String minutes = time.minute.toString().padLeft(2, '0');
-      controller.text = '$hours:$minutes';
+  Future<void> _pickTime(TextEditingController c) async {
+    final t = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    if (t != null) {
+      c.text = '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
     }
   }
 
-  // ─── Submit ───
-
-  Future<void> _submit() async {
+  void _submit() {
     if (!_formKey.currentState!.validate()) return;
 
-    // Get original image count
-    int originalImageCount = 0;
-    if (widget.site['imageUrls'] != null && widget.site['imageUrls'] is List) {
-      originalImageCount = (widget.site['imageUrls'] as List).length;
-    }
-
-    // If user removed images but didn't add new ones, warn them
-    if (_newFiles.isEmpty && _existingImageUrls.length != originalImageCount) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('To apply image removals, please upload at least one new image.')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    Map<String, dynamic> fields = {
-      'Name': _nameController.text.trim(),
-      'Category': _categoryController.text.trim(),
-      'District': _districtController.text.trim(),
-      'Address': _addressController.text.trim(),
-      'ShortDescription': _shortDescController.text.trim(),
-      'HistoricalSignificance': _historicalController.text.trim().isEmpty ? null : _historicalController.text.trim(),
-      'CulturalImportance': _culturalController.text.trim().isEmpty ? null : _culturalController.text.trim(),
-      'EntryFeeNPR': _feeNprController.text.trim().isEmpty ? null : _feeNprController.text.trim(),
-      'EntryFeeSAARC': _feeSaarcController.text.trim().isEmpty ? null : _feeSaarcController.text.trim(),
-      'OpeningTime': _openTimeController.text.trim().isEmpty ? null : _openTimeController.text.trim(),
-      'ClosingTime': _closeTimeController.text.trim().isEmpty ? null : _closeTimeController.text.trim(),
-      'BestTimeToVisit': _bestTimeController.text.trim().isEmpty ? null : _bestTimeController.text.trim(),
+    final fields = {
+      'Name': _name.text.trim(),
+      'Category': _category.text.trim(),
+      'District': _district.text.trim(),
+      'Address': _address.text.trim(),
+      'ShortDescription': _short.text.trim(),
+      'HistoricalSignificance': _historical.text.trim().isEmpty ? null : _historical.text.trim(),
+      'CulturalImportance': _cultural.text.trim().isEmpty ? null : _cultural.text.trim(),
+      'EntryFeeNPR': double.tryParse(_feeNpr.text.trim()),
+      'EntryFeeSAARC': double.tryParse(_feeSaarc.text.trim()),
+      'OpeningTime': _openTime.text.trim().isEmpty ? null : _openTime.text.trim(),
+      'ClosingTime': _closeTime.text.trim().isEmpty ? null : _closeTime.text.trim(),
+      'BestTimeToVisit': _bestTime.text.trim().isEmpty ? null : _bestTime.text.trim(),
       'IsUNESCO': _isUnesco,
+      // We might need to handle existing images if the backend supports partial updates or expects the full list of URLs to keep.
+      // Assuming the backend handles "files" as NEW images and doesn't delete existing unless specified.
+      // If the backend replaces all images, we need a way to tell it which existing ones to keep.
+      // For now, let's assume standard behavior: new files are added.
+      // If we need to delete specific images, that's usually a separate API or a field 'imagesToDelete'.
+      // Based on the user's provided code, it seems they just send fields and files.
+      // The user's code had logic: "If user removed images but didn't add new ones, warn them".
+      // This implies the backend might REPLACE images if new ones are sent, or maybe it doesn't support deleting individual images yet?
+      // Let's stick to the provided pattern: update fields and send new files.
     };
+    fields.removeWhere((key, value) => value == null);
 
-    try {
-      final response = await SitesRemoteDatasource().updateSite(
-        id: widget.site['id'] as int,
-        fields: fields,
-        files: _newFiles,
-      );
-
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
-
-      if (response.statusCode == 200) {
-        if (mounted) Navigator.pop(context, true);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Update failed: ${response.statusCode}')),
-          );
-        }
-      }
-    } catch (error) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Network error: $error')),
-        );
-      }
-    }
+    context.read<SitesBloc>().add(UpdateSite(
+      id: widget.site['id'] as int,
+      fields: fields,
+      files: _newImages,
+    ));
   }
-
-  // ─── Build ───
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double dialogWidth = screenWidth > 1000 ? 1000.0 : screenWidth * 0.95;
+    return BlocListener<SitesBloc, SitesState>(
+      listener: (context, state) {
+        if (state is SiteCreateSuccess) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Site updated successfully'), backgroundColor: Colors.green),
+          );
+          Navigator.pop(context, true);
+        } else if (state is SitesError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message), backgroundColor: Colors.red),
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Edit Cultural Site', style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+        ),
+        body: Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 800),
+            child: BlocBuilder<SitesBloc, SitesState>(
+              builder: (context, state) {
+                final loading = state is SitesLoading;
+                return SingleChildScrollView(
+                  padding: EdgeInsets.all(16.w),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildSection('Basic Info', Icons.info_outline, [
+                          _buildTextField(_name, 'Site Name', required: true),
+                          Row(children: [
+                            Expanded(child: _buildTextField(_category, 'Category', required: true)),
+                            SizedBox(width: 12.w),
+                            Expanded(child: _buildTextField(_district, 'District', required: true)),
+                          ]),
+                          _buildTextField(_address, 'Address', required: true),
+                          _buildTextField(_short, 'Short Description', lines: 3, required: true),
+                        ]),
 
-    return AlertDialog(
-      title: Row(
-        children: [
-          const Expanded(child: Text('Edit Site', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
-          IconButton(onPressed: () => Navigator.pop(context, false), icon: const Icon(Icons.close)),
-        ],
-      ),
-      content: SizedBox(
-        width: dialogWidth,
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Name and Category
-                Row(children: [
-                  _buildTextField(_nameController, 'Name *', required: true),
-                  const SizedBox(width: 12),
-                  _buildTextField(_categoryController, 'Category *', required: true),
-                ]),
-                const SizedBox(height: 8),
+                        _buildSection('Details', Icons.description_outlined, [
+                          _buildTextField(_historical, 'Historical Significance', lines: 3),
+                          _buildTextField(_cultural, 'Cultural Importance', lines: 3),
+                        ]),
 
-                // District and Address
-                Row(children: [
-                  _buildTextField(_districtController, 'District *', required: true),
-                  const SizedBox(width: 12),
-                  _buildTextField(_addressController, 'Address *', required: true),
-                ]),
-                const SizedBox(height: 8),
+                        _buildSection('Fees & Times', Icons.attach_money, [
+                          Row(children: [
+                            Expanded(child: _buildTextField(_feeNpr, 'Fee (NPR)', isNumber: true)),
+                            SizedBox(width: 12.w),
+                            Expanded(child: _buildTextField(_feeSaarc, 'Fee (SAARC)', isNumber: true)),
+                          ]),
+                          SizedBox(height: 12.h),
+                          Row(children: [
+                            Expanded(child: _buildTimeField(_openTime, 'Opening Time')),
+                            SizedBox(width: 12.w),
+                            Expanded(child: _buildTimeField(_closeTime, 'Closing Time')),
+                          ]),
+                          SizedBox(height: 12.h),
+                          _buildTextField(_bestTime, 'Best Time to Visit'),
+                        ]),
 
-                // Short Description
-                _buildTextArea(_shortDescController, 'Short Description *', maxLength: 500, required: true),
-                const SizedBox(height: 12),
+                        _buildSection('Settings', Icons.settings_outlined, [
+                          SwitchListTile(
+                            title: Text('UNESCO Site', style: GoogleFonts.dmSans()),
+                            value: _isUnesco,
+                            onChanged: (val) => setState(() => _isUnesco = val),
+                            activeColor: _brown,
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                        ]),
 
-                // Historical Significance
-                _buildTextArea(_historicalController, 'Historical Significance', maxLength: 500),
-                const SizedBox(height: 8),
+                        _buildSection('Images', Icons.image_outlined, [
+                          if (_existingImages.isNotEmpty) ...[
+                            Text('Existing Images', style: GoogleFonts.dmSans(fontSize: 14.sp, fontWeight: FontWeight.bold)),
+                            SizedBox(height: 8.h),
+                            Wrap(
+                              spacing: 12.w,
+                              runSpacing: 12.h,
+                              children: _existingImages.asMap().entries.map((e) => _buildExistingImageChip(e.key, e.value)).toList(),
+                            ),
+                            SizedBox(height: 16.h),
+                          ],
 
-                // Cultural Importance
-                _buildTextArea(_culturalController, 'Cultural Importance', maxLength: 500),
-                const SizedBox(height: 12),
+                          ElevatedButton.icon(
+                            onPressed: loading ? null : _pickImages,
+                            icon: const Icon(Icons.add_photo_alternate),
+                            label: const Text('Add New Images'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _brown,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
+                          SizedBox(height: 12.h),
+                          if (_newImages.isNotEmpty)
+                            Wrap(
+                              spacing: 12.w,
+                              runSpacing: 12.h,
+                              children: _newImages.asMap().entries.map((e) => _buildNewImageChip(e.key, e.value)).toList(),
+                            ),
+                        ]),
 
-                // Fees
-                Row(children: [
-                  _buildNumberField(_feeNprController, 'Entry Fee (NPR)'),
-                  const SizedBox(width: 12),
-                  _buildNumberField(_feeSaarcController, 'Entry Fee SAARC'),
-                ]),
-                const SizedBox(height: 8),
-
-                // Times
-                Row(children: [
-                  _buildTimeField(_openTimeController, 'Opening (HH:mm)'),
-                  const SizedBox(width: 12),
-                  _buildTimeField(_closeTimeController, 'Closing (HH:mm)'),
-                ]),
-                const SizedBox(height: 8),
-
-                // Best time + UNESCO
-                Row(children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _bestTimeController,
-                      decoration: const InputDecoration(labelText: 'Best Time to Visit', border: OutlineInputBorder()),
+                        SizedBox(height: 24.h),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 50.h,
+                          child: ElevatedButton(
+                            onPressed: loading ? null : _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _brown,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                            ),
+                            child: loading
+                                ? const SizedBox(width: 24, height: 24, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                                : Text('Update Site', style: GoogleFonts.dmSans(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+                          ),
+                        ),
+                        SizedBox(height: 24.h),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Row(children: [
-                    const Text('UNESCO'),
-                    Switch.adaptive(value: _isUnesco, onChanged: (value) => setState(() => _isUnesco = value)),
-                  ]),
-                ]),
-                const SizedBox(height: 12),
-
-                // Existing images
-                const Text('Existing Images (remove if needed)'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: _existingImageUrls.map((url) {
-                    return Chip(
-                      label: SizedBox(width: 160, child: Text(url, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                      onDeleted: () => setState(() => _existingImageUrls.remove(url)),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 12),
-
-                // New images
-                const Text('Upload New Images (replaces existing)'),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    ElevatedButton.icon(
-                      onPressed: _isLoading ? null : _pickFiles,
-                      icon: const Icon(Icons.upload),
-                      label: const Text('Choose Files'),
-                    ),
-                    ..._newFiles.map((file) => Chip(label: Text(file.name))),
-                  ],
-                ),
-              ],
+                );
+              },
             ),
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+    );
+  }
+
+  Widget _buildSection(String title, IconData icon, List<Widget> children) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 16.h),
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(icon, size: 20.sp, color: _brown),
+            SizedBox(width: 8.w),
+            Text(title, style: GoogleFonts.dmSans(fontSize: 16.sp, fontWeight: FontWeight.bold)),
+          ]),
+          SizedBox(height: 16.h),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField(TextEditingController ctrl, String label, {int lines = 1, bool isNumber = false, bool required = false}) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: TextFormField(
+        controller: ctrl,
+        maxLines: lines,
+        keyboardType: isNumber ? const TextInputType.numberWithOptions(decimal: true) : null,
+        style: GoogleFonts.dmSans(fontSize: 14.sp),
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
         ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _submit,
-          child: _isLoading
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Text('Save Changes'),
+        validator: required ? (v) => (v == null || v.trim().isEmpty) ? '$label is required' : null : null,
+      ),
+    );
+  }
+
+  Widget _buildTimeField(TextEditingController ctrl, String label) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: TextFormField(
+        controller: ctrl,
+        readOnly: true,
+        onTap: () => _pickTime(ctrl),
+        decoration: InputDecoration(
+          labelText: label,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8.r)),
+          suffixIcon: const Icon(Icons.access_time, size: 20),
+          contentPadding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNewImageChip(int index, PlatformFile file) {
+    return Stack(
+      children: [
+        Container(
+          width: 100.w,
+          height: 100.w,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8.r),
+            child: kIsWeb
+                ? (file.bytes != null ? Image.memory(file.bytes!, fit: BoxFit.cover) : const Icon(Icons.image))
+                : (file.path != null ? Image.file(File(file.path!), fit: BoxFit.cover) : const Icon(Icons.image)),
+          ),
+        ),
+        Positioned(
+          top: 4,
+          right: 4,
+          child: InkWell(
+            onTap: () => _removeNewImage(index),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              child: const Icon(Icons.close, size: 14, color: Colors.white),
+            ),
+          ),
         ),
       ],
     );
   }
 
-  // ─── Helper widgets ───
-
-  /// Text field inside a Row (uses Expanded)
-  Widget _buildTextField(TextEditingController controller, String label, {bool required = false}) {
-    return Expanded(
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
-        validator: required
-            ? (value) => (value == null || value.trim().isEmpty) ? 'Required' : null
-            : null,
-      ),
-    );
-  }
-
-  /// Multi-line text area (full width)
-  Widget _buildTextArea(TextEditingController controller, String label, {int maxLength = 500, bool required = false}) {
-    return TextFormField(
-      controller: controller,
-      maxLength: maxLength,
-      maxLines: 5,
-      decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
-      validator: required
-          ? (value) => (value == null || value.trim().isEmpty) ? 'Required' : null
-          : null,
-    );
-  }
-
-  /// Number-only field inside a Row (uses Expanded)
-  Widget _buildNumberField(TextEditingController controller, String label) {
-    return Expanded(
-      child: TextFormField(
-        controller: controller,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
-        validator: (value) {
-          if (value == null || value.isEmpty) return null; // optional
-          return double.tryParse(value) == null ? 'Number only' : null;
-        },
-      ),
-    );
-  }
-
-  /// Time picker field inside a Row (uses Expanded)
-  Widget _buildTimeField(TextEditingController controller, String label) {
-    return Expanded(
-      child: TextFormField(
-        controller: controller,
-        readOnly: true,
-        decoration: InputDecoration(
-          labelText: label,
-          border: const OutlineInputBorder(),
-          suffixIcon: const Icon(Icons.access_time),
+  Widget _buildExistingImageChip(int index, String url) {
+    return Stack(
+      children: [
+        Container(
+          width: 100.w,
+          height: 100.w,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8.r),
+            child: ProxyImage(imageUrl: url, width: 100.w, height: 100.w, borderRadiusValue: 8.r),
+          ),
         ),
-        onTap: () => _pickTime(controller),
-        validator: (value) {
-          if (value == null || value.isEmpty) return null; // optional
-          bool isValidFormat = RegExp(r'^\d{2}:\d{2}$').hasMatch(value);
-          return isValidFormat ? null : 'Use HH:mm format';
-        },
-      ),
+        Positioned(
+          top: 4,
+          right: 4,
+          child: InkWell(
+            onTap: () => _removeExistingImage(index),
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+              child: const Icon(Icons.close, size: 14, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

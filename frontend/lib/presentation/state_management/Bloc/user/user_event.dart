@@ -1,19 +1,10 @@
-import 'package:equatable/equatable.dart';
+// lib/presentation/state_management/Bloc/user/user_event.dart
 
-abstract class UserEvent extends Equatable {
-  const UserEvent();
-
-  @override
-  List<Object> get props => [];
-}
+abstract class UserEvent {}
 
 class FetchUsers extends UserEvent {}
 
-class DeleteUsers extends UserEvent{
+class DeleteUsers extends UserEvent {
   final int userId;
-
-  const DeleteUsers(this.userId);
-
-  @override
-  List<Object> get props => [userId];
+  DeleteUsers(this.userId);
 }

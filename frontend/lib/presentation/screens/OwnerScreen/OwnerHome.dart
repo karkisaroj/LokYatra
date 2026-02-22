@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayListingsPage.dart';
-import '../../state_management/Bloc/homestays/HomestayBloc.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
 import 'Ownerhomepage.dart';
 import 'Ownerprofilepage.dart';
 

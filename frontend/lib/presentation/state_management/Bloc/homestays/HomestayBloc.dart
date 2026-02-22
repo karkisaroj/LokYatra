@@ -96,6 +96,8 @@ class HomestayBloc extends Bloc<HomestayEvent, HomestayState> {
     try {
       final response = await _datasource.deleteHomestay(event.id);
       if (response.statusCode == 200 || response.statusCode == 204) {
+        // Small delay to ensure DB propagation and provide visual feedback
+        await Future.delayed(const Duration(milliseconds: 500));
         add(const TouristLoadAllHomestays());
       } else {
         emit(HomestayError('Failed to delete: ${response.statusCode}'));

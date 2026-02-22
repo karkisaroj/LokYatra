@@ -4,11 +4,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
-import 'package:lokyatra_frontend/data/models/TouristSite.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayState.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_state.dart';
+import '../../../data/models/Site.dart';
 import 'TouristHomestayDetailPage.dart';
 import 'TouristSitesDetails.dart';
 
@@ -228,7 +228,7 @@ class _TouristSearchPageState extends State<TouristSearchPage> {
                           builder: (_) => BlocProvider.value(
                             value: context.read<HomestayBloc>(),
                             child: TouristSiteDetailPage(
-                              site: TouristSite.fromJson(site),
+                              site: CulturalSite.fromJson(site),
                             ),
                           ),
                         ),

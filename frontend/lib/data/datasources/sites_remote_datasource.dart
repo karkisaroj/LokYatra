@@ -7,9 +7,9 @@ class SitesRemoteDatasource {
   final Dio _dio = Dio(
     BaseOptions(
       baseUrl: apiBaseUrl,
-      connectTimeout: const Duration(seconds: 10),
-      receiveTimeout: const Duration(seconds: 20), // GETs ok
-      sendTimeout: const Duration(seconds: 20),
+      connectTimeout: connectTimeout,
+      receiveTimeout: receiveTimeout,
+      sendTimeout: sendTimeout,
       headers: headers,
       responseType: ResponseType.json,
     ),
@@ -45,14 +45,13 @@ class SitesRemoteDatasource {
       }
     }
 
-    // Longer timeouts for uploads
     return _dio.post(
       sitesBasePath,
       data: formData,
       options: Options(
         headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
-        sendTimeout: const Duration(seconds: 120),
-        receiveTimeout: const Duration(seconds: 120),
+        sendTimeout: uploadSendTimeout,
+        receiveTimeout: uploadReceiveTimeout,
       ),
     );
   }
@@ -84,8 +83,8 @@ class SitesRemoteDatasource {
       data: formData,
       options: Options(
         headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
-        sendTimeout: const Duration(seconds: 120),
-        receiveTimeout: const Duration(seconds: 120),
+        sendTimeout: uploadSendTimeout,
+        receiveTimeout: uploadReceiveTimeout,
       ),
     );
   }

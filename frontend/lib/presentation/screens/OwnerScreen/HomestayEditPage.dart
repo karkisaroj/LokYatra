@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,6 +8,7 @@ import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/datasources/homestays_remote_datasource.dart';
 import 'package:lokyatra_frontend/data/datasources/sites_remote_datasource.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
+import '../../widgets/Helpers/form_helpers.dart';
 
 class HomestayEditPage extends StatefulWidget {
   final Homestay homestay;
@@ -20,6 +22,9 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   bool _sitesLoading = true;
+
+  // null = not uploading, 0.0–1.0 = upload progress
+  double? _uploadProgress;
 
   late final TextEditingController _name;
   late final TextEditingController _location;
@@ -120,7 +125,12 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isLoading = true);
+
+    setState(() {
+      _isLoading = true;
+      _uploadProgress = null; // show spinner until first progress event
+    });
+
     try {
       final res = await HomestaysRemoteDatasource().updateHomestay(
         id: widget.homestay.id,
@@ -142,23 +152,43 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
           if (_selectedSiteId != null) 'NearCulturalSiteId': _selectedSiteId.toString(),
         },
         files: _newImages.whereType<PlatformFile>().toList(),
+        onSendProgress: (sent, total) {
+          if (total > 0 && mounted) {
+            setState(() => _uploadProgress = sent / total);
+          }
+        },
       );
-      if ((res.statusCode == 200 || res.statusCode == 204) && mounted) {
+
+      if (!mounted) return;
+
+      if (res.statusCode == 200 || res.statusCode == 204) {
         Navigator.pop(context, true);
       } else {
-        _snack('Update failed: ${res.statusMessage}');
+        FormHelpers.showSnack(context, 'Update failed: ${res.statusMessage}');
       }
+    } on DioException catch (e) {
+      if (!mounted) return;
+      String msg;
+      if (e.type == DioExceptionType.sendTimeout ||
+          e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionTimeout) {
+        msg = 'Upload timed out — check your connection and try again.';
+      } else if (e.response != null) {
+        msg = 'Status ${e.response!.statusCode}: ${e.response!.statusMessage}';
+      } else {
+        msg = e.message ?? 'Network error';
+      }
+      FormHelpers.showSnack(context, msg);
     } catch (e) {
-      _snack('Error: $e');
+      if (mounted) FormHelpers.showSnack(context, 'Error: $e');
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _uploadProgress = null;
+        });
+      }
     }
-  }
-
-  void _snack(String msg) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg, style: GoogleFonts.dmSans())));
   }
 
   @override
@@ -172,15 +202,7 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
             style: GoogleFonts.playfairDisplay(
                 fontSize: 18.sp, fontWeight: FontWeight.bold,
                 color: const Color(0xFF2D1B10))),
-        actions: [
-          TextButton.icon(
-            onPressed: _isLoading ? null : _submit,
-            icon: Icon(Icons.save, color: _brown, size: 18.sp),
-            label: Text('Save',
-                style: GoogleFonts.dmSans(
-                    color: _brown, fontWeight: FontWeight.bold, fontSize: 14.sp)),
-          ),
-        ],
+        // Removed the save button from AppBar as requested
       ),
       body: Form(
         key: _formKey,
@@ -255,30 +277,90 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
               ]),
 
               SizedBox(height: 20.h),
+
+              // Bottom upload button — shows progress when uploading
               SizedBox(
                 width: double.infinity,
-                height: 52.h,
-                child: _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton.icon(
-                  onPressed: _submit,
-                  icon: Icon(Icons.save, size: 18.sp),
-                  label: Text('Save Changes',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 15.sp, fontWeight: FontWeight.w600)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: _brown,
-                    foregroundColor: Colors.white,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r)),
-                  ),
-                ),
+                height: 58.h,
+                child: _isLoading ? _uploadButton() : _submitButton(),
               ),
+
               SizedBox(height: 40.h),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  // Plain submit button
+  Widget _submitButton() => ElevatedButton.icon(
+    onPressed: _submit,
+    icon: Icon(Icons.save, size: 18.sp),
+    label: Text('Save Changes',
+        style: GoogleFonts.dmSans(
+            fontSize: 15.sp, fontWeight: FontWeight.w600)),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: _brown,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12.r)),
+    ),
+  );
+
+  // Progress button — replaces submit button while uploading
+  Widget _uploadButton() {
+    final hasProgress = _uploadProgress != null;
+    final pct = hasProgress
+        ? '${(_uploadProgress! * 100).toStringAsFixed(0)}%'
+        : '';
+    final label = !hasProgress
+        ? 'Preparing...'
+        : _uploadProgress! < 1.0
+        ? 'Uploading images  $pct'
+        : 'Saving to server...';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: _brown,
+        borderRadius: BorderRadius.circular(12.r),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 20.w),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 14.w,
+                height: 14.h,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white.withOpacity(0.8)),
+              ),
+              SizedBox(width: 10.w),
+              Text(label,
+                  style: GoogleFonts.dmSans(
+                      color: Colors.white,
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600)),
+            ],
+          ),
+          if (hasProgress) ...[
+            SizedBox(height: 8.h),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4.r),
+              child: LinearProgressIndicator(
+                value: _uploadProgress,
+                backgroundColor: Colors.white.withOpacity(0.25),
+                color: Colors.white,
+                minHeight: 4.h,
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -290,7 +372,7 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
       borderRadius: BorderRadius.circular(16.r),
       boxShadow: [
         BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
+            color: Colors.black.withOpacity(0.05),
             blurRadius: 8,
             offset: const Offset(0, 2)),
       ],
@@ -307,7 +389,7 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
+                color: Colors.black.withOpacity(0.05),
                 blurRadius: 8,
                 offset: const Offset(0, 2)),
           ],
@@ -397,7 +479,7 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
     if (_sitesLoading) return const Center(child: CircularProgressIndicator());
     if (_sites.isEmpty) {
       return Text('No sites available.',
-        style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey));
+          style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey));
     }
     return Container(
       height: 200.h,
@@ -453,7 +535,7 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
                 .removeWhere((s) => s.toLowerCase() == a.toLowerCase());
           }
         }),
-        selectedColor: _brown.withValues(alpha: 0.12),
+        selectedColor: _brown.withOpacity(0.12),
         checkmarkColor: _brown,
         side: BorderSide(color: selected ? _brown : Colors.grey.shade300),
         backgroundColor: const Color(0xFFFAF9F7),

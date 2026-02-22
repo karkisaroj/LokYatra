@@ -1,36 +1,32 @@
+// lib/presentation/state_management/Bloc/user/user_state.dart
 
-import 'package:equatable/equatable.dart';
 import 'package:lokyatra_frontend/data/models/user.dart';
 
-abstract class UserState extends Equatable{
-  @override
-  List<Object?> get props => [];
-}
+abstract class UserState {}
 
-class UserInitial extends UserState{}
+class UserInitial extends UserState {}
 
-class UserLoading extends UserState{}
+class UserLoading extends UserState {}
 
-class UserLoaded extends UserState{
+class UserLoaded extends UserState {
   final List<User> users;
   UserLoaded(this.users);
-
-  @override
-  List<Object?> get props => [users];
 }
 
-class UserError extends UserState{
+
+class UserDeleted extends UserState {
+  final int userId;
+  final int homestaysDeleted;
+  final String message;
+
+  UserDeleted(
+      this.userId, {
+        this.homestaysDeleted = 0,
+        this.message = 'User deleted.',
+      });
+}
+
+class UserError extends UserState {
   final String message;
   UserError(this.message);
-  @override
-  List<Object?> get props => [message];
-}
-
-class UserDeleted extends UserState{
-  final int userId;
-  UserDeleted(this.userId);
-
-  @override
-  List<Object?> get props => [userId];
-
 }

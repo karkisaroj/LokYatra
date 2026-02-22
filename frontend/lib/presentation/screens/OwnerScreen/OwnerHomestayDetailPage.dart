@@ -6,6 +6,12 @@ import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayEvent.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_state.dart';
+
+import '../../../data/models/Site.dart';
+import '../admin/SiteDetailPage.dart';
 
 class OwnerHomestayDetailPage extends StatefulWidget {
   final Homestay homestay;
@@ -21,9 +27,121 @@ class _OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
   static const _dark = Color(0xFF2D1B10);
   static const _cream = Color(0xFFFAF7F2);
   static const _warmGrey = Color(0xFF8B8B8B);
+  static const _slate = Color(0xFF3D5A80);
 
   int _currentImageIndex = 0;
   bool _isLoading = false;
+  CulturalSite? _nearSite;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.homestay.nearCulturalSite != null) {
+      context.read<SitesBloc>().add(LoadSiteById(widget.homestay.nearCulturalSite!.id));
+    }
+  }
+
+  Widget _buildSiteCard() {
+    return BlocBuilder<SitesBloc, SitesState>(
+      builder: (context, state) {
+        if (state is SiteDetailLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state is SiteDetailLoaded) {
+          _nearSite = CulturalSite.fromJson(state.site);
+          return GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SiteDetailPage(site: _nearSite!),
+                ),
+              );
+            },
+            child: Container(
+              padding: EdgeInsets.all(10.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.r),
+                border: Border.all(color: Colors.grey.shade200),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  if (_nearSite!.imageUrls.isNotEmpty) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8.r),
+                      child: ProxyImage(
+                        imageUrl: _nearSite!.imageUrls.first,
+                        width: 70.w,
+                        height: 70.h,
+                        borderRadiusValue: 0,
+                        thumb: true,
+                      ),
+                    ),
+                    SizedBox(width: 12.w),
+                  ] else ...[
+                    Container(
+                      width: 70.w,
+                      height: 70.h,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8.r),
+                      ),
+                      child: Icon(Icons.temple_hindu, color: Colors.grey[400], size: 30.sp),
+                    ),
+                    SizedBox(width: 12.w),
+                  ],
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(_nearSite!.name ?? 'Unknown Site',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.dmSans(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.bold,
+                                color: _dark)),
+                        SizedBox(height: 4.h),
+                        if (_nearSite!.district != null)
+                          Text(_nearSite!.district ?? '',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 12.sp, color: Colors.grey[600])),
+                        if (_nearSite!.category != null)
+                          Text(_nearSite!.category ?? '',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 11.sp, color: _slate)),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.arrow_forward_ios_rounded, size: 14.sp, color: Colors.grey[400]),
+                ],
+              ),
+            ),
+          );
+        }
+        if (state is SitesError) {
+          return Text('Error loading site: ${state.message}');
+        }
+        return Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Text('No site details available'),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -105,7 +223,7 @@ class _OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                             decoration: BoxDecoration(
                               color: _currentImageIndex == index
                                   ? Colors.white
-                                  : Colors.white.withValues(alpha: 0.5),
+                                  : Colors.white.withOpacity(0.5),
                               borderRadius: BorderRadius.circular(4.r),
                             ),
                           );
@@ -150,22 +268,20 @@ class _OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                           ),
                           decoration: BoxDecoration(
                             color: homestay.isVisible
-                                ? Colors.green.withValues(alpha: 0.1)
-                                : Colors.orange.withValues(alpha: 0.1),
+                                ? Colors.green.withOpacity(0.1)
+                                : Colors.orange.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20.r),
                             border: Border.all(
                               color: homestay.isVisible
-                                  ? Colors.green.withValues(alpha: 0.3)
-                                  : Colors.orange.withValues(alpha: 0.3),
+                                  ? Colors.green.withOpacity(0.3)
+                                  : Colors.orange.withOpacity(0.3),
                             ),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
-                                homestay.isVisible
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
+                                homestay.isVisible ? Icons.visibility : Icons.visibility_off,
                                 size: 14.sp,
                                 color: homestay.isVisible
                                     ? Colors.green[700]
@@ -215,7 +331,7 @@ class _OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                             vertical: 4.h,
                           ),
                           decoration: BoxDecoration(
-                            color: _terracotta.withValues(alpha: 0.1),
+                            color: _terracotta.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(20.r),
                           ),
                           child: Text(
@@ -260,7 +376,7 @@ class _OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                         borderRadius: BorderRadius.circular(16.r),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
+                            color: Colors.black.withOpacity(0.04),
                             blurRadius: 10,
                             offset: const Offset(0, 4),
                           ),
@@ -403,60 +519,10 @@ class _OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                     ],
 
                     // Near Cultural Site
-                    if (homestay.nearCulturalSite != null) ...[
+                    if (widget.homestay.nearCulturalSite != null) ...[
                       _buildSectionTitle('Nearby Heritage Site'),
                       SizedBox(height: 8.h),
-                      Container(
-                        padding: EdgeInsets.all(16.w),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.r),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.04),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: EdgeInsets.all(10.w),
-                              decoration: BoxDecoration(
-                                color: _terracotta.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(10.r),
-                              ),
-                              child: Icon(Icons.location_on,
-                                  color: _terracotta, size: 20.sp),
-                            ),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    homestay.nearCulturalSite!.name,
-                                    style: GoogleFonts.dmSans(
-                                      fontSize: 14.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: _dark,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4.h),
-                                  Text(
-                                    'Heritage Site',
-                                    style: GoogleFonts.dmSans(
-                                      fontSize: 12.sp,
-                                      color: _warmGrey,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      _buildSiteCard(),
                       SizedBox(height: 24.h),
                     ],
 
@@ -570,9 +636,7 @@ class _OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
         title: Row(
           children: [
             Icon(
-              widget.homestay.isVisible
-                  ? Icons.pause_circle_outline
-                  : Icons.play_circle_outline,
+              widget.homestay.isVisible ? Icons.pause_circle_outline : Icons.play_circle_outline,
               color: widget.homestay.isVisible ? Colors.orange[700] : Colors.green[600],
               size: 28.sp,
             ),

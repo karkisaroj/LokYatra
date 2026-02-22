@@ -22,7 +22,7 @@ class _HomestaysState extends State<Homestays> {
   static const _bg = Color(0xFFF4F6F9);
 
   String _search = '';
-  String _filter = 'All'; // 'All' | 'Active' | 'Paused'
+  String _filter = 'All';
 
   @override
   void initState() {

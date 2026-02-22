@@ -37,7 +37,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       title: "Users",
       child: UserManagementPage(subtitleNotifier: subtitleNotifier),
     ),
-    PageConfig(icon: const Icon(Icons.map_outlined), title: "Sites", child: const Sites()),
+    PageConfig(icon: const Icon(Icons.map_outlined), title: "Sites", child: const AdminSites()),
     PageConfig(icon: const Icon(Icons.menu_book_outlined), title: "Stories", child: const Stories()),
     PageConfig(icon: const Icon(Icons.house), title: "Homestays", child: Homestays(subtitleNotifier: subtitleNotifier)),
     PageConfig(icon: const Icon(Icons.calendar_month), title: "Bookings", child: const Bookings()),

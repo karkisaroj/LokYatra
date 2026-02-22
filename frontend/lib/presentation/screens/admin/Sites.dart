@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
-import 'package:lokyatra_frontend/data/datasources/sites_remote_datasource.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_state.dart';
+import '../../../data/models/Site.dart';
 import 'SiteAddDialog.dart';
 import 'SiteDetailPage.dart';
 import 'SiteEditDialog.dart';
 
-class Sites extends StatefulWidget {
-  const Sites({super.key});
+class AdminSites extends StatefulWidget {
+  const AdminSites({super.key});
 
   @override
-  State<Sites> createState() => _SitesState();
+  State<AdminSites> createState() => _AdminSitesState();
 }
 
-class _SitesState extends State<Sites> {
+class _AdminSitesState extends State<AdminSites> {
   final _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -34,71 +34,51 @@ class _SitesState extends State<Sites> {
 
   // Method to add a new site
   Future<void> _addSite() async {
-    await showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) {
-        return BlocProvider.value(
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
           value: context.read<SitesBloc>(),
-          child: BlocListener<SitesBloc, SitesState>(
-            listener: (ctx, state) {
-              if (state is SiteCreateSuccess) {
-                Navigator.of(ctx).pop(true);
-
-                // Use the context from the listener
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(
-                    content: Text('Site added successfully'),
-                    backgroundColor: Colors.green,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-
-                // Refresh the sites list
-                ctx.read<SitesBloc>().add(LoadSites());
-              }
-              if (state is SitesError) {
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: ${state.message}'),
-                    backgroundColor: Colors.red,
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              }
-            },
-            child: const SiteAddDialog(),
-          ),
-        );
-      },
-    );
-  }
-
-  // Method to edit a site
-  Future<void> _editSite(Map<String, dynamic> site) async {
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (dialogContext) => BlocProvider.value(
-        value: context.read<SitesBloc>(),
-        child: SiteEditDialog(site: site),
+          child: const SiteAddPage(),
+        ),
       ),
     );
 
     if (result == true && mounted) {
       context.read<SitesBloc>().add(LoadSites());
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Site updated successfully'),
-          backgroundColor: Colors.green,
-          behavior: SnackBarBehavior.floating,
+    }
+  }
+
+  // Method to edit a site
+  Future<void> _editSite(Map<String, dynamic> site) async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: context.read<SitesBloc>(),
+          child: SiteEditPage(site: site),
         ),
-      );
+      ),
+    );
+
+    if (result == true && mounted) {
+      context.read<SitesBloc>().add(LoadSites());
     }
   }
 
   // Method to delete a site
   Future<void> _deleteSite(int id) async {
+    if (id == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid Site ID'),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
@@ -123,54 +103,8 @@ class _SitesState extends State<Sites> {
 
     if (confirmed != true) return;
 
-    // Show loading indicator
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Deleting site...'),
-          duration: Duration(seconds: 1),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    }
-
-    try {
-      final response = await SitesRemoteDatasource().deleteSite(id);
-
-      if (!mounted) return;
-
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        // Force refresh from API instead of relying on cache
-        context.read<SitesBloc>().add(const RefreshSites());
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Site deleted successfully'),
-            backgroundColor: Colors.green,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Delete failed: ${response.statusCode}'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    } catch (error) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Network error: $error'),
-            backgroundColor: Colors.red,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
+    // Dispatch delete event
+    context.read<SitesBloc>().add(DeleteSite(id));
   }
 
   @override
@@ -216,10 +150,17 @@ class _SitesState extends State<Sites> {
 
             // Sites list
             Expanded(
-              child: BlocBuilder<SitesBloc, SitesState>(
-                buildWhen: (previous, current) {
-                  // Always rebuild when state changes to ensure UI updates immediately
-                  return true;
+              child: BlocConsumer<SitesBloc, SitesState>(
+                listener: (context, state) {
+                  if (state is SitesError) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.message),
+                        backgroundColor: Colors.red,
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
+                  }
                 },
                 builder: (context, state) {
                   if (state is SitesLoading) {
@@ -336,7 +277,7 @@ class _SitesState extends State<Sites> {
         ],
         rows: sites.map<DataRow>((site) {
           String? imageUrl = getFirstImageUrl(site['imageUrls']);
-          int siteId = site['id'] as int? ?? 0;
+          int siteId = int.tryParse(site['id'].toString()) ?? 0;
 
           return DataRow(cells: [
             DataCell(
@@ -391,7 +332,7 @@ class _SitesState extends State<Sites> {
                     onPressed: () {
                       Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))
+                          MaterialPageRoute(builder: (_) => SiteDetailPage(site: CulturalSite.fromJson(site)))
                       );
                     },
                   ),
@@ -422,7 +363,7 @@ class _SitesState extends State<Sites> {
       itemBuilder: (context, index) {
         Map<String, dynamic> site = sites[index] as Map<String, dynamic>;
         String? imageUrl = getFirstImageUrl(site['imageUrls']);
-        int siteId = site['id'] as int? ?? 0;
+        int siteId = int.tryParse(site['id'].toString()) ?? 0;
 
         String name = (site['name'] ?? '').toString();
         String category = (site['category'] ?? '').toString();
@@ -440,7 +381,7 @@ class _SitesState extends State<Sites> {
             onTap: () {
               Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))
+                  MaterialPageRoute(builder: (_) => SiteDetailPage(site: CulturalSite.fromJson(site)))
               );
             },
             child: Padding(

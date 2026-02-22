@@ -1,3 +1,5 @@
+// lib/data/datasources/user_remote_datasource.dart
+
 import 'package:dio/dio.dart';
 import 'package:lokyatra_frontend/core/constants.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
@@ -5,31 +7,37 @@ import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageServ
 class UserRemoteDatasource {
   final Dio _dio = Dio(
     BaseOptions(
-      baseUrl: apiBaseUrl,   // has trailing slash — correct
+      baseUrl: apiBaseUrl,
       connectTimeout: connectTimeout,
       receiveTimeout: receiveTimeout,
       responseType: ResponseType.json,
     ),
-  )..interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
+  );
 
   Future<Options> _authOptions() async {
     final token = await SecureStorageService.getAccessToken();
-    if (token == null) throw Exception('Not authenticated');
+    if (token == null) throw Exception('Not authenticated — please log in again.');
     return Options(headers: {
       'Authorization': 'Bearer $token',
       'Accept': 'application/json',
     });
   }
 
+  /// GET api/User/me
   Future<Response> getMe() async =>
       _dio.get('api/User/me', options: await _authOptions());
 
+  /// GET api/User/getUsers  (admin only)
   Future<Response> getUsers() async =>
       _dio.get(getUsersEndpoint, options: await _authOptions());
 
+  /// DELETE api/User/deleteUser/{userId}  (admin only)
+  /// Response body: { message, homestaysDeleted }
   Future<Response> deleteUser(int userId) async =>
-      _dio.delete('$deleteUserEndpoint/$userId', options: await _authOptions());
+      _dio.delete('api/User/deleteUser/$userId',
+          options: await _authOptions());
 
+  /// PATCH api/User/update-profile
   Future<Response> updateProfile({
     String? name,
     String? phoneNumber,

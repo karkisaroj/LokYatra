@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
-import 'package:lokyatra_frontend/data/models/TouristSite.dart';
 import 'package:lokyatra_frontend/data/models/Story.dart';
+import '../../../data/models/Site.dart';
 import '../../state_management/Bloc/stories/story_bloc.dart';
 import '../../state_management/Bloc/stories/story_event.dart';
 import '../../state_management/Bloc/stories/story_state.dart';
@@ -14,7 +14,7 @@ import '../../state_management/Bloc/homestays/HomestayState.dart';
 import 'TouristHomestayDetailPage.dart';
 
 class TouristSiteDetailPage extends StatefulWidget {
-  final TouristSite site;
+  final CulturalSite site;
   const TouristSiteDetailPage({super.key, required this.site});
 
   @override
@@ -26,7 +26,6 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
   static const _darkTeal = Color(0xFF4A707A);
   static const _dark = Color(0xFF2D1B10);
   static const _cream = Color(0xFFFAF7F2);
-  static const _warmGrey = Color(0xFF8B8B8B);
 
   int _currentImageIndex = 0;
   int _selectedTabIndex = 2; // Default to Stories
@@ -34,22 +33,12 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
   final List<String> _tabs = ['About', 'History', 'Stories', 'Reviews'];
 
   @override
-  void initState() {
-    super.initState();
-    final siteName = widget.site.name ?? '';
-    context.read<HomestayBloc>().add(TouristLoadHomestaysNearSite(siteName));
-  }
-
-  @override
   Widget build(BuildContext context) {
     final name = widget.site.name ?? 'Unnamed Site';
     final location = widget.site.address ?? 'Unknown Location';
     final district = widget.site.district ?? '';
-    final entryFee = widget.site.entryFeeNPR?.toDouble() ?? 0.0;
+    final entryFee = widget.site.entryFeeNPR?.toStringAsFixed(0) ?? '0';
     final isUNESCO = widget.site.isUNESCO ?? false;
-
-    // NEW: Get category from site model
-    final category = widget.site.category;
 
     final List<String> imageUrls = (widget.site.imageUrls as List?)
         ?.map((e) => e.toString())
@@ -58,8 +47,17 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
 
     final displayImages = imageUrls.isNotEmpty ? imageUrls : [''];
 
-    return BlocProvider(
-      create: (context) => StoryBloc()..add(LoadStories(siteId: widget.site.id)),
+    // Inject BOTH StoryBloc AND HomestayBloc specifically for this page.
+    // This ensures that when we load nearby homestays, we don't affect the global HomestayBloc used by TouristHome.
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (context) => StoryBloc()..add(LoadStories(siteId: widget.site.id)),
+        ),
+        BlocProvider(
+          create: (context) => HomestayBloc()..add(TouristLoadHomestaysNearSite(widget.site.name ?? '')),
+        ),
+      ],
       child: Scaffold(
         backgroundColor: _cream,
         body: CustomScrollView(
@@ -112,7 +110,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                             decoration: BoxDecoration(
                               color: _currentImageIndex == index
                                   ? Colors.white
-                                  : Colors.white.withValues(alpha: 0.5),
+                                  : Colors.white.withOpacity(0.5),
                               borderRadius: BorderRadius.circular(4.r),
                             ),
                           );
@@ -145,7 +143,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                             borderRadius: BorderRadius.circular(20.r),
                             boxShadow: [
                               BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04),
+                                  color: Colors.black.withOpacity(0.04),
                                   blurRadius: 15,
                                   offset: const Offset(0, 8))
                             ],
@@ -159,8 +157,6 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                       fontWeight: FontWeight.bold,
                                       color: _dark)),
                               SizedBox(height: 10.h),
-
-                              // Rating and UNESCO Row
                               Row(
                                 children: [
                                   Icon(Icons.star_rounded,
@@ -175,7 +171,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                   Text(' (245 reviews)',
                                       style: GoogleFonts.dmSans(
                                           fontSize: 13.sp,
-                                          color: _warmGrey)),
+                                          color: Colors.grey[500])),
                                   SizedBox(width: 12.w),
                                   if (isUNESCO)
                                     Container(
@@ -193,32 +189,11 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                     ),
                                 ],
                               ),
-
-                              SizedBox(height: 12.h),
-
-                              // NEW: Category Row
-                              if (category != null && category.isNotEmpty) ...[
-                                Row(
-                                  children: [
-                                    Icon(Icons.category_outlined,
-                                        size: 16.sp,
-                                        color: _warmGrey),
-                                    SizedBox(width: 8.w),
-                                    Text(category,
-                                        style: GoogleFonts.dmSans(
-                                            fontSize: 13.sp,
-                                            color: _warmGrey,
-                                            fontWeight: FontWeight.w500)),
-                                  ],
-                                ),
-                                SizedBox(height: 12.h),
-                              ],
-
-                              // Opening Hours
+                              SizedBox(height: 20.h),
                               Row(
                                 children: [
                                   Icon(Icons.access_time_rounded,
-                                      size: 16.sp, color: _warmGrey),
+                                      size: 16.sp, color: Colors.grey[600]),
                                   SizedBox(width: 8.w),
                                   Text('6AM - 7PM Opening',
                                       style: GoogleFonts.dmSans(
@@ -226,25 +201,19 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                 ],
                               ),
                               SizedBox(height: 12.h),
-
-                              // Location
                               Row(
                                 children: [
                                   Icon(Icons.location_on_outlined,
-                                      size: 16.sp, color: _warmGrey),
+                                      size: 16.sp, color: Colors.grey[600]),
                                   SizedBox(width: 8.w),
-                                  Expanded(
-                                    child: Text('$location, $district',
-                                        style: GoogleFonts.dmSans(
-                                            fontSize: 13.sp, color: _dark)),
-                                  ),
+                                  Text('$location, $district',
+                                      style: GoogleFonts.dmSans(
+                                          fontSize: 13.sp, color: _dark)),
                                 ],
                               ),
                               SizedBox(height: 20.h),
                               Divider(color: Colors.grey[200]),
                               SizedBox(height: 16.h),
-
-                              // Entry Fee and Map Button
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 crossAxisAlignment: CrossAxisAlignment.end,
@@ -255,10 +224,8 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                       Text('Entry Fee',
                                           style: GoogleFonts.dmSans(
                                               fontSize: 12.sp,
-                                              color: _warmGrey)),
-                                      Text(entryFee > 0
-                                          ? 'Rs. ${entryFee.toStringAsFixed(0)}'
-                                          : 'Free',
+                                              color: Colors.grey[500])),
+                                      Text('Rs. $entryFee',
                                           style: GoogleFonts.dmSans(
                                               fontSize: 18.sp,
                                               color: _terracotta,
@@ -288,8 +255,6 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                           ),
                         ),
                         SizedBox(height: 24.h),
-
-                        // Tabs
                         Container(
                           padding: EdgeInsets.all(4.w),
                           decoration: BoxDecoration(
@@ -316,7 +281,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                         ? [
                                       BoxShadow(
                                           color: Colors.black
-                                              .withValues(alpha: 0.05),
+                                              .withOpacity(0.05),
                                           blurRadius: 4,
                                           offset: const Offset(0, 2))
                                     ]
@@ -330,7 +295,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                           ? FontWeight.bold
                                           : FontWeight.w500,
                                       color:
-                                      isSelected ? _dark : _warmGrey,
+                                      isSelected ? _dark : Colors.grey[700],
                                     ),
                                   ),
                                 ),
@@ -341,8 +306,6 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                         SizedBox(height: 24.h),
                         _buildTabContent(),
                         SizedBox(height: 32.h),
-
-                        // Nearby Homestays Header
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
@@ -352,7 +315,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                     color: _dark,
                                     fontWeight: FontWeight.bold)),
                             Icon(Icons.favorite_border_rounded,
-                                color: _warmGrey),
+                                color: Colors.grey[600]),
                           ],
                         ),
                         SizedBox(height: 16.h),
@@ -385,13 +348,8 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
       case 2:
         return _buildStoriesTab();
       case 3:
-        return Center(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 40.h),
-            child: Text("Reviews coming soon.",
-                style: GoogleFonts.dmSans(fontSize: 14.sp, color: _warmGrey)),
-          ),
-        );
+        return Text("Reviews coming soon.",
+            style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey));
       default:
         return const SizedBox.shrink();
     }
@@ -422,23 +380,14 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
             return Center(
                 child: Padding(
                   padding: EdgeInsets.all(20.0),
-                  child: Column(
-                    children: [
-                      Icon(Icons.auto_stories_outlined,
-                          size: 48.sp,
-                          color: _warmGrey.withValues(alpha: 0.5)),
-                      SizedBox(height: 12.h),
-                      Text("No stories available yet.",
-                          style: GoogleFonts.dmSans(
-                              fontSize: 14.sp,
-                              color: _warmGrey)),
-                    ],
-                  ),
+                  child: Text("No stories available yet.",
+                      style: GoogleFonts.dmSans(color: Colors.grey)),
                 ));
           }
 
           return Column(
             children: state.stories.map((story) {
+              // Use first image if available, else fallback
               final imageUrl = story.imageUrls.isNotEmpty
                   ? story.imageUrls.first
                   : 'https://res.cloudinary.com/doanvrjez/image/upload/v1771594793/profile_images/IMG_20260212_121753_998_ipsgtx.jpg';
@@ -450,7 +399,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                     borderRadius: BorderRadius.circular(16.r),
                     boxShadow: [
                       BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.04),
+                          color: Colors.black.withOpacity(0.04),
                           blurRadius: 10,
                           offset: const Offset(0, 4))
                     ]),
@@ -497,13 +446,14 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                           SizedBox(height: 6.h),
                           Row(children: [
                             Icon(Icons.access_time_rounded,
-                                size: 14.sp, color: _warmGrey),
+                                size: 14.sp, color: Colors.grey[600]),
                             SizedBox(width: 6.w),
                             Text('${story.estimatedReadTimeMinutes} min read',
                                 style: GoogleFonts.dmSans(
-                                    fontSize: 12.sp, color: _warmGrey))
+                                    fontSize: 12.sp, color: Colors.grey[600]))
                           ]),
                           SizedBox(height: 10.h),
+                          // Displaying full content but limited to 3 lines
                           Text(story.fullContent,
                               maxLines: 3,
                               overflow: TextOverflow.ellipsis,
@@ -514,7 +464,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                           SizedBox(height: 12.h),
                           GestureDetector(
                             onTap: () {
-                              // Navigate to full story view
+                              // Navigate to full story view if needed
                             },
                             child: Text('Read Story →',
                                 style: GoogleFonts.dmSans(
@@ -544,13 +494,8 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
         }
         if (state is TouristNearbyHomestaysLoaded) {
           if (state.homestays.isEmpty) {
-            return Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 20.h),
-                child: Text("No homestays found near this site.",
-                    style: GoogleFonts.dmSans(color: _warmGrey)),
-              ),
-            );
+            return Text("No homestays found near this site.",
+                style: GoogleFonts.dmSans(color: Colors.grey));
           }
           return Column(
             children: state.homestays.map((h) {
@@ -569,7 +514,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                       borderRadius: BorderRadius.circular(16.r),
                       boxShadow: [
                         BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.04),
+                            color: Colors.black.withOpacity(0.04),
                             blurRadius: 10,
                             offset: const Offset(0, 4))
                       ]),
@@ -610,7 +555,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                         Text('4.7',
                                             style: GoogleFonts.dmSans(
                                                 fontSize: 13.sp,
-                                                color: _warmGrey))
+                                                color: Colors.grey[700]))
                                       ]),
                                     ])),
                             Column(
@@ -625,7 +570,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                   Text('+13% VAT',
                                       style: GoogleFonts.dmSans(
                                           fontSize: 11.sp,
-                                          color: _warmGrey)),
+                                          color: Colors.grey[500])),
                                 ]),
                           ],
                         ),

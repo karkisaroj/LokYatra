@@ -37,3 +37,26 @@ class CreateSite extends SitesEvent {
   @override
   List<Object> get props => [fields, files];
 }
+
+class UpdateSite extends SitesEvent {
+  final int id;
+  final Map<String, dynamic> fields;
+  final List<PlatformFile> files;
+
+  const UpdateSite({
+    required this.id,
+    required this.fields,
+    required this.files,
+  });
+
+  @override
+  List<Object> get props => [id, fields, files];
+}
+
+class DeleteSite extends SitesEvent {
+  final int id;
+  const DeleteSite(this.id);
+
+  @override
+  List<Object> get props => [id];
+}
