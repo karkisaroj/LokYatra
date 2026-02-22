@@ -2,9 +2,6 @@
 using CloudinaryDotNet.Actions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
-using System.Collections.Generic;
-using System.Net;
-using System.Threading.Tasks;
 
 namespace backend.Services
 {
@@ -17,43 +14,66 @@ namespace backend.Services
             var cloudName = configuration["Cloudinary:CloudName"];
             var apiKey = configuration["Cloudinary:ApiKey"];
             var apiSecret = configuration["Cloudinary:ApiSecret"];
-            if (string.IsNullOrWhiteSpace(cloudName) || string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(apiSecret))
+
+            if (string.IsNullOrWhiteSpace(cloudName) ||
+                string.IsNullOrWhiteSpace(apiKey) ||
+                string.IsNullOrWhiteSpace(apiSecret))
             {
-                Console.WriteLine("[CloudinaryImageService] Missing Cloudinary config. Service will act as no-op.");
+                Console.WriteLine("[Cloudinary] Missing config — running as no-op.");
                 _cloudinary = null;
                 return;
             }
-            var account = new Account(cloudName, apiKey, apiSecret);
-            _cloudinary = new Cloudinary(account) { Api = { Secure = true } };
+
+            _cloudinary = new Cloudinary(new Account(cloudName, apiKey, apiSecret))
+            {
+                Api = { Secure = true }
+            };
         }
 
         public async Task<List<string>> UploadFilesAsync(string folder, IFormFileCollection files)
         {
-            var urls = new List<string>();
             if (_cloudinary is null || files is null || files.Count == 0)
             {
-                Console.WriteLine("[CloudinaryImageService] No cloudinary or no files.");
-                return urls;
+                Console.WriteLine("[Cloudinary] No client or no files.");
+                return [];
             }
 
+            // Read all file bytes BEFORE launching parallel tasks.
+            var fileData = new List<(string name, byte[] bytes)>();
             foreach (var file in files)
             {
                 if (file.Length <= 0) continue;
-                await using var stream = file.OpenReadStream();
+                using var ms = new MemoryStream();
+                await file.CopyToAsync(ms);
+                fileData.Add((file.FileName, ms.ToArray()));
+            }
+
+            var uploadTasks = fileData.Select(async fd =>
+            {
+                await using var stream = new MemoryStream(fd.bytes);
                 var uploadParams = new ImageUploadParams
                 {
-                    File = new FileDescription(file.FileName, stream),
+                    File = new FileDescription(fd.name, stream),
                     Folder = folder,
                     UseFilename = true,
                     UniqueFilename = true,
                     Overwrite = false,
-                    Transformation = new Transformation().Quality("auto").FetchFormat("auto"),
+                    // Let Cloudinary auto-optimize quality and format
+                    Transformation = new Transformation()
+                        .Quality("auto")
+                        .FetchFormat("auto"),
                 };
+
                 var result = await _cloudinary.UploadAsync(uploadParams);
-                Console.WriteLine($"[CloudinaryImageService] Upload {file.FileName} -> {result.SecureUrl}");
-                if (result.SecureUrl != null) urls.Add(result.SecureUrl.AbsoluteUri);
-            }
-            Console.WriteLine($"[CloudinaryImageService] Returning {urls.Count} URL(s)");
+                Console.WriteLine($"[Cloudinary] {fd.name} → {result.SecureUrl}");
+                return result.SecureUrl?.AbsoluteUri;
+            });
+
+            // Wait for ALL uploads to finish simultaneously
+            var results = await Task.WhenAll(uploadTasks);
+
+            var urls = results.Where(u => u != null).Cast<string>().ToList();
+            Console.WriteLine($"[Cloudinary] Done — {urls.Count} URL(s) returned.");
             return urls;
         }
     }

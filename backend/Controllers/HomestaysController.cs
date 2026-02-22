@@ -244,7 +244,7 @@ namespace backend.Controllers
             return Ok(new { id = homestay.Id, isVisible = homestay.IsVisible });
         }
 
-        [Authorize(Roles = "admin")]
+        [Authorize(Roles = "admin,owner")]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {

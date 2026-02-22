@@ -9,10 +9,9 @@ namespace backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class SitesController : ControllerBase
+    public class SitesController(AppDbContext db) : ControllerBase
     {
-        private readonly AppDbContext db;
-        public SitesController(AppDbContext db) { this.db = db; }
+        private readonly AppDbContext db = db;
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<object>>> GetSites([FromQuery] string? q = null)
@@ -30,24 +29,26 @@ namespace backend.Controllers
 
             var list = await query
                 .OrderByDescending(s => s.Id)
-                .Select(s => new
-                {
-                    id = s.Id,
-                    name = s.Name,
-                    category = s.Category,
-                    district = s.District,
-                    address = s.Address,
-                    shortDescription = s.ShortDescription,
-                    historicalSignificance = s.HistoricalSignificance,
-                    culturalImportance = s.CulturalImportance,
-                    entryFeeNPR = s.EntryFeeNPR,       
-                    entryFeeSAARC = s.EntryFeeSAARC,  
-                    openingTime = s.OpeningTime,
-                    closingTime = s.ClosingTime,
-                    bestTimeToVisit = s.BestTimeToVisit,
-                    isUNESCO = s.IsUNESCO,
-                    imageUrls = s.ImageUrls
-                })
+               .Select(s => new
+               {
+                   id = s.Id,
+                   name = s.Name,
+                   category = s.Category,
+                   district = s.District,
+                   address = s.Address,
+                   shortDescription = s.ShortDescription,
+                   historicalSignificance = s.HistoricalSignificance,
+                   culturalImportance = s.CulturalImportance,
+                   entryFeeNPR = s.EntryFeeNPR,
+                   entryFeeSAARC = s.EntryFeeSAARC,
+                   openingTime = s.OpeningTime,
+                   closingTime = s.ClosingTime,
+                   bestTimeToVisit = s.BestTimeToVisit,
+                   isUNESCO = s.IsUNESCO,
+                   imageUrls = s.ImageUrls,
+                   createdAt = s.CreatedAt,
+                   updatedAt = s.UpdatedAt
+               })
                 .ToListAsync();
 
             return Ok(list);
@@ -82,8 +83,8 @@ namespace backend.Controllers
         [HttpPost]
         [RequestSizeLimit(25_000_000)]
         public async Task<ActionResult<object>> Create(
-    [FromServices] ICloudImageService imageService,
-    [FromForm] SiteCreateFormDto form)
+        [FromServices] ICloudImageService imageService,
+        [FromForm] SiteCreateFormDto form)
         {
             if (!ModelState.IsValid)
             {

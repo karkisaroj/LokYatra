@@ -12,10 +12,10 @@ namespace backend.DTO
 
         public int? NearCulturalSiteId { get; set; }
 
-        [Required, MaxLength(800)] public string BuildingHistory { get; set; } = string.Empty;
-        [MaxLength(600)] public string? CulturalSignificance { get; set; }
-        [Required, MaxLength(500)] public string TraditionalFeatures { get; set; } = string.Empty;
-        [Required, MaxLength(500)] public string CulturalExperiences { get; set; } = string.Empty;
+        [Required, MaxLength(1800)] public string BuildingHistory { get; set; } = string.Empty;
+        [MaxLength(1600)] public string? CulturalSignificance { get; set; }
+        [Required, MaxLength(1500)] public string TraditionalFeatures { get; set; } = string.Empty;
+        [Required, MaxLength(1500)] public string CulturalExperiences { get; set; } = string.Empty;
 
         [Required] public int NumberOfRooms { get; set; }
         [Required] public int MaxGuests { get; set; }

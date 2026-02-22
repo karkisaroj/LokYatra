@@ -1,6 +1,6 @@
 ﻿using backend.Database;
 using backend.DTO;
-using backend.Models;
+using backend.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
