@@ -8,6 +8,8 @@ import 'package:lokyatra_frontend/data/models/Homestay.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayAddPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayEditPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayListingsPage.dart';
+import '../../../core/services/sqlite_service.dart';
+import '../../../data/datasources/User_remote_datasource.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
 import '../../state_management/Bloc/homestays/HomestayState.dart';
@@ -23,16 +25,54 @@ class OwnerHomePage extends StatefulWidget {
 class _OwnerHomePageState extends State<OwnerHomePage> {
   static const _brown = Color(0xFF5C4033);
   static const _bg    = Color(0xFFF5EFE9);
+  String? _imageUrl;
 
   @override
   void initState() {
     super.initState();
+    _loadImage();
     context.read<HomestayBloc>().add(const OwnerLoadMyHomestays());
   }
 
   void _reload() {
-    if (mounted) context.read<HomestayBloc>().add(const OwnerLoadMyHomestays());
+    if (mounted) {
+
+      context.read<HomestayBloc>().add(const OwnerLoadMyHomestays());
+    }
   }
+
+  Future<void> _loadImage() async {
+    final sqlite = SqliteService();
+    final cachedImage = await sqlite.get('user_profile_image');
+
+    if (mounted) {
+      setState(() {
+        _imageUrl = (cachedImage != null && cachedImage.isNotEmpty) ? cachedImage : null;
+      });
+    }
+    // If online, refresh from API
+    final isOnline = await sqlite.isOnline();
+    if (isOnline) {
+      try {
+        final res = await UserRemoteDatasource().getMe();
+        if (res.statusCode == 200) {
+          final data = res.data as Map<String, dynamic>;
+          final serverImage = data['profileImage'] as String? ?? '';
+          if (serverImage.isNotEmpty && serverImage != cachedImage) {
+            await sqlite.put('user_profile_image', serverImage);
+            if (mounted) {
+              setState(() {
+                _imageUrl = serverImage;
+              });
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Error refreshing owner image: $e');
+      }
+    }
+  }
+
 
   void _goToDetail(Homestay h) =>
       Navigator.push(context,
@@ -58,37 +98,49 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // Header
               Padding(
                 padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 0),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text('LokYatra',
-                        style: GoogleFonts.playfairDisplay(
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'LokYatra',
+                          style: GoogleFonts.playfairDisplay(
                             fontSize: 22.sp,
                             fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2D1B10))),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 14.w, vertical: 7.h),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(20.r),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(Icons.person_outline_rounded,
-                              size: 16.sp, color: _brown),
-                          SizedBox(width: 6.w),
-                          Text('Host',
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 13.sp,
-                                  fontWeight: FontWeight.w600,
-                                  color: _brown)),
-                        ],
+                            color: const Color(0xFF2D1B10),
+                          ),
+                        ),
+                        SizedBox(height: 4.h),
+                        Text(
+                          'Host',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                            color: _brown,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    ClipOval(
+                      child: (_imageUrl != null && _imageUrl!.isNotEmpty)
+                          ? Image.network(
+                        _imageUrl!,
+                        width: 55.w,
+                        height: 55.w,
+                        fit: BoxFit.cover,
+                      )
+                          : Container(
+                        width: 55.w,
+                        height: 55.w,
+                        color: _brown.withValues(alpha: 0.1),
+                        child: Icon(Icons.person, color: _brown, size: 28.sp),
                       ),
                     ),
                   ],

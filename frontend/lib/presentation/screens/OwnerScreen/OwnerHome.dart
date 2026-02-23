@@ -56,7 +56,7 @@ class _OwnerHomeState extends State<OwnerHome> {
       designSize: const Size(390, 844),
       minTextAdapt: true,
       splitScreenMode: true,
-      builder: (_, __) => BlocProvider.value(
+      builder: (_, _) => BlocProvider.value(
         // Provide the SAME bloc instance to all tabs
         value: _homestayBloc,
         child: Scaffold(
@@ -64,7 +64,7 @@ class _OwnerHomeState extends State<OwnerHome> {
             index: _currentTab,
             children: [
               const OwnerHomePage(),
-              const HomestayListingsPage(), // your existing file
+              const HomestayListingsPage(),
               _comingSoon('Bookings', Icons.calendar_today_outlined),
               _comingSoon('Balance', Icons.account_balance_wallet_outlined),
               const OwnerProfilePage(),

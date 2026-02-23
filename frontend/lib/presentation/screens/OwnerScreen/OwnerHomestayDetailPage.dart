@@ -514,7 +514,7 @@ class _OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                             ],
                           ),
                         );
-                      }).toList(),
+                      }),
                       SizedBox(height: 24.h),
                     ],
 
@@ -539,7 +539,7 @@ class _OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                               size: 18.sp,
                             ),
                             label: Text(
-                              homestay.isVisible ? 'Pause Homestay' : 'Activate Homestay',
+                              homestay.isVisible ? 'Pause' : 'Activate',
                             ),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: homestay.isVisible

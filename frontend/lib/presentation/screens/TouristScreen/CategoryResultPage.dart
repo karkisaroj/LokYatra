@@ -27,18 +27,20 @@ class CategoryResultsPage extends StatelessWidget {
       backgroundColor: _cream,
       body: CustomScrollView(
         slivers: [
-          // ── Header ────────────────────────────────────────────────
+          // ── Header
           SliverAppBar(
-            expandedHeight: 150.h,
+            expandedHeight: 120.h,
             pinned: true,
             backgroundColor: _dark,
-            elevation: 0,
-            leading: GestureDetector(
-              onTap: () => Navigator.pop(context),
-              child: Container(
-                margin: EdgeInsets.all(8.w),
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: Icon(Icons.arrow_back, size: 20.sp, color: _dark),
+            elevation: 2,
+            leading: IconButton(
+              icon: Icon(Icons.arrow_back, size: 14.sp, color: _dark),
+              onPressed: () => Navigator.pop(context),
+              style: ButtonStyle(
+                backgroundColor: WidgetStateProperty.all(Colors.white),
+                shape: WidgetStateProperty.all(const CircleBorder()),
+                padding: WidgetStateProperty.all(EdgeInsets.all(4.w)),
+                minimumSize: WidgetStateProperty.all(Size(32.w, 32.w)),
               ),
             ),
             flexibleSpace: FlexibleSpaceBar(
@@ -47,26 +49,48 @@ class CategoryResultsPage extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [Color(0xFF2D1B10), Color(0xFF5C3A28)],
+                    colors: [
+                      Color(0xFF2D1B10),
+                      Color(0xFF555555),
+                    ],
                   ),
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: EdgeInsets.fromLTRB(20.w, 48.h, 20.w, 16.h),
+                    padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 12.h),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(_categoryIcon(category), color: Colors.white60, size: 26.sp),
-                        SizedBox(height: 6.h),
-                        Text(category,
-                            style: GoogleFonts.playfairDisplay(
-                                color: Colors.white, fontSize: 24.sp, fontWeight: FontWeight.bold)),
+                        Icon(
+                          _categoryIcon(category),
+                          color: Colors.white.withValues(alpha: 0.7),
+                          size: 24.sp,
+                        ),
+                        SizedBox(height: 4.h),
                         Text(
-                          type == 'Site' ? 'Cultural Sites'
-                              : type == 'Stay' ? 'Homestays'
+                          category,
+                          style: GoogleFonts.playfairDisplay(
+                            color: Colors.white,
+                            fontSize: 22.sp,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                        Text(
+                          type == 'Site'
+                              ? 'Cultural Sites'
+                              : type == 'Stay'
+                              ? 'Homestays'
                               : 'Sites & Stays',
-                          style: GoogleFonts.dmSans(color: Colors.white60, fontSize: 13.sp),
+                          style: GoogleFonts.dmSans(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontSize: 13.sp,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
                         ),
                       ],
                     ),
