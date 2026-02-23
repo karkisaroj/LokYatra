@@ -2,6 +2,7 @@ import 'package:bloc/bloc.dart';
 import 'package:dio/dio.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:lokyatra_frontend/core/constants.dart';
+import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 import 'package:lokyatra_frontend/data/models/register.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
 import 'auth_event.dart';
@@ -30,9 +31,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       RegisterButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final response = await _dio.post(registerEndpoint, data: event.user.toJson());
+      final response =
+      await _dio.post(registerEndpoint, data: event.user.toJson());
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final registeredUser = RegisterUser.fromJson(response.data as Map<String, dynamic>);
+        final registeredUser =
+        RegisterUser.fromJson(response.data as Map<String, dynamic>);
         emit(RegisterSuccess(registeredUser));
       } else {
         emit(AuthError('Server error: ${response.statusCode}'));
@@ -59,13 +62,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return;
       }
 
-      final accessToken  = loginRes.data['accessToken']  as String;
+      final accessToken = loginRes.data['accessToken'] as String;
       final refreshToken = loginRes.data['refreshToken'] as String;
 
-      // Step 2: Save tokens
+      // Step 2: Save tokens securely
       await SecureStorageService.saveTokens(accessToken, refreshToken);
 
-      // Step 3: Fetch profile using the fresh token directly (no storage read)
+      // Step 3: Fetch profile using fresh token
       try {
         final profileRes = await _dio.get(
           'api/User/me',
@@ -75,35 +78,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           }),
         );
 
-        print('=== getMe status: ${profileRes.statusCode}');
-        print('=== getMe data: ${profileRes.data}');
-
         if (profileRes.statusCode == 200) {
           final d = profileRes.data as Map<String, dynamic>;
           final imageUrl = d['profileImage'] as String? ?? '';
-          print('=== profileImage from server: "$imageUrl"');
 
-          await SecureStorageService.saveUserProfile(
-            name:         d['name']         as String? ?? '',
-            email:        d['email']         as String? ?? '',
-            profileImage: imageUrl,
-            phoneNumber:  d['phoneNumber']   as String? ?? '',
-          );
-
-          final check = await SecureStorageService.getProfileImage();
-          print('=== profileImage saved in prefs: "$check"');
+          // Save profile info in SQLite (non-sensitive)
+          await SqliteService().put("user_name", d['name'] ?? '');
+          await SqliteService().put("user_email", d['email'] ?? '');
+          await SqliteService().put("user_phone", d['phoneNumber'] ?? '');
+          await SqliteService().put("user_image", imageUrl);
         }
       } catch (e) {
-        print('=== getMe FAILED: $e');
-        // Save at least name/email from token so profile page isn't empty
+        // Fallback: decode token to at least get name/email
         final decoded = JwtDecoder.decode(accessToken);
-        await SecureStorageService.saveUserProfile(
-          name:  decoded['name']  as String? ?? '',
-          email: event.email,
-        );
+        await SqliteService().put("user_name", decoded['name'] ?? '');
+        await SqliteService().put("user_email", event.email);
       }
 
-      // Step 4: Emit success — prefs are written, navigation happens now
+      // Step 4: Emit success
       final role = JwtDecoder.decode(accessToken)['role'] as String?;
       if (role == 'admin') {
         emit(AdminLoginSuccess(accessToken));
@@ -114,7 +106,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       } else {
         emit(AuthError('Unknown role: $role'));
       }
-
     } on DioException catch (e) {
       emit(AuthError(_parseDioError(e)));
     } catch (e) {
@@ -135,14 +126,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       // server call failing is fine — clear locally anyway
     } finally {
       await SecureStorageService.deleteTokens();
+      // Clear cached profile info from SQLite
+      await SqliteService().clearAllCache();
       emit(LogoutSuccess());
     }
   }
 
   String _parseDioError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout) return 'Connection timeout';
-    if (e.type == DioExceptionType.receiveTimeout)    return 'Receive timeout';
-    if (e.type == DioExceptionType.connectionError)   return 'Cannot reach server. Check your network.';
+    if (e.type == DioExceptionType.receiveTimeout) return 'Receive timeout';
+    if (e.type == DioExceptionType.connectionError) {
+      return 'Cannot reach server. Check your network.';
+    }
     if (e.response != null) {
       final data = e.response?.data;
       if (data is String && data.isNotEmpty) return data;

@@ -1,11 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lokyatra_frontend/data/datasources/sites_remote_datasource.dart';
+import '../../../../data/models/Site.dart'; // your CulturalSite model
 import 'sites_event.dart';
 import 'sites_state.dart';
 
 class SitesBloc extends Bloc<SitesEvent, SitesState> {
   final SitesRemoteDatasource _remote = SitesRemoteDatasource();
+  List<CulturalSite>? _cachedSites;
 
   SitesBloc() : super(SitesInitial()) {
     on<LoadSites>(_onLoadSites);
@@ -33,11 +35,17 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
   Future<void> _onLoadSites(LoadSites event, Emitter<SitesState> emit) async {
     emit(SitesLoading());
     try {
-      final response = await _remote.getSites(q: event.query);
-      final List sites = response.data ?? [];
-      emit(SitesLoaded(sites));
+      final resp = await _remote.getSites();
+      if (resp.statusCode == 200) {
+        final raw = resp.data as List<dynamic>;
+        final sites = raw.map((e) => CulturalSite.fromJson(e as Map<String, dynamic>)).toList();
+        _cachedSites = sites;
+        emit(SitesLoaded(sites));
+      } else {
+        emit(SitesError('Failed to load sites: ${resp.statusCode}'));
+      }
     } catch (e) {
-      emit(SitesError(_handleError(e)));
+      emit(SitesError('Network error: $e'));
     }
   }
 
@@ -45,8 +53,14 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
     emit(SitesLoading());
     try {
       final response = await _remote.getSites();
-      final List sites = response.data ?? [];
-      emit(SitesLoaded(sites));
+      if (response.statusCode == 200) {
+        final raw = response.data as List<dynamic>;
+        final sites = raw.map((e) => CulturalSite.fromJson(e as Map<String, dynamic>)).toList();
+        _cachedSites = sites;
+        emit(SitesLoaded(sites));
+      } else {
+        emit(SitesError('Failed to refresh sites: ${response.statusCode}'));
+      }
     } catch (e) {
       emit(SitesError(_handleError(e)));
     }
@@ -55,11 +69,20 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
   Future<void> _onLoadSiteById(LoadSiteById event, Emitter<SitesState> emit) async {
     emit(SiteDetailLoading());
     try {
-      final response = await _remote.getSite(event.id);
-      final site = response.data;
-      emit(SiteDetailLoaded(site));
+      final resp = await _remote.getSite(event.id);
+      if (resp.statusCode == 200) {
+        final site = CulturalSite.fromJson(resp.data as Map<String, dynamic>);
+        emit(SiteDetailLoaded(site)); // single site detail
+        if (_cachedSites != null) {
+          emit(SitesLoaded(_cachedSites!)); // list of sites
+        }
+      } else {
+        emit(SiteDetailError('Failed to load site: ${resp.statusCode}'));
+        if (_cachedSites != null) emit(SitesLoaded(_cachedSites!));
+      }
     } catch (e) {
-      emit(SitesError(_handleError(e)));
+      emit(SiteDetailError('Network error: $e'));
+      if (_cachedSites != null) emit(SitesLoaded(_cachedSites!));
     }
   }
 

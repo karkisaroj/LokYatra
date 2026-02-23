@@ -178,8 +178,8 @@ class _StoriesState extends State<Stories> {
                                   style: GoogleFonts.dmSans(fontSize: 13.sp)),
                             ),
                             ...state.sites.map((site) => DropdownMenuItem<int>(
-                              value: site['id'] as int,
-                              child: Text((site['name'] ?? '').toString(),
+                              value: site.id,
+                              child: Text((site.name?? '').toString(),
                                   overflow: TextOverflow.ellipsis,
                                   style:
                                   GoogleFonts.dmSans(fontSize: 13.sp)),

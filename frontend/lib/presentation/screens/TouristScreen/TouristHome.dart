@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristProfilePage.dart';
+import '../../../core/services/sqlite_service.dart';
+import '../../../data/datasources/User_remote_datasource.dart';
 import '../../../data/models/Site.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
@@ -114,20 +116,51 @@ class _HomeTab extends StatefulWidget {
 class _HomeTabState extends State<_HomeTab> {
   static const _dark = Color(0xFF2D1B10);
   final _searchController = TextEditingController();
+  String? _profileImageUrl;
 
   @override
   void initState() {
     super.initState();
     context.read<SitesBloc>().add(LoadSites());
-    // Don't load homestays here anymore - they're loaded when tab is selected
-    // This prevents double loading
+    _loadProfileImage();
+  }
+
+  Future<void> _loadProfileImage() async {
+    final sqlite = SqliteService();
+    final cachedImage = await sqlite.get('user_profile_image');
+    if (mounted) {
+      setState(() {
+        _profileImageUrl = cachedImage;
+      });
+    }
+  //this lines of code below will run if the user is online to check profile picture
+    final isOnline = await sqlite.isOnline();
+    if (isOnline) {
+      try {
+        final res = await UserRemoteDatasource().getMe();
+        if (res.statusCode == 200) {
+          final data = res.data as Map<String, dynamic>;
+          final serverImage = data['profileImage'] as String? ?? '';
+
+          // Only update if server has a new image
+          if (serverImage.isNotEmpty && serverImage != cachedImage) {
+            await sqlite.put('user_profile_image', serverImage);
+            if (mounted) {
+              setState(() {
+                _profileImageUrl = serverImage;
+              });
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('Error refreshing profile image: $e');
+      }
+    }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Load homestays when tab becomes visible
-    // This ensures they load if coming from another tab
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
@@ -171,8 +204,12 @@ class _HomeTabState extends State<_HomeTab> {
                       CircleAvatar(
                         radius: 22.r,
                         backgroundColor: Colors.grey[300],
-                        backgroundImage: const NetworkImage(
-                            'https://cdn-icons-png.flaticon.com/512/3135/3135715.png'),
+                        backgroundImage: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
+                            ? NetworkImage(_profileImageUrl!)
+                            : null,
+                        child: _profileImageUrl == null || _profileImageUrl!.isEmpty
+                            ? Icon(Icons.person_rounded, color: Colors.grey[600], size: 28.sp)
+                            : null,
                       )
                     ],
                   ),
@@ -231,7 +268,7 @@ class _HomeTabState extends State<_HomeTab> {
                                   builder: (_) => BlocProvider.value(
                                     value: context.read<HomestayBloc>(),
                                     child: TouristSiteDetailPage(
-                                      site: CulturalSite.fromJson(site),
+                                      site: site,
                                     ),
                                   ),
                                 ),
@@ -312,13 +349,13 @@ class _SearchBar extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.04),
+                color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 10, offset: const Offset(0, 4))
           ],
         ),
         child: TextField(
           controller: controller,
-          enabled: false, // Make it read-only/disabled so tap passes to GestureDetector
+          enabled: false,
           style: GoogleFonts.dmSans(fontSize: 14.sp),
           decoration: InputDecoration(
             hintText: 'Search for sites, homestays...',
@@ -434,15 +471,15 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _HorizontalSiteCard extends StatelessWidget {
-  final Map<String, dynamic> site;
+  final CulturalSite site;
   final VoidCallback onTap;
   const _HorizontalSiteCard({required this.site, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = getFirstImageUrl(site['imageUrls']);
-    final name = site['name'] as String? ?? 'Unnamed Site';
-    final district = site['district'] as String? ?? 'Nepal';
+    final imageUrl = getFirstImageUrl(site.imageUrls);
+    final name = site.name ?? 'Unnamed Site';
+    final district = site.district ?? 'Nepal';
 
     return GestureDetector(
       onTap: onTap,
@@ -452,7 +489,7 @@ class _HorizontalSiteCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20.r),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.08), blurRadius: 10, offset: const Offset(0, 4))
+                color: Colors.black.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 4))
           ],
         ),
         child: Stack(
@@ -469,7 +506,7 @@ class _HorizontalSiteCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20.r),
                 gradient: LinearGradient(
                   begin: Alignment.topCenter, end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.7)],
+                  colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
                 ),
               ),
             ),
@@ -518,7 +555,7 @@ class _HomestayCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final imageUrl = homestay.imageUrls.isNotEmpty ? homestay.imageUrls.first : null;
     final nearSite = (homestay.nearCulturalSite?.name ?? '').isNotEmpty
-        ? 'Near ${homestay.nearCulturalSite?.name}' : homestay.location ?? '';
+        ? 'Near ${homestay.nearCulturalSite?.name}' : homestay.location ;
 
     return GestureDetector(
       onTap: onTap,
@@ -529,7 +566,7 @@ class _HomestayCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(20.r),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.04), blurRadius: 15, offset: const Offset(0, 8))
+                color: Colors.black.withValues(alpha: 0.04), blurRadius: 15, offset: const Offset(0, 8))
           ],
         ),
         child: Column(
@@ -547,7 +584,7 @@ class _HomestayCard extends StatelessWidget {
                   top: 12.h, right: 12.w,
                   child: Container(
                     padding: EdgeInsets.all(8.w),
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.9), shape: BoxShape.circle),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.9), shape: BoxShape.circle),
                     child: Icon(Icons.favorite_border_rounded, size: 20.sp, color: Colors.grey[700]),
                   ),
                 ),
@@ -604,4 +641,8 @@ class _HomestayCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String getFirstImageUrl(List<String> urls) {
+  return urls.isNotEmpty ? urls.first : '';
 }

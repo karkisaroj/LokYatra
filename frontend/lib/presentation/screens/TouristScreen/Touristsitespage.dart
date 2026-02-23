@@ -81,7 +81,7 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                 }
                 if (state is SitesLoaded) {
                   final filtered = state.sites.where((s) {
-                    final name = (s['name'] ?? '').toString().toLowerCase();
+                    final name = (s.name?? '').toString().toLowerCase();
                     return _search.isEmpty ||
                         name.contains(_search.toLowerCase());
                   }).toList();
@@ -91,11 +91,11 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                     itemCount: filtered.length,
                     itemBuilder: (context, i) {
                       final site = filtered[i];
-                      final imageUrl = getFirstImageUrl(site['imageUrls']);
-                      final name     = (site['name'] ?? '').toString();
-                      final category = (site['category'] ?? '').toString();
+                      final imageUrl = getFirstImageUrl(site.imageUrls);
+                      final name     = (site.name?? '').toString();
+                      final category = (site.category ?? '').toString();
                       final isUnesco = category.toLowerCase().contains('unesco') ||
-                          site['isUnesco'] == true;
+                          site.isUNESCO == true;
 
                       return Container(
                         margin: EdgeInsets.only(bottom: 16.h),
@@ -186,7 +186,11 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                                                   fontWeight: FontWeight.w700)),
                                         ),
                                       SizedBox(height: 6.h),
-                                      Text('Rs. ${site['entryFee'] ?? '0'}',
+                                      Text('Rs. ${site.entryFeeNPR ?? '0'}',
+                                          style: GoogleFonts.dmSans(
+                                              fontSize: 13.sp,
+                                              color: Colors.grey[600])),
+                                      Text('SAARC. ${site.entryFeeSAARC ?? '0'}',
                                           style: GoogleFonts.dmSans(
                                               fontSize: 13.sp,
                                               color: Colors.grey[600])),

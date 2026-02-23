@@ -2,77 +2,62 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
-
 import '../../../data/models/Site.dart';
 
-class SiteDetailPage extends StatelessWidget {
+class SiteDetailPage extends StatefulWidget {
   final CulturalSite site;
   const SiteDetailPage({super.key, required this.site});
+
+  @override
+  State<SiteDetailPage> createState() => _SiteDetailPageState();
+}
+
+class _SiteDetailPageState extends State<SiteDetailPage> {
+  int _currentImageIndex = 0;
+  final PageController _pageController = PageController();
 
   static const _terracotta = Color(0xFFCD6E4E);
   static const _dark = Color(0xFF2D1B10);
   static const _cream = Color(0xFFFAF7F2);
   static const _warmGrey = Color(0xFF8B8B8B);
+  static const _teal = Color(0xFF4A707A);
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
 
   String _formatDate(DateTime? date) {
     if (date == null) return '—';
-    try {
-      final dt = date.toLocal();
-      const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-      ];
-      final m = months[dt.month - 1];
-      final d = dt.day;
-      final y = dt.year;
-      final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
-      final min = dt.minute.toString().padLeft(2, '0');
-      final ampm = dt.hour >= 12 ? 'PM' : 'AM';
-      return '$m $d, $y at $h:$min $ampm';
-    } catch (e) {
-      return date.toString();
-    }
+    final dt = date.toLocal();
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    final h = dt.hour > 12 ? dt.hour - 12 : (dt.hour == 0 ? 12 : dt.hour);
+    final min = dt.minute.toString().padLeft(2, '0');
+    final ampm = dt.hour >= 12 ? 'PM' : 'AM';
+    return '${months[dt.month - 1]} ${dt.day}, ${dt.year} · $h:$min $ampm';
   }
 
   @override
   Widget build(BuildContext context) {
-    // Extract data safely
-    final name = site.name ?? '';
-    final category = site.category ?? '';
-    final district = site.district ?? '';
-    final shortDescription = site.shortDescription ?? '';
-    final historicalSignificance = site.historicalSignificance ?? '';
-    final culturalImportance = site.culturalImportance ?? '';
-    final openingTime = site.openingTime ?? '';
-    final closingTime = site.closingTime ?? '';
-    final entryFeeNPR = site.entryFeeNPR?.toStringAsFixed(0) ?? '';
-    final entryFeeSAARC = site.entryFeeSAARC?.toStringAsFixed(0) ?? '';
-    final bestTimeToVisit = site.bestTimeToVisit ?? '';
-    final isUNESCO = site.isUNESCO;
-    final createdAt = site.createdAt;
-    final updatedAt = site.updatedAt;
-
-    // Images
-    List<String> imageUrls = site.imageUrls.isNotEmpty ? site.imageUrls : [''];
+    final site = widget.site;
+    final images = site.imageUrls.isNotEmpty ? site.imageUrls : <String>[];
 
     return Scaffold(
       backgroundColor: _cream,
       body: CustomScrollView(
         slivers: [
-          // 1. App Bar with Hero Image
+          // ── Hero Image Gallery ──────────────────────────────────────────
           SliverAppBar(
-            expandedHeight: 300.h,
+            expandedHeight: 320.h,
             pinned: true,
-            backgroundColor: _cream,
+            backgroundColor: _dark,
             elevation: 0,
             leading: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
                 margin: EdgeInsets.all(8.w),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
-                ),
+                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                 child: Icon(Icons.arrow_back, size: 20.sp, color: _dark),
               ),
             ),
@@ -80,97 +65,129 @@ class SiteDetailPage extends StatelessWidget {
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (imageUrls.first.isNotEmpty)
-                    ProxyImage(
-                      imageUrl: imageUrls.first,
+                  // Image PageView
+                  images.isEmpty
+                      ? Container(
+                    color: Colors.grey[300],
+                    child: Icon(Icons.image_not_supported, size: 60.sp, color: Colors.grey[400]),
+                  )
+                      : PageView.builder(
+                    controller: _pageController,
+                    itemCount: images.length,
+                    onPageChanged: (i) => setState(() => _currentImageIndex = i),
+                    itemBuilder: (_, i) => ProxyImage(
+                      imageUrl: images[i],
                       width: double.infinity,
                       height: double.infinity,
                       borderRadiusValue: 0,
-                    )
-                  else
-                    Container(
-                      color: Colors.grey[300],
-                      child: Icon(Icons.image_not_supported, size: 50.sp, color: Colors.grey[500]),
                     ),
+                  ),
 
-                  // Gradient overlay for text readability
+                  // Gradient
                   Positioned.fill(
-                    child: Container(
+                    child: DecoratedBox(
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
                           colors: [
-                            Colors.black.withOpacity(0.3),
+                            Colors.black.withOpacity(0.35),
                             Colors.transparent,
-                            Colors.black.withOpacity(0.6),
+                            Colors.black.withOpacity(0.7),
                           ],
+                          stops: const [0, 0.4, 1],
                         ),
                       ),
                     ),
                   ),
 
-                  // Title on image
+                  // Image count badge (top right)
+                  if (images.length > 1)
+                    Positioned(
+                      top: 12.h,
+                      right: 16.w,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(20.r),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.photo_library_outlined, size: 12.sp, color: Colors.white),
+                            SizedBox(width: 4.w),
+                            Text(
+                              '${_currentImageIndex + 1}/${images.length}',
+                              style: GoogleFonts.dmSans(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                  // Dot indicators
+                  if (images.length > 1)
+                    Positioned(
+                      bottom: 70.h,
+                      left: 0,
+                      right: 0,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(images.length, (i) {
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            margin: EdgeInsets.symmetric(horizontal: 3.w),
+                            height: 6.h,
+                            width: _currentImageIndex == i ? 20.w : 6.w,
+                            decoration: BoxDecoration(
+                              color: _currentImageIndex == i ? Colors.white : Colors.white54,
+                              borderRadius: BorderRadius.circular(3.r),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+
+                  // Title overlay at bottom
                   Positioned(
-                    bottom: 20.h,
+                    bottom: 16.h,
                     left: 20.w,
                     right: 20.w,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (isUNESCO)
+                        if (site.isUNESCO)
                           Container(
-                            margin: EdgeInsets.only(bottom: 8.h),
-                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                            margin: EdgeInsets.only(bottom: 6.h),
+                            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                             decoration: BoxDecoration(
                               color: _terracotta,
                               borderRadius: BorderRadius.circular(4.r),
                             ),
                             child: Text(
-                              'UNESCO World Heritage Site',
-                              style: GoogleFonts.dmSans(
-                                color: Colors.white,
-                                fontSize: 10.sp,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
+                              '🏛 UNESCO World Heritage',
+                              style: GoogleFonts.dmSans(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold),
                             ),
                           ),
                         Text(
-                          name,
+                          site.name ?? '',
                           style: GoogleFonts.playfairDisplay(
                             color: Colors.white,
-                            fontSize: 28.sp,
+                            fontSize: 26.sp,
                             fontWeight: FontWeight.bold,
+                            shadows: [const Shadow(blurRadius: 8, color: Colors.black45)],
                           ),
                         ),
                         SizedBox(height: 4.h),
                         Row(
                           children: [
-                            Icon(Icons.location_on, color: Colors.white70, size: 14.sp),
-                            SizedBox(width: 4.w),
-                            Text(
-                              district,
-                              style: GoogleFonts.dmSans(
-                                color: Colors.white70,
-                                fontSize: 14.sp,
-                              ),
-                            ),
-                            if (category.isNotEmpty) ...[
-                              SizedBox(width: 12.w),
-                              Container(
-                                width: 4.w,
-                                height: 4.w,
-                                decoration: const BoxDecoration(color: Colors.white70, shape: BoxShape.circle),
-                              ),
-                              SizedBox(width: 12.w),
-                              Text(
-                                category,
-                                style: GoogleFonts.dmSans(
-                                  color: Colors.white70,
-                                  fontSize: 14.sp,
-                                ),
-                              ),
+                            Icon(Icons.location_on, color: Colors.white70, size: 13.sp),
+                            SizedBox(width: 3.w),
+                            Text(site.district ?? '', style: GoogleFonts.dmSans(color: Colors.white70, fontSize: 13.sp)),
+                            if ((site.category ?? '').isNotEmpty) ...[
+                              Text('  ·  ', style: GoogleFonts.dmSans(color: Colors.white38, fontSize: 13.sp)),
+                              Text(site.category!, style: GoogleFonts.dmSans(color: Colors.white70, fontSize: 13.sp)),
                             ],
                           ],
                         ),
@@ -182,131 +199,138 @@ class SiteDetailPage extends StatelessWidget {
             ),
           ),
 
-          // 2. Content Body
+          // ── Body ───────────────────────────────────────────────────────
           SliverToBoxAdapter(
-            child: Container(
-              decoration: BoxDecoration(
-                color: _cream,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(20.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Quick Info Cards
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _InfoCard(
-                            icon: Icons.access_time,
-                            label: 'Hours',
-                            value: '$openingTime - $closingTime',
-                          ),
-                          SizedBox(width: 12.w),
-                          _InfoCard(
-                            icon: Icons.attach_money,
-                            label: 'Entry (NPR)',
-                            value: entryFeeNPR,
-                          ),
-                          SizedBox(width: 12.w),
-                          _InfoCard(
-                            icon: Icons.calendar_today,
-                            label: 'Best Time',
-                            value: bestTimeToVisit,
-                          ),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Quick Info Row
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        if ((site.openingTime ?? '').isNotEmpty || (site.closingTime ?? '').isNotEmpty)
+                          _InfoChip(Icons.access_time_rounded, 'Hours', '${site.openingTime ?? '?'} – ${site.closingTime ?? '?'}'),
+                        if (site.entryFeeNPR != null) ...[
+                          SizedBox(width: 10.w),
+                          _InfoChip(Icons.payments_outlined, 'Entry (NPR)', 'Rs. ${site.entryFeeNPR!.toStringAsFixed(0)}'),
                         ],
-                      ),
+                        if ((site.bestTimeToVisit ?? '').isNotEmpty) ...[
+                          SizedBox(width: 10.w),
+                          _InfoChip(Icons.wb_sunny_outlined, 'Best Time', site.bestTimeToVisit!),
+                        ],
+                        if (site.entryFeeSAARC != null) ...[
+                          SizedBox(width: 10.w),
+                          _InfoChip(Icons.people_outline, 'SAARC', 'Rs. ${site.entryFeeSAARC!.toStringAsFixed(0)}'),
+                        ],
+                      ],
                     ),
-                    SizedBox(height: 24.h),
+                  ),
+                  SizedBox(height: 24.h),
 
-                    // Description
+                  // Short Description
+                  if ((site.shortDescription ?? '').isNotEmpty) ...[
                     Text(
-                      shortDescription,
-                      style: GoogleFonts.dmSans(
-                        fontSize: 15.sp,
-                        height: 1.6,
-                        color: _dark.withOpacity(0.8),
-                      ),
+                      site.shortDescription!,
+                      style: GoogleFonts.dmSans(fontSize: 15.sp, height: 1.65, color: _dark.withOpacity(0.85)),
                     ),
                     SizedBox(height: 24.h),
-
-                    // Historical Significance
-                    if (historicalSignificance.isNotEmpty) ...[
-                      _SectionTitle(title: 'Historical Significance'),
-                      SizedBox(height: 8.h),
-                      Text(
-                        historicalSignificance,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 14.sp,
-                          height: 1.6,
-                          color: _warmGrey,
-                        ),
-                      ),
-                      SizedBox(height: 24.h),
-                    ],
-
-                    // Cultural Importance
-                    if (culturalImportance.isNotEmpty) ...[
-                      _SectionTitle(title: 'Cultural Importance'),
-                      SizedBox(height: 8.h),
-                      Text(
-                        culturalImportance,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 14.sp,
-                          height: 1.6,
-                          color: _warmGrey,
-                        ),
-                      ),
-                      SizedBox(height: 24.h),
-                    ],
-
-                    // Additional Details
-                    Container(
-                      padding: EdgeInsets.all(16.w),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12.r),
-                        border: Border.all(color: Colors.grey.shade200),
-                      ),
-                      child: Column(
-                        children: [
-                          _DetailRow(label: 'Entry Fee (SAARC)', value: 'NPR $entryFeeSAARC'),
-                          const Divider(height: 24),
-                          _DetailRow(label: 'Created At', value: _formatDate(createdAt)),
-                          const Divider(height: 24),
-                          _DetailRow(label: 'Last Updated', value: _formatDate(updatedAt)),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 24.h),
-
-                    // Gallery
-                    if (imageUrls.length > 1) ...[
-                      _SectionTitle(title: 'Gallery'),
-                      SizedBox(height: 12.h),
-                      SizedBox(
-                        height: 120.h,
-                        child: ListView.separated(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: imageUrls.length,
-                          separatorBuilder: (_, __) => SizedBox(width: 12.w),
-                          itemBuilder: (_, index) => ClipRRect(
-                            borderRadius: BorderRadius.circular(12.r),
-                            child: ProxyImage(
-                              imageUrl: imageUrls[index],
-                              width: 160.w,
-                              height: 120.h,
-                              borderRadiusValue: 0,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 32.h),
-                    ],
                   ],
-                ),
+
+                  // Historical Significance
+                  if ((site.historicalSignificance ?? '').isNotEmpty) ...[
+                    _SectionHeader('Historical Significance', Icons.history_edu_outlined, _teal),
+                    SizedBox(height: 10.h),
+                    _ContentCard(child: Text(
+                      site.historicalSignificance!,
+                      style: GoogleFonts.dmSans(fontSize: 14.sp, height: 1.65, color: _warmGrey),
+                    )),
+                    SizedBox(height: 20.h),
+                  ],
+
+                  // Cultural Importance
+                  if ((site.culturalImportance ?? '').isNotEmpty) ...[
+                    _SectionHeader('Cultural Importance', Icons.temple_hindu_outlined, _terracotta),
+                    SizedBox(height: 10.h),
+                    _ContentCard(child: Text(
+                      site.culturalImportance!,
+                      style: GoogleFonts.dmSans(fontSize: 14.sp, height: 1.65, color: _warmGrey),
+                    )),
+                    SizedBox(height: 20.h),
+                  ],
+
+                  // Image Gallery (thumbnails)
+                  if (images.length > 1) ...[
+                    _SectionHeader('Photo Gallery', Icons.photo_library_outlined, _dark),
+                    SizedBox(height: 12.h),
+                    SizedBox(
+                      height: 100.h,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: images.length,
+                        separatorBuilder: (_, __) => SizedBox(width: 10.w),
+                        itemBuilder: (_, i) {
+                          final isActive = i == _currentImageIndex;
+                          return GestureDetector(
+                            onTap: () {
+                              _pageController.animateToPage(
+                                i,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeInOut,
+                              );
+                              setState(() => _currentImageIndex = i);
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              width: 100.w,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10.r),
+                                border: Border.all(
+                                  color: isActive ? _terracotta : Colors.transparent,
+                                  width: 2.5,
+                                ),
+                                boxShadow: isActive
+                                    ? [BoxShadow(color: _terracotta.withOpacity(0.3), blurRadius: 6)]
+                                    : null,
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8.r),
+                                child: ProxyImage(
+                                  imageUrl: images[i],
+                                  width: 100.w,
+                                  height: 100.h,
+                                  borderRadiusValue: 0,
+                                  thumb: true,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    SizedBox(height: 20.h),
+                  ],
+
+                  // Metadata Card
+                  _SectionHeader('Site Details', Icons.info_outline_rounded, _dark),
+                  SizedBox(height: 10.h),
+                  _ContentCard(
+                    child: Column(
+                      children: [
+                        _DetailRow(Icons.calendar_today_outlined, 'Added On', _formatDate(site.createdAt)),
+                        Divider(height: 20.h, color: Colors.grey.shade100),
+                        _DetailRow(Icons.update_rounded, 'Last Updated', _formatDate(site.updatedAt)),
+                        if (site.address != null) ...[
+                          Divider(height: 20.h, color: Colors.grey.shade100),
+                          _DetailRow(Icons.map_outlined, 'Address', site.address!),
+                        ],
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 32.h),
+                ],
               ),
             ),
           ),
@@ -316,69 +340,85 @@ class SiteDetailPage extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
+// ── Small reusable widgets ────────────────────────────────────────────────────
+
+class _SectionHeader extends StatelessWidget {
   final String title;
-  const _SectionTitle({required this.title});
+  final IconData icon;
+  final Color color;
+  const _SectionHeader(this.title, this.icon, this.color);
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      title,
-      style: GoogleFonts.playfairDisplay(
-        fontSize: 18.sp,
-        fontWeight: FontWeight.bold,
-        color: const Color(0xFF2D1B10),
-      ),
+    return Row(
+      children: [
+        Icon(icon, size: 18.sp, color: color),
+        SizedBox(width: 8.w),
+        Text(
+          title,
+          style: GoogleFonts.playfairDisplay(
+            fontSize: 17.sp,
+            fontWeight: FontWeight.bold,
+            color: const Color(0xFF2D1B10),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _InfoCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
+class _ContentCard extends StatelessWidget {
+  final Widget child;
+  const _ContentCard({required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+      width: double.infinity,
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14.r),
+        border: Border.all(color: Colors.grey.shade100),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2)),
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _InfoChip(this.icon, this.label, this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
         border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 4, offset: const Offset(0, 2)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16.sp, color: const Color(0xFFCD6E4E)),
-              SizedBox(width: 6.w),
-              Text(
-                label,
-                style: GoogleFonts.dmSans(
-                  fontSize: 12.sp,
-                  color: Colors.grey[600],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
+              Icon(icon, size: 13.sp, color: const Color(0xFFCD6E4E)),
+              SizedBox(width: 5.w),
+              Text(label, style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500])),
             ],
           ),
-          SizedBox(height: 6.h),
-          Text(
-            value,
-            style: GoogleFonts.dmSans(
-              fontSize: 14.sp,
-              color: const Color(0xFF2D1B10),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          SizedBox(height: 4.h),
+          Text(value, style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
         ],
       ),
     );
@@ -386,29 +426,26 @@ class _InfoCard extends StatelessWidget {
 }
 
 class _DetailRow extends StatelessWidget {
+  final IconData icon;
   final String label;
   final String value;
-
-  const _DetailRow({required this.label, required this.value});
+  const _DetailRow(this.icon, this.label, this.value);
 
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.dmSans(
-            fontSize: 14.sp,
-            color: Colors.grey[600],
-          ),
-        ),
-        Text(
-          value,
-          style: GoogleFonts.dmSans(
-            fontSize: 14.sp,
-            color: const Color(0xFF2D1B10),
-            fontWeight: FontWeight.w600,
+        Icon(icon, size: 15.sp, color: Colors.grey[400]),
+        SizedBox(width: 10.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label, style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500])),
+              SizedBox(height: 2.h),
+              Text(value, style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF2D1B10))),
+            ],
           ),
         ),
       ],

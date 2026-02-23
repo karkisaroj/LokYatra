@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/datasources/user_remote_datasource.dart';
-import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
+
+import '../../../core/services/sqlite_service.dart';
 
 class ProfileImageWidget extends StatefulWidget {
   final String? initialImageUrl;
@@ -33,7 +34,6 @@ class _ProfileImageWidgetState extends State<ProfileImageWidget> {
     _imageUrl = widget.initialImageUrl;
   }
 
-  // Sync if parent passes a new URL (e.g. after page reload)
   @override
   void didUpdateWidget(ProfileImageWidget old) {
     super.didUpdateWidget(old);
@@ -60,7 +60,7 @@ class _ProfileImageWidgetState extends State<ProfileImageWidget> {
       if (res.statusCode == 200) {
         final newUrl = res.data['profileImage'] as String?;
         if (newUrl != null && newUrl.isNotEmpty) {
-          await SecureStorageService.updateProfileImage(newUrl);
+          await SqliteService().put('user_profile_image', newUrl);
           if (mounted) setState(() => _imageUrl = newUrl);
           widget.onUploaded?.call(newUrl);
         }

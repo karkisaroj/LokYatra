@@ -3,12 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
-import 'package:lokyatra_frontend/data/models/Homestay.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayState.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_state.dart';
-import '../../../data/models/Site.dart';
 import 'TouristHomestayDetailPage.dart';
 import 'TouristSitesDetails.dart';
 
@@ -22,7 +20,6 @@ class TouristSearchPage extends StatefulWidget {
 class _TouristSearchPageState extends State<TouristSearchPage> {
   final TextEditingController _searchController = TextEditingController();
   String _query = '';
-  static const _terracotta = Color(0xFFCD6E4E);
   static const _dark = Color(0xFF2D1B10);
   static const _cream = Color(0xFFFAF7F2);
 
@@ -73,7 +70,7 @@ class _TouristSearchPageState extends State<TouristSearchPage> {
                 borderRadius: BorderRadius.circular(16.r),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withValues(alpha: 0.04),
                       blurRadius: 10,
                       offset: const Offset(0, 4))
                 ],
@@ -194,9 +191,9 @@ class _TouristSearchPageState extends State<TouristSearchPage> {
           builder: (context, state) {
             if (state is SitesLoaded) {
               final results = state.sites.where((site) {
-                final name = (site['name'] ?? '').toString().toLowerCase();
+                final name = (site.name ?? '').toString().toLowerCase();
                 final location =
-                (site['location'] ?? '').toString().toLowerCase();
+                (site.district ?? '').toString().toLowerCase();
                 final q = _query.toLowerCase();
                 return name.contains(q) || location.contains(q);
               }).toList();
@@ -218,9 +215,9 @@ class _TouristSearchPageState extends State<TouristSearchPage> {
                     }
                     final site = results[index - 1];
                     return _SearchResultItem(
-                      title: site['name'] ?? '',
-                      subtitle: site['location'] ?? '',
-                      imageUrl: getFirstImageUrl(site['imageUrls']),
+                      title: site.name?? '',
+                      subtitle: site.district?? '',
+                      imageUrl: getFirstImageUrl(site.imageUrls),
                       type: 'Site',
                       onTap: () => Navigator.push(
                         context,
@@ -228,7 +225,7 @@ class _TouristSearchPageState extends State<TouristSearchPage> {
                           builder: (_) => BlocProvider.value(
                             value: context.read<HomestayBloc>(),
                             child: TouristSiteDetailPage(
-                              site: CulturalSite.fromJson(site),
+                              site: site,
                             ),
                           ),
                         ),
@@ -368,7 +365,7 @@ class _SearchResultItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(12.r),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.03),
+                color: Colors.black.withValues(alpha: 0.03),
                 blurRadius: 8,
                 offset: const Offset(0, 2))
           ],

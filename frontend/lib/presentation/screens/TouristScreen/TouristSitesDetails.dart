@@ -12,6 +12,7 @@ import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
 import '../../state_management/Bloc/homestays/HomestayState.dart';
 import 'TouristHomestayDetailPage.dart';
+import 'StoryDetailPage.dart';
 
 class TouristSiteDetailPage extends StatefulWidget {
   final CulturalSite site;
@@ -23,308 +24,292 @@ class TouristSiteDetailPage extends StatefulWidget {
 
 class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
   static const _terracotta = Color(0xFFCD6E4E);
-  static const _darkTeal = Color(0xFF4A707A);
-  static const _dark = Color(0xFF2D1B10);
-  static const _cream = Color(0xFFFAF7F2);
+  static const _darkTeal   = Color(0xFF4A707A);
+  static const _dark       = Color(0xFF2D1B10);
+  static const _cream      = Color(0xFFFAF7F2);
+  static const _warmGrey   = Color(0xFF8B8B8B);
 
   int _currentImageIndex = 0;
-  int _selectedTabIndex = 2; // Default to Stories
-
+  int _selectedTabIndex = 0;
+  final PageController _pageController = PageController();
   final List<String> _tabs = ['About', 'History', 'Stories', 'Reviews'];
 
   @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final name = widget.site.name ?? 'Unnamed Site';
-    final location = widget.site.address ?? 'Unknown Location';
-    final district = widget.site.district ?? '';
-    final entryFee = widget.site.entryFeeNPR?.toStringAsFixed(0) ?? '0';
-    final isUNESCO = widget.site.isUNESCO ?? false;
+    final site      = widget.site;
+    final name      = site.name ?? 'Unnamed Site';
+    final address   = site.address ?? '';
+    final district  = site.district ?? '';
+    final entryFee  = site.entryFeeNPR?.toStringAsFixed(0) ?? '0';
+    final opening   = site.openingTime ?? '';
+    final closing   = site.closingTime ?? '';
+    final isUNESCO  = site.isUNESCO;
+    final imageUrls = site.imageUrls.isNotEmpty ? site.imageUrls : <String>[];
 
-    final List<String> imageUrls = (widget.site.imageUrls as List?)
-        ?.map((e) => e.toString())
-        .toList() ??
-        [];
-
-    final displayImages = imageUrls.isNotEmpty ? imageUrls : [''];
-
-    // Inject BOTH StoryBloc AND HomestayBloc specifically for this page.
-    // This ensures that when we load nearby homestays, we don't affect the global HomestayBloc used by TouristHome.
     return MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => StoryBloc()..add(LoadStories(siteId: widget.site.id)),
+          create: (_) => StoryBloc()..add(LoadStories(siteId: site.id)),
         ),
+        // ── Own HomestayBloc instance so it doesn't affect the global one ──
         BlocProvider(
-          create: (context) => HomestayBloc()..add(TouristLoadHomestaysNearSite(widget.site.name ?? '')),
+          create: (_) => HomestayBloc()
+            ..add(TouristLoadHomestaysNearSite(site.name ?? '')),
         ),
       ],
       child: Scaffold(
         backgroundColor: _cream,
         body: CustomScrollView(
           slivers: [
+            // ── Image Gallery AppBar ──────────────────────────────────
             SliverAppBar(
-              expandedHeight: 350.h,
+              expandedHeight: 340.h,
               pinned: true,
-              backgroundColor: _cream,
+              backgroundColor: _dark,
               elevation: 0,
               leading: GestureDetector(
                 onTap: () => Navigator.pop(context),
                 child: Container(
                   margin: EdgeInsets.all(8.w),
-                  decoration: const BoxDecoration(
-                      color: Colors.white, shape: BoxShape.circle),
+                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                   child: Icon(Icons.arrow_back, size: 20.sp, color: _dark),
                 ),
               ),
               flexibleSpace: FlexibleSpaceBar(
-                background: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    PageView.builder(
-                      itemCount: displayImages.length,
-                      onPageChanged: (index) =>
-                          setState(() => _currentImageIndex = index),
-                      itemBuilder: (context, index) {
-                        return displayImages[index].isNotEmpty
-                            ? ProxyImage(
-                          imageUrl: displayImages[index],
-                          width: double.infinity,
-                          height: 350.h,
-                          borderRadiusValue: 0,
-                        )
-                            : Container(color: Colors.grey[300]);
-                      },
+                background: Stack(fit: StackFit.expand, children: [
+                  imageUrls.isEmpty
+                      ? Container(color: Colors.grey[300],
+                      child: Icon(Icons.temple_hindu, size: 60.sp, color: Colors.grey[400]))
+                      : PageView.builder(
+                    controller: _pageController,
+                    itemCount: imageUrls.length,
+                    onPageChanged: (i) => setState(() => _currentImageIndex = i),
+                    itemBuilder: (_, i) => ProxyImage(
+                      imageUrl: imageUrls[i],
+                      width: double.infinity,
+                      height: double.infinity,
+                      borderRadiusValue: 0,
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.black26, Colors.transparent, Colors.black],
+                          stops: const [0, 0.4, 1],
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (imageUrls.length > 1) ...[
+                    Positioned(
+                      top: 12.h, right: 16.w,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                        decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20.r)),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(Icons.photo_library_outlined, size: 12.sp, color: Colors.white),
+                          SizedBox(width: 4.w),
+                          Text('${_currentImageIndex + 1}/${imageUrls.length}',
+                              style: GoogleFonts.dmSans(color: Colors.white,
+                                  fontSize: 12.sp, fontWeight: FontWeight.w600)),
+                        ]),
+                      ),
                     ),
                     Positioned(
-                      bottom: 50.h,
-                      left: 0,
-                      right: 0,
+                      bottom: 50.h, left: 0, right: 0,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(displayImages.length, (index) {
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 300),
-                            margin: EdgeInsets.symmetric(horizontal: 4.w),
-                            height: 8.h,
-                            width: _currentImageIndex == index ? 24.w : 8.w,
-                            decoration: BoxDecoration(
-                              color: _currentImageIndex == index
-                                  ? Colors.white
-                                  : Colors.white.withOpacity(0.5),
-                              borderRadius: BorderRadius.circular(4.r),
-                            ),
-                          );
-                        }),
+                        children: List.generate(imageUrls.length, (i) => AnimatedContainer(
+                          duration: const Duration(milliseconds: 250),
+                          margin: EdgeInsets.symmetric(horizontal: 3.w),
+                          height: 6.h,
+                          width: _currentImageIndex == i ? 20.w : 6.w,
+                          decoration: BoxDecoration(
+                            color: _currentImageIndex == i ? Colors.white : Colors.white54,
+                            borderRadius: BorderRadius.circular(3.r),
+                          ),
+                        )),
                       ),
                     ),
                   ],
-                ),
+                  // Name + location overlay
+                  Positioned(
+                    bottom: imageUrls.length > 1 ? 24.h : 20.h,
+                    left: 20.w, right: 20.w,
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      if (isUNESCO)
+                        Container(
+                          margin: EdgeInsets.only(bottom: 6.h),
+                          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                          decoration: BoxDecoration(
+                            color: _terracotta,
+                            borderRadius: BorderRadius.circular(4.r),
+                          ),
+                          child: Text('UNESCO World Heritage',
+                              style: GoogleFonts.dmSans(color: Colors.white,
+                                  fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                        ),
+                      Text(name,
+                          style: GoogleFonts.playfairDisplay(color: Colors.white,
+                              fontSize: 24.sp, fontWeight: FontWeight.bold,
+                              shadows: [const Shadow(blurRadius: 8, color: Colors.black45)])),
+                      SizedBox(height: 4.h),
+                      Row(children: [
+                        Icon(Icons.location_on_outlined, color: Colors.white70, size: 13.sp),
+                        SizedBox(width: 3.w),
+                        Flexible(child: Text(
+                            '$address${district.isNotEmpty ? ", $district" : ""}',
+                            overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.dmSans(color: Colors.white70, fontSize: 13.sp))),
+                      ]),
+                    ]),
+                  ),
+                ]),
               ),
             ),
+
+            // ── Body ─────────────────────────────────────────────────
             SliverToBoxAdapter(
-              child: Transform.translate(
-                offset: Offset(0, -30.h),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: _cream,
-                    borderRadius:
-                    BorderRadius.vertical(top: Radius.circular(30.r)),
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 24.h),
-                        Container(
-                          padding: EdgeInsets.all(20.w),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20.r),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withOpacity(0.04),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 8))
-                            ],
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+
+                  // ── Info Card ───────────────────────────────────────
+                  Container(
+                    padding: EdgeInsets.all(18.w),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20.r),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04),
+                          blurRadius: 15, offset: const Offset(0, 6))],
+                    ),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Row(children: [
+                        Icon(Icons.star_rounded, color: const Color(0xFFC7A26B), size: 18.sp),
+                        SizedBox(width: 4.w),
+                        Text('4.8', style: GoogleFonts.dmSans(
+                            fontSize: 14.sp, fontWeight: FontWeight.bold, color: _dark)),
+                        Text(' (245 reviews)',
+                            style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[500])),
+                        const Spacer(),
+                        if (isUNESCO)
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                            decoration: BoxDecoration(
+                                color: _darkTeal, borderRadius: BorderRadius.circular(20.r)),
+                            child: Text('UNESCO', style: GoogleFonts.dmSans(
+                                fontSize: 10.sp, color: Colors.white, fontWeight: FontWeight.bold)),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(name,
-                                  style: GoogleFonts.playfairDisplay(
-                                      fontSize: 24.sp,
-                                      fontWeight: FontWeight.bold,
-                                      color: _dark)),
-                              SizedBox(height: 10.h),
-                              Row(
-                                children: [
-                                  Icon(Icons.star_rounded,
-                                      color: const Color(0xFFC7A26B),
-                                      size: 18.sp),
-                                  SizedBox(width: 4.w),
-                                  Text('4.8',
-                                      style: GoogleFonts.dmSans(
-                                          fontSize: 14.sp,
-                                          fontWeight: FontWeight.bold,
-                                          color: _dark)),
-                                  Text(' (245 reviews)',
-                                      style: GoogleFonts.dmSans(
-                                          fontSize: 13.sp,
-                                          color: Colors.grey[500])),
-                                  SizedBox(width: 12.w),
-                                  if (isUNESCO)
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 10.w, vertical: 4.h),
-                                      decoration: BoxDecoration(
-                                        color: _terracotta,
-                                        borderRadius: BorderRadius.circular(12.r),
-                                      ),
-                                      child: Text('UNESCO Site',
-                                          style: GoogleFonts.dmSans(
-                                              fontSize: 10.sp,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold)),
-                                    ),
-                                ],
-                              ),
-                              SizedBox(height: 20.h),
-                              Row(
-                                children: [
-                                  Icon(Icons.access_time_rounded,
-                                      size: 16.sp, color: Colors.grey[600]),
-                                  SizedBox(width: 8.w),
-                                  Text('6AM - 7PM Opening',
-                                      style: GoogleFonts.dmSans(
-                                          fontSize: 13.sp, color: _dark)),
-                                ],
-                              ),
-                              SizedBox(height: 12.h),
-                              Row(
-                                children: [
-                                  Icon(Icons.location_on_outlined,
-                                      size: 16.sp, color: Colors.grey[600]),
-                                  SizedBox(width: 8.w),
-                                  Text('$location, $district',
-                                      style: GoogleFonts.dmSans(
-                                          fontSize: 13.sp, color: _dark)),
-                                ],
-                              ),
-                              SizedBox(height: 20.h),
-                              Divider(color: Colors.grey[200]),
-                              SizedBox(height: 16.h),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Entry Fee',
-                                          style: GoogleFonts.dmSans(
-                                              fontSize: 12.sp,
-                                              color: Colors.grey[500])),
-                                      Text('Rs. $entryFee',
-                                          style: GoogleFonts.dmSans(
-                                              fontSize: 18.sp,
-                                              color: _terracotta,
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
-                                  ElevatedButton.icon(
-                                    onPressed: () {},
-                                    icon: Icon(Icons.location_on, size: 16.sp),
-                                    label: Text('MAP VIEW',
-                                        style: GoogleFonts.dmSans(
-                                            fontSize: 13.sp,
-                                            fontWeight: FontWeight.bold)),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: _darkTeal,
-                                      foregroundColor: Colors.white,
-                                      shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                          BorderRadius.circular(8.r)),
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 16.w, vertical: 10.h),
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                        SizedBox(height: 24.h),
-                        Container(
-                          padding: EdgeInsets.all(4.w),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFEFE8DB),
-                            borderRadius: BorderRadius.circular(24.r),
-                          ),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: List.generate(_tabs.length, (index) {
-                              final isSelected = _selectedTabIndex == index;
-                              return GestureDetector(
-                                onTap: () =>
-                                    setState(() => _selectedTabIndex = index),
-                                child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 250),
-                                  padding: EdgeInsets.symmetric(
-                                      horizontal: 18.w, vertical: 10.h),
-                                  decoration: BoxDecoration(
-                                    color: isSelected
-                                        ? Colors.white
-                                        : Colors.transparent,
-                                    borderRadius: BorderRadius.circular(20.r),
-                                    boxShadow: isSelected
-                                        ? [
-                                      BoxShadow(
-                                          color: Colors.black
-                                              .withOpacity(0.05),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2))
-                                    ]
-                                        : [],
-                                  ),
-                                  child: Text(
-                                    _tabs[index],
-                                    style: GoogleFonts.dmSans(
-                                      fontSize: 13.sp,
-                                      fontWeight: isSelected
-                                          ? FontWeight.bold
-                                          : FontWeight.w500,
-                                      color:
-                                      isSelected ? _dark : Colors.grey[700],
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }),
-                          ),
-                        ),
-                        SizedBox(height: 24.h),
-                        _buildTabContent(),
-                        SizedBox(height: 32.h),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text('Nearby Homestays',
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 18.sp,
-                                    color: _dark,
-                                    fontWeight: FontWeight.bold)),
-                            Icon(Icons.favorite_border_rounded,
-                                color: Colors.grey[600]),
-                          ],
-                        ),
-                        SizedBox(height: 16.h),
-                        _buildNearbyHomestays(),
-                        SizedBox(height: 40.h),
+                      ]),
+                      SizedBox(height: 14.h),
+                      if (opening.isNotEmpty || closing.isNotEmpty)
+                        _InfoRow(Icons.access_time_rounded,
+                            opening.isNotEmpty && closing.isNotEmpty
+                                ? '$opening – $closing'
+                                : opening.isNotEmpty ? opening : closing),
+                      if (address.isNotEmpty) ...[
+                        SizedBox(height: 8.h),
+                        _InfoRow(Icons.location_on_outlined,
+                            '$address${district.isNotEmpty ? ", $district" : ""}'),
                       ],
+                      SizedBox(height: 16.h),
+                      Divider(color: Colors.grey[100]),
+                      SizedBox(height: 14.h),
+                      // Fee + Map — wrapped to prevent overflow
+                      Row(children: [
+                        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text('Entry Fee',
+                              style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
+                          SizedBox(height: 2.h),
+                          Text('Rs. $entryFee',
+                              style: GoogleFonts.dmSans(fontSize: 20.sp,
+                                  color: _terracotta, fontWeight: FontWeight.bold)),
+                        ])),
+                        SizedBox(width: 12.w),
+                        ElevatedButton.icon(
+                          onPressed: () {},
+                          icon: Icon(Icons.map_outlined, size: 16.sp),
+                          label: Text('Map', style: GoogleFonts.dmSans(
+                              fontSize: 13.sp, fontWeight: FontWeight.bold)),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _darkTeal,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10.r)),
+                            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
+                          ),
+                        ),
+                      ]),
+                    ]),
+                  ),
+
+                  SizedBox(height: 24.h),
+
+                  // ── Tab bar ─────────────────────────────────────────
+                  Container(
+                    padding: EdgeInsets.all(4.w),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFE8DB),
+                      borderRadius: BorderRadius.circular(24.r),
+                    ),
+                    child: Row(
+                      children: List.generate(_tabs.length, (i) {
+                        final isSelected = _selectedTabIndex == i;
+                        return Expanded(
+                          child: GestureDetector(
+                            onTap: () => setState(() => _selectedTabIndex = i),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: EdgeInsets.symmetric(vertical: 9.h),
+                              decoration: BoxDecoration(
+                                color: isSelected ? Colors.white : Colors.transparent,
+                                borderRadius: BorderRadius.circular(20.r),
+                                boxShadow: isSelected
+                                    ? [BoxShadow(color: Colors.black.withOpacity(0.06),
+                                    blurRadius: 4, offset: const Offset(0, 2))]
+                                    : [],
+                              ),
+                              child: Text(_tabs[i],
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 12.sp,
+                                  fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                  color: isSelected ? _dark : Colors.grey[600],
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
                     ),
                   ),
-                ),
+
+                  SizedBox(height: 20.h),
+                  _buildTabContent(),
+
+                  SizedBox(height: 32.h),
+                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                    Text('Nearby Homestays',
+                        style: GoogleFonts.playfairDisplay(
+                            fontSize: 20.sp, fontWeight: FontWeight.bold, color: _dark)),
+                    Icon(Icons.hotel_outlined, color: Colors.grey[500], size: 20.sp),
+                  ]),
+                  SizedBox(height: 14.h),
+                  _buildNearbyHomestays(),
+                  SizedBox(height: 40.h),
+                ]),
               ),
             ),
           ],
@@ -336,20 +321,26 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
   Widget _buildTabContent() {
     switch (_selectedTabIndex) {
       case 0:
-        return Text(widget.site.shortDescription ?? 'No description available.',
-            style: GoogleFonts.dmSans(
-                fontSize: 14.sp, height: 1.6, color: Colors.grey[800]));
+        return _TabText(widget.site.shortDescription ?? 'No description available.');
       case 1:
-        return Text(
-            widget.site.historicalSignificance ??
-                'No historical context available.',
-            style: GoogleFonts.dmSans(
-                fontSize: 14.sp, height: 1.6, color: Colors.grey[800]));
+        return _TabText(widget.site.historicalSignificance ?? 'No historical context available.');
       case 2:
         return _buildStoriesTab();
       case 3:
-        return Text("Reviews coming soon.",
-            style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey));
+        return Container(
+          padding: EdgeInsets.all(20.w),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: Colors.grey.shade100),
+          ),
+          child: Center(child: Column(children: [
+            Icon(Icons.rate_review_outlined, size: 40.sp, color: Colors.grey[300]),
+            SizedBox(height: 12.h),
+            Text('Reviews coming soon',
+                style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey[400])),
+          ])),
+        );
       default:
         return const SizedBox.shrink();
     }
@@ -359,126 +350,43 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
     return BlocBuilder<StoryBloc, StoryState>(
       builder: (context, state) {
         if (state is StoryLoading) {
-          return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: CircularProgressIndicator(color: _terracotta),
-              ));
+          return const Center(child: Padding(
+            padding: EdgeInsets.all(24),
+            child: CircularProgressIndicator(color: _terracotta),
+          ));
         }
-
         if (state is StoryError) {
-          return Center(
-              child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Text(state.message,
-                    style: GoogleFonts.dmSans(color: Colors.red)),
-              ));
+          return Center(child: Padding(
+            padding: EdgeInsets.all(20.w),
+            child: Text(state.message, style: GoogleFonts.dmSans(color: Colors.red)),
+          ));
         }
-
         if (state is StoriesLoaded) {
           if (state.stories.isEmpty) {
-            return Center(
-                child: Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: Text("No stories available yet.",
-                      style: GoogleFonts.dmSans(color: Colors.grey)),
-                ));
+            return Container(
+              padding: EdgeInsets.all(24.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16.r),
+                border: Border.all(color: Colors.grey.shade100),
+              ),
+              child: Center(child: Column(children: [
+                Icon(Icons.auto_stories_outlined, size: 40.sp, color: Colors.grey[300]),
+                SizedBox(height: 12.h),
+                Text('No stories yet.',
+                    style: GoogleFonts.dmSans(color: Colors.grey[400], fontSize: 14.sp)),
+              ])),
+            );
           }
-
           return Column(
-            children: state.stories.map((story) {
-              // Use first image if available, else fallback
-              final imageUrl = story.imageUrls.isNotEmpty
-                  ? story.imageUrls.first
-                  : 'https://res.cloudinary.com/doanvrjez/image/upload/v1771594793/profile_images/IMG_20260212_121753_998_ipsgtx.jpg';
-
-              return Container(
-                margin: EdgeInsets.only(bottom: 20.h),
-                decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16.r),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withOpacity(0.04),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4))
-                    ]),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Stack(
-                      children: [
-                        ClipRRect(
-                            borderRadius: BorderRadius.vertical(
-                                top: Radius.circular(16.r)),
-                            child: ProxyImage(
-                                imageUrl: imageUrl,
-                                width: double.infinity,
-                                height: 160.h,
-                                borderRadiusValue: 0,
-                                thumb: true)),
-                        Positioned(
-                            top: 12.h,
-                            left: 12.w,
-                            child: Container(
-                                padding: EdgeInsets.symmetric(
-                                    horizontal: 10.w, vertical: 4.h),
-                                decoration: BoxDecoration(
-                                    color: _terracotta,
-                                    borderRadius: BorderRadius.circular(12.r)),
-                                child: Text(story.storyType,
-                                    style: GoogleFonts.dmSans(
-                                        color: Colors.white,
-                                        fontSize: 11.sp,
-                                        fontWeight: FontWeight.bold)))),
-                      ],
-                    ),
-                    Padding(
-                      padding: EdgeInsets.all(16.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(story.title,
-                              style: GoogleFonts.playfairDisplay(
-                                  fontSize: 18.sp,
-                                  fontWeight: FontWeight.bold,
-                                  color: _dark)),
-                          SizedBox(height: 6.h),
-                          Row(children: [
-                            Icon(Icons.access_time_rounded,
-                                size: 14.sp, color: Colors.grey[600]),
-                            SizedBox(width: 6.w),
-                            Text('${story.estimatedReadTimeMinutes} min read',
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 12.sp, color: Colors.grey[600]))
-                          ]),
-                          SizedBox(height: 10.h),
-                          // Displaying full content but limited to 3 lines
-                          Text(story.fullContent,
-                              maxLines: 3,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 13.sp,
-                                  height: 1.5,
-                                  color: Colors.grey[700])),
-                          SizedBox(height: 12.h),
-                          GestureDetector(
-                            onTap: () {
-                              // Navigate to full story view if needed
-                            },
-                            child: Text('Read Story →',
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 13.sp,
-                                    color: _terracotta,
-                                    fontWeight: FontWeight.bold)),
-                          ),
-                        ],
-                      ),
-                    )
-                  ],
-                ),
-              );
-            }).toList(),
+            children: state.stories
+                .map((story) => _StoryCard(
+              story: story,
+              onTap: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => StoryDetailPage(story: story),
+              )),
+            ))
+                .toList(),
           );
         }
         return const SizedBox.shrink();
@@ -494,96 +402,308 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
         }
         if (state is TouristNearbyHomestaysLoaded) {
           if (state.homestays.isEmpty) {
-            return Text("No homestays found near this site.",
-                style: GoogleFonts.dmSans(color: Colors.grey));
+            return Container(
+              padding: EdgeInsets.all(20.w),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14.r),
+                border: Border.all(color: Colors.grey.shade100),
+              ),
+              child: Center(child: Text('No homestays found near this site.',
+                  style: GoogleFonts.dmSans(color: Colors.grey[400], fontSize: 13.sp))),
+            );
           }
           return Column(
-            children: state.homestays.map((h) {
-              final imageUrl =
-              h.imageUrls.isNotEmpty ? h.imageUrls.first : null;
-              return GestureDetector(
-                onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) =>
-                            TouristHomestayDetailPage(homestay: h.toJson()))),
-                child: Container(
-                  margin: EdgeInsets.only(bottom: 16.h),
-                  decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16.r),
-                      boxShadow: [
-                        BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4))
-                      ]),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      ClipRRect(
-                          borderRadius:
-                          BorderRadius.vertical(top: Radius.circular(16.r)),
-                          child: ProxyImage(
-                              imageUrl: imageUrl,
-                              width: double.infinity,
-                              height: 180.h,
-                              borderRadiusValue: 0,
-                              thumb: true)),
-                      Padding(
-                        padding: EdgeInsets.all(16.w),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                                child: Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                    children: [
-                                      Text(h.name,
-                                          style: GoogleFonts.dmSans(
-                                              fontSize: 16.sp,
-                                              fontWeight: FontWeight.bold,
-                                              color: _dark)),
-                                      SizedBox(height: 8.h),
-                                      Row(children: [
-                                        Icon(Icons.star_rounded,
-                                            color: const Color(0xFFC7A26B),
-                                            size: 16.sp),
-                                        SizedBox(width: 4.w),
-                                        Text('4.7',
-                                            style: GoogleFonts.dmSans(
-                                                fontSize: 13.sp,
-                                                color: Colors.grey[700]))
-                                      ]),
-                                    ])),
-                            Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                      'Rs. ${h.pricePerNight.toStringAsFixed(0)}/N',
-                                      style: GoogleFonts.dmSans(
-                                          fontSize: 15.sp,
-                                          fontWeight: FontWeight.bold,
-                                          color: _dark)),
-                                  Text('+13% VAT',
-                                      style: GoogleFonts.dmSans(
-                                          fontSize: 11.sp,
-                                          color: Colors.grey[500])),
-                                ]),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }).toList(),
+            children: state.homestays
+                .map((h) => _NearbyHomestayCard(
+              homestay: h,
+              onTap: () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => TouristHomestayDetailPage(homestay: h.toJson()))),
+            ))
+                .toList(),
           );
         }
-        return const SizedBox();
+        return const SizedBox.shrink();
       },
+    );
+  }
+}
+
+// ── Sub-widgets ───────────────────────────────────────────────────────────────
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _InfoRow(this.icon, this.text);
+
+  @override
+  Widget build(BuildContext context) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Icon(icon, size: 15.sp, color: Colors.grey[500]),
+    SizedBox(width: 8.w),
+    Flexible(child: Text(text,
+        style: GoogleFonts.dmSans(fontSize: 13.sp, color: const Color(0xFF2D1B10), height: 1.4))),
+  ]);
+}
+
+class _TabText extends StatelessWidget {
+  final String text;
+  const _TabText(this.text);
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: EdgeInsets.all(16.w),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16.r),
+      border: Border.all(color: Colors.grey.shade100),
+    ),
+    child: Text(text,
+        style: GoogleFonts.dmSans(fontSize: 14.sp, height: 1.65, color: Colors.grey[700])),
+  );
+}
+
+class _StoryCard extends StatelessWidget {
+  final Story story;
+  final VoidCallback onTap;
+  const _StoryCard({required this.story, required this.onTap});
+
+  static const _terracotta = Color(0xFFCD6E4E);
+  static const _dark       = Color(0xFF2D1B10);
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl = story.imageUrls.isNotEmpty ? story.imageUrls.first : null;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: EdgeInsets.only(bottom: 16.h),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04),
+              blurRadius: 10, offset: const Offset(0, 4))],
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          if (imageUrl != null)
+            Stack(children: [
+              ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+                child: ProxyImage(imageUrl: imageUrl, width: double.infinity,
+                    height: 150.h, borderRadiusValue: 0, thumb: true),
+              ),
+              Positioned(
+                top: 12.h, left: 12.w,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                      color: _terracotta, borderRadius: BorderRadius.circular(12.r)),
+                  child: Text(story.storyType, style: GoogleFonts.dmSans(
+                      color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ]),
+          Padding(
+            padding: EdgeInsets.all(14.w),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              if (imageUrl == null)
+                Container(
+                  margin: EdgeInsets.only(bottom: 8.h),
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                      color: _terracotta, borderRadius: BorderRadius.circular(12.r)),
+                  child: Text(story.storyType, style: GoogleFonts.dmSans(
+                      color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold)),
+                ),
+              Text(story.title, style: GoogleFonts.playfairDisplay(
+                  fontSize: 16.sp, fontWeight: FontWeight.bold, color: _dark)),
+              SizedBox(height: 6.h),
+              Row(children: [
+                Icon(Icons.access_time_rounded, size: 13.sp, color: Colors.grey[500]),
+                SizedBox(width: 5.w),
+                Text('${story.estimatedReadTimeMinutes} min read',
+                    style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
+              ]),
+              SizedBox(height: 8.h),
+              Text(story.fullContent, maxLines: 3, overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.dmSans(fontSize: 13.sp, height: 1.5, color: Colors.grey[600])),
+              SizedBox(height: 10.h),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Read Story →',
+                    style: GoogleFonts.dmSans(fontSize: 13.sp,
+                        color: _terracotta, fontWeight: FontWeight.bold)),
+                Icon(Icons.arrow_forward_ios_rounded, size: 12.sp, color: Colors.grey[400]),
+              ]),
+            ]),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+class _NearbyHomestayCard extends StatelessWidget {
+  final dynamic homestay;
+  final VoidCallback onTap;
+
+  const _NearbyHomestayCard({
+    required this.homestay,
+    required this.onTap,
+  });
+
+  static const _terracotta = Color(0xFFCD6E4E);
+  static const _dark = Color(0xFF2D1B10);
+
+  @override
+  Widget build(BuildContext context) {
+    final imageUrl =
+    (homestay.imageUrls?.isNotEmpty == true) ? homestay.imageUrls.first : null;
+
+    final name = homestay.name ?? 'Unnamed Homestay';
+    final location = homestay.location ?? '';
+    final price = homestay.pricePerNight ?? 0;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: EdgeInsets.only(bottom: 16.h),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18.r),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            // Image
+            ClipRRect(
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(18.r),
+                bottomLeft: Radius.circular(18.r),
+              ),
+              child: ProxyImage(
+                imageUrl: imageUrl,
+                width: 110.w,
+                height: 110.h,
+                borderRadiusValue: 0,
+                thumb: true,
+              ),
+            ),
+
+            SizedBox(width: 14.w),
+
+            // Info Section
+            Expanded(
+              child: Padding(
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Name
+                    Text(
+                      name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.bold,
+                        color: _dark,
+                      ),
+                    ),
+
+                    SizedBox(height: 6.h),
+
+                    // Location
+                    if (location.isNotEmpty)
+                      Row(
+                        children: [
+                          Icon(Icons.location_on_outlined,
+                              size: 13.sp, color: Colors.grey[500]),
+                          SizedBox(width: 4.w),
+                          Expanded(
+                            child: Text(
+                              location,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 12.sp,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                    SizedBox(height: 6.h),
+
+                    // Rating
+                    Row(
+                      children: [
+                        Icon(Icons.star_rounded,
+                            size: 14.sp, color: Colors.amber[600]),
+                        SizedBox(width: 4.w),
+                        Text(
+                          '4.7',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 12.sp,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Text(
+                          ' (120 reviews)',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 11.sp,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    SizedBox(height: 10.h),
+
+                    // Price
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        RichText(
+                          text: TextSpan(
+                            children: [
+                              TextSpan(
+                                text: 'Rs. ${price.toStringAsFixed(0)}',
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 16.sp,
+                                  color: _terracotta,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              TextSpan(
+                                text: ' / night',
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 11.sp,
+                                  color: Colors.grey[500],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14.sp,
+                          color: Colors.grey[400],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

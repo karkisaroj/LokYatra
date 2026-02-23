@@ -7,7 +7,6 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites
 import '../../../data/models/Site.dart';
 import 'SiteAddDialog.dart';
 import 'SiteDetailPage.dart';
-import 'SiteEditDialog.dart';
 
 class AdminSites extends StatefulWidget {
   const AdminSites({super.key});
@@ -32,7 +31,6 @@ class _AdminSitesState extends State<AdminSites> {
     super.dispose();
   }
 
-  // Method to add a new site
   Future<void> _addSite() async {
     final result = await Navigator.push(
       context,
@@ -50,7 +48,7 @@ class _AdminSitesState extends State<AdminSites> {
   }
 
   // Method to edit a site
-  Future<void> _editSite(Map<String, dynamic> site) async {
+  Future<void> _editSite(CulturalSite site) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
@@ -116,7 +114,6 @@ class _AdminSitesState extends State<AdminSites> {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Search bar and Add button
             Row(
               children: [
                 Expanded(
@@ -197,18 +194,22 @@ class _AdminSitesState extends State<AdminSites> {
                   }
 
                   if (state is SitesLoaded) {
-                    // Filter sites by search query
-                    var sites = state.sites;
-                    if (_searchQuery.isNotEmpty) {
-                      sites = sites.where((site) {
-                        String name = (site['name'] ?? '').toString().toLowerCase();
-                        String category = (site['category'] ?? '').toString().toLowerCase();
-                        String district = (site['district'] ?? '').toString().toLowerCase();
-                        return name.contains(_searchQuery) ||
-                            category.contains(_searchQuery) ||
-                            district.contains(_searchQuery);
-                      }).toList();
-                    }
+                  // Get the list of CulturalSite objects
+                  var sites = state.sites;
+
+                  // Apply search filtering
+                  if (_searchQuery.isNotEmpty) {
+                    final query = _searchQuery.toLowerCase();
+                    sites = sites.where((site) {
+                      final name = (site.name ?? '').toLowerCase();
+                      final category = (site.category ?? '').toLowerCase();
+                      final district = (site.district ?? '').toLowerCase();
+
+                      return name.contains(query) ||
+                          category.contains(query) ||
+                          district.contains(query);
+                    }).toList();
+                  }
 
                     if (sites.isEmpty) {
                       return Center(
@@ -261,7 +262,7 @@ class _AdminSitesState extends State<AdminSites> {
   }
 
   // Wide screen table view
-  Widget _buildWideTable(List<dynamic> sites) {
+  Widget _buildWideTable(List<CulturalSite> sites) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: DataTable(
@@ -276,8 +277,8 @@ class _AdminSitesState extends State<AdminSites> {
           DataColumn(label: Text('Actions')),
         ],
         rows: sites.map<DataRow>((site) {
-          String? imageUrl = getFirstImageUrl(site['imageUrls']);
-          int siteId = int.tryParse(site['id'].toString()) ?? 0;
+          String? imageUrl = getFirstImageUrl(site.imageUrls);
+          int siteId = int.tryParse(site.id.toString()) ?? 0;
 
           return DataRow(cells: [
             DataCell(
@@ -295,7 +296,7 @@ class _AdminSitesState extends State<AdminSites> {
               SizedBox(
                 width: 240,
                 child: Text(
-                  (site['name'] ?? '').toString(),
+                  (site.name ?? '').toString(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontWeight: FontWeight.w500),
@@ -306,7 +307,7 @@ class _AdminSitesState extends State<AdminSites> {
               SizedBox(
                 width: 160,
                 child: Text(
-                  (site['category'] ?? '').toString(),
+                  (site.category ?? '').toString(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -316,7 +317,7 @@ class _AdminSitesState extends State<AdminSites> {
               SizedBox(
                 width: 160,
                 child: Text(
-                  (site['district'] ?? '').toString(),
+                  (site.district ?? '').toString(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -332,7 +333,7 @@ class _AdminSitesState extends State<AdminSites> {
                     onPressed: () {
                       Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => SiteDetailPage(site: CulturalSite.fromJson(site)))
+                          MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))
                       );
                     },
                   ),
@@ -356,18 +357,18 @@ class _AdminSitesState extends State<AdminSites> {
   }
 
   // Mobile list view
-  Widget _buildMobileList(List<dynamic> sites) {
+  Widget _buildMobileList(List<CulturalSite> sites) {
     return ListView.separated(
       itemCount: sites.length,
       separatorBuilder: (_, __) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
-        Map<String, dynamic> site = sites[index] as Map<String, dynamic>;
-        String? imageUrl = getFirstImageUrl(site['imageUrls']);
-        int siteId = int.tryParse(site['id'].toString()) ?? 0;
+        final site =sites[index];
+        String? imageUrl = getFirstImageUrl(site.imageUrls);
+        int siteId = int.tryParse(site.id.toString()) ?? 0;
 
-        String name = (site['name'] ?? '').toString();
-        String category = (site['category'] ?? '').toString();
-        String district = (site['district'] ?? '').toString();
+        String name = (site.name?? '').toString();
+        String category = (site.category?? '').toString();
+        String district = (site.district?? '').toString();
 
         String subtitle = [category, district]
             .where((value) => value.isNotEmpty)
@@ -381,7 +382,7 @@ class _AdminSitesState extends State<AdminSites> {
             onTap: () {
               Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => SiteDetailPage(site: CulturalSite.fromJson(site)))
+                  MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))
               );
             },
             child: Padding(

@@ -48,7 +48,7 @@ class _OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
           return const Center(child: CircularProgressIndicator());
         }
         if (state is SiteDetailLoaded) {
-          _nearSite = CulturalSite.fromJson(state.site);
+          _nearSite = state.site;
           return GestureDetector(
             onTap: () {
               Navigator.push(
@@ -66,7 +66,7 @@ class _OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                 border: Border.all(color: Colors.grey.shade200),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
+                    color: Colors.black.withValues(alpha: 0.03),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),

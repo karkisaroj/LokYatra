@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/data/datasources/user_remote_datasource.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_event.dart';
-import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
+import '../../../core/services/sqlite_service.dart';
 import 'ProfileImageWidget.dart';
 
 class OwnerProfilePage extends StatefulWidget {
@@ -31,15 +31,15 @@ class _OwnerProfilePageState extends State<OwnerProfilePage> {
   }
 
   Future<void> _loadProfile() async {
-    // First load from local SharedPreferences (fast)
-    final name  = await SecureStorageService.getUserName();
-    final email = await SecureStorageService.getUserEmail();
-    final image = await SecureStorageService.getProfileImage();
-    final phone = await SecureStorageService.getPhoneNumber();
+    // First load from local Sqlite (fast)
+    final name  = await SqliteService().get('user_name');
+    final email = await SqliteService().get('user_email');
+    final image = await SqliteService().get('user_profile_image');
+    final phone = await SqliteService().get('user_phone');
 
     if (mounted) {
       setState(() {
-        _name  = name  ?? '';
+        _name  = name ?? '';
         _email = email ?? '';
         _phone = phone ?? '';
         _profileImageUrl = (image != null && image.isNotEmpty) ? image : null;
@@ -67,13 +67,11 @@ class _OwnerProfilePageState extends State<OwnerProfilePage> {
         final serverPhone = data['phoneNumber']  as String? ?? '';
         final serverImage = data['profileImage'] as String? ?? '';
 
-        // Save fresh data back to SharedPreferences
-        await SecureStorageService.saveUserProfile(
-          name: serverName,
-          email: serverEmail,
-          profileImage: serverImage,
-          phoneNumber: serverPhone,
-        );
+        // Save fresh data back to Sqlite
+        await SqliteService().put('user_name', serverName);
+        await SqliteService().put('user_email', serverEmail);
+        await SqliteService().put('user_profile_image', serverImage);
+        await SqliteService().put('user_phone', serverPhone);
 
         if (mounted) {
           setState(() {

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 import 'package:lokyatra_frontend/data/datasources/user_remote_datasource.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_event.dart';
-import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
 import '../OwnerScreen/ProfileImageWidget.dart';
 
 class TouristProfilePage extends StatefulWidget {
@@ -31,15 +31,15 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
   }
 
   Future<void> _loadProfile() async {
-    // First load from local SharedPreferences (fast)
-    final name  = await SecureStorageService.getUserName();
-    final email = await SecureStorageService.getUserEmail();
-    final image = await SecureStorageService.getProfileImage();
-    final phone = await SecureStorageService.getPhoneNumber();
+    // Load from SQLite (non-sensitive)
+    final name  = await SqliteService().get("user_name");
+    final email = await SqliteService().get("user_email");
+    final image = await SqliteService().get("user_image");
+    final phone = await SqliteService().get("user_phone");
 
     if (mounted) {
       setState(() {
-        _name  = name  ?? '';
+        _name  = name ?? '';
         _email = email ?? '';
         _phone = phone ?? '';
         _profileImageUrl = (image != null && image.isNotEmpty) ? image : null;
@@ -47,7 +47,6 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
     }
 
     // If profile image is missing locally, fetch fresh from backend
-    // This covers the case after logout → login where prefs were cleared
     if (image == null || image.isEmpty) {
       await _fetchFromServer();
     } else {
@@ -58,8 +57,6 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
   Future<void> _fetchFromServer() async {
     try {
       final res = await UserRemoteDatasource().getMe();
-      print('getMe status: ${res.statusCode}');
-      print('getMe data: ${res.data}');
       if (res.statusCode == 200) {
         final data = res.data as Map<String, dynamic>;
         final serverName  = data['name']         as String? ?? '';
@@ -67,13 +64,11 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
         final serverPhone = data['phoneNumber']  as String? ?? '';
         final serverImage = data['profileImage'] as String? ?? '';
 
-        // Save fresh data back to SharedPreferences
-        await SecureStorageService.saveUserProfile(
-          name: serverName,
-          email: serverEmail,
-          profileImage: serverImage,
-          phoneNumber: serverPhone,
-        );
+        // Save fresh data back to SQLite
+        await SqliteService().put("user_name", serverName);
+        await SqliteService().put("user_email", serverEmail);
+        await SqliteService().put("user_phone", serverPhone);
+        await SqliteService().put("user_image", serverImage);
 
         if (mounted) {
           setState(() {
@@ -86,7 +81,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
         }
       }
     } catch (e) {
-      print('getMe error: $e');
+      debugPrint('getMe error: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -100,18 +95,18 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-          padding:
-          EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
+          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
           child: Column(
             children: [
               SizedBox(height: 20.h),
 
-              // Profile image — tappable to change
               ProfileImageWidget(
                 initialImageUrl: _profileImageUrl,
                 accentColor: _brown,
-                onUploaded: (newUrl) =>
-                    setState(() => _profileImageUrl = newUrl),
+                onUploaded: (newUrl) async {
+                  setState(() => _profileImageUrl = newUrl);
+                  await SqliteService().put("user_image", newUrl);
+                },
               ),
 
               SizedBox(height: 14.h),
@@ -169,11 +164,8 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                 height: 48.h,
                 child: OutlinedButton.icon(
                   onPressed: () {
-                    context
-                        .read<AuthBloc>()
-                        .add(LogoutButtonClicked());
-                    Navigator.pushReplacementNamed(
-                        context, '/login');
+                    context.read<AuthBloc>().add(LogoutButtonClicked());
+                    Navigator.pushReplacementNamed(context, '/login');
                   },
                   icon: Icon(Icons.logout_rounded, size: 18.sp),
                   label: Text('Logout',
@@ -184,8 +176,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                     foregroundColor: Colors.red[600],
                     side: BorderSide(color: Colors.red.shade300),
                     shape: RoundedRectangleBorder(
-                        borderRadius:
-                        BorderRadius.circular(12.r)),
+                        borderRadius: BorderRadius.circular(12.r)),
                   ),
                 ),
               ),
@@ -215,7 +206,7 @@ class _MenuItem extends StatelessWidget {
         borderRadius: BorderRadius.circular(12.r),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
+              color: Colors.black.withOpacity(0.04),
               blurRadius: 8,
               offset: const Offset(0, 2)),
         ],
@@ -225,7 +216,7 @@ class _MenuItem extends StatelessWidget {
         leading: Container(
           padding: EdgeInsets.all(8.w),
           decoration: BoxDecoration(
-            color: _brown.withValues(alpha: 0.08),
+            color: _brown.withOpacity(0.08),
             borderRadius: BorderRadius.circular(8.r),
           ),
           child: Icon(icon, size: 18.sp, color: _brown),
