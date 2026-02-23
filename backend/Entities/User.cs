@@ -9,6 +9,7 @@ namespace backend.Entities
     {
         [Key]
         public int UserId { get; set; }
+
         public bool IsActive { get; set; } = false;
         public string Name { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
@@ -22,7 +23,6 @@ namespace backend.Entities
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 
-        // Navigation property — lets EF load this user's homestays via Include()
         public ICollection<Homestay>? Homestays { get; set; }
     }
 }

@@ -137,7 +137,7 @@ namespace backend.Controllers
             var homestayCount = user.Homestays?.Count ?? 0;
             var userName = user.Name;
 
-            // EF cascade-deletes all Homestays because we loaded them with Include()
+            //deletes all Homestays because we loaded them with Include()
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 
@@ -148,9 +148,7 @@ namespace backend.Controllers
             });
         }
 
-        // ── PATCH api/User/deactivate/{userId} ── admin only ─────────────────
-        // Safe alternative when user has paid bookings.
-        // Deactivated users cannot log in but all their records are preserved.
+       
         [Authorize(Roles = "admin")]
         [HttpPatch("deactivate/{userId}")]
         public async Task<ActionResult> DeactivateUser(int userId)
@@ -168,8 +166,7 @@ namespace backend.Controllers
             return Ok(new { message = $"'{user.Name}' has been deactivated. They can no longer log in." });
         }
 
-        // ── Helper: map entity to DTO ─────────────────────────────────────────
-        // User here refers to backend.Entities.User (imported at top of file)
+     
         private static UserDto MapToDto(User u) => new()
         {
             UserId = u.UserId,

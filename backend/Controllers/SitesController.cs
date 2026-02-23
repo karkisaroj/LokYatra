@@ -29,36 +29,38 @@ namespace backend.Controllers
 
             var list = await query
                 .OrderByDescending(s => s.Id)
-               .Select(s => new
-               {
-                   id = s.Id,
-                   name = s.Name,
-                   category = s.Category,
-                   district = s.District,
-                   address = s.Address,
-                   shortDescription = s.ShortDescription,
-                   historicalSignificance = s.HistoricalSignificance,
-                   culturalImportance = s.CulturalImportance,
-                   entryFeeNPR = s.EntryFeeNPR,
-                   entryFeeSAARC = s.EntryFeeSAARC,
-                   openingTime = s.OpeningTime,
-                   closingTime = s.ClosingTime,
-                   bestTimeToVisit = s.BestTimeToVisit,
-                   isUNESCO = s.IsUNESCO,
-                   imageUrls = s.ImageUrls,
-                   createdAt = s.CreatedAt,
-                   updatedAt = s.UpdatedAt
-               })
+                .Select(s => new
+                {
+                    id = s.Id,
+                    name = s.Name,
+                    category = s.Category,
+                    district = s.District,
+                    address = s.Address,
+                    shortDescription = s.ShortDescription,
+                    historicalSignificance = s.HistoricalSignificance,
+                    culturalImportance = s.CulturalImportance,
+                    entryFeeNPR = s.EntryFeeNPR,
+                    entryFeeSAARC = s.EntryFeeSAARC,
+                    openingTime = s.OpeningTime,
+                    closingTime = s.ClosingTime,
+                    bestTimeToVisit = s.BestTimeToVisit,
+                    isUNESCO = s.IsUNESCO,
+                    imageUrls = s.ImageUrls,
+                    createdAt = s.CreatedAt,
+                    updatedAt = s.UpdatedAt
+                })
                 .ToListAsync();
 
             return Ok(list);
         }
 
+        // ✅ FIXED: now includes createdAt and updatedAt
         [HttpGet("{id:int}")]
         public async Task<ActionResult<object>> GetSite(int id)
         {
             var s = await db.CulturalSites.FindAsync(id);
             if (s is null) return NotFound("Site not found");
+
             return Ok(new
             {
                 id = s.Id,
@@ -75,7 +77,9 @@ namespace backend.Controllers
                 closingTime = s.ClosingTime,
                 bestTimeToVisit = s.BestTimeToVisit,
                 isUNESCO = s.IsUNESCO,
-                imageUrls = s.ImageUrls
+                imageUrls = s.ImageUrls,
+                createdAt = s.CreatedAt,   // ✅ was missing
+                updatedAt = s.UpdatedAt    // ✅ was missing
             });
         }
 
@@ -83,13 +87,10 @@ namespace backend.Controllers
         [HttpPost]
         [RequestSizeLimit(25_000_000)]
         public async Task<ActionResult<object>> Create(
-        [FromServices] ICloudImageService imageService,
-        [FromForm] SiteCreateFormDto form)
+            [FromServices] ICloudImageService imageService,
+            [FromForm] SiteCreateFormDto form)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var files = Request.Form.Files;
             var urls = files is { Count: > 0 }
@@ -123,20 +124,22 @@ namespace backend.Controllers
             {
                 id = entity.Id,
                 name = entity.Name,
-                category = entity.Category,
-                district = entity.District,
-                imageUrls = entity.ImageUrls
+                imageUrls = entity.ImageUrls,
+                createdAt = entity.CreatedAt,
+                updatedAt = entity.UpdatedAt
             });
         }
 
         [Authorize(Roles = "admin")]
         [HttpPut("{id:int}")]
         [RequestSizeLimit(25_000_000)]
-        public async Task<ActionResult<object>> Update(int id, [FromServices] ICloudImageService imageService, [FromForm] SiteCreateFormDto form)
+        public async Task<ActionResult<object>> Update(
+            int id,
+            [FromServices] ICloudImageService imageService,
+            [FromForm] SiteCreateFormDto form)
         {
             var entity = await db.CulturalSites.FindAsync(id);
             if (entity is null) return NotFound("Site not found");
-
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var files = Request.Form.Files;
@@ -167,27 +170,24 @@ namespace backend.Controllers
             {
                 id = entity.Id,
                 name = entity.Name,
-                category = entity.Category,
-                district = entity.District,
-                imageUrls = entity.ImageUrls
+                imageUrls = entity.ImageUrls,
+                createdAt = entity.CreatedAt,
+                updatedAt = entity.UpdatedAt
             });
         }
 
         [HttpGet("proxy-image")]
-        [ResponseCache(Duration = 3600)] 
+        [ResponseCache(Duration = 3600)]
         public async Task<ActionResult> ProxyImage([FromQuery] string url)
         {
             if (string.IsNullOrWhiteSpace(url)) return BadRequest("url required");
-
             try
             {
                 using var http = new HttpClient();
                 http.Timeout = TimeSpan.FromSeconds(30);
                 var response = await http.GetAsync(url);
-
                 if (!response.IsSuccessStatusCode)
                     return StatusCode((int)response.StatusCode, "Image fetch failed");
-
                 var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/jpeg";
                 var bytes = await response.Content.ReadAsByteArrayAsync();
                 return File(bytes, contentType);
@@ -204,10 +204,8 @@ namespace backend.Controllers
         {
             var entity = await db.CulturalSites.FindAsync(id);
             if (entity is null) return NotFound("Site not found");
-
             db.CulturalSites.Remove(entity);
             await db.SaveChangesAsync();
-
             return Ok(new { message = "Site deleted successfully" });
         }
     }

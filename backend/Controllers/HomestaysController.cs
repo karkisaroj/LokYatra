@@ -19,20 +19,20 @@ namespace backend.Controllers
             return int.TryParse(claim, out int userId) ? userId : null;
         }
 
-      
+
         [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAllHomestays()
         {
             var isAdmin = User.Identity?.IsAuthenticated == true && User.IsInRole("admin");
 
-            var query = db.Homestays.Include(h => h.NearCulturalSite).AsQueryable();
+            var query = db.Homestays
+                .Include(h => h.NearCulturalSite)
+                .Include(h => h.Owner)          
+                .AsQueryable();
 
-           
             if (!isAdmin)
-            {
                 query = query.Where(h => h.IsVisible == true);
-            }
 
             var list = await query
                 .OrderByDescending(h => h.CreatedAt)
@@ -48,6 +48,16 @@ namespace backend.Controllers
                     {
                         id = h.NearCulturalSite.Id,
                         name = h.NearCulturalSite.Name
+                    },
+                    // ── owner block ── null when user was deleted ──────────────
+                    owner = h.Owner == null ? null : new
+                    {
+                        userId = h.Owner.UserId,
+                        name = h.Owner.Name,
+                        email = h.Owner.Email,
+                        phoneNumber = h.Owner.PhoneNumber,
+                        profileImage = h.Owner.ProfileImage,
+                        createdAt = h.Owner.CreatedAt,
                     },
                     buildingHistory = h.BuildingHistory,
                     culturalSignificance = h.CulturalSignificance,
@@ -67,7 +77,7 @@ namespace backend.Controllers
             return Ok(list);
         }
 
-        
+
         [Authorize(Roles = "owner")]
         [HttpGet("my-homestays")]
         public async Task<IActionResult> GetMyHomestays()
@@ -78,6 +88,7 @@ namespace backend.Controllers
             var list = await db.Homestays
                 .Where(h => h.OwnerId == ownerId)
                 .Include(h => h.NearCulturalSite)
+                .Include(h => h.Owner)          
                 .OrderByDescending(h => h.CreatedAt)
                 .Select(h => new
                 {
@@ -91,6 +102,15 @@ namespace backend.Controllers
                     {
                         id = h.NearCulturalSite.Id,
                         name = h.NearCulturalSite.Name
+                    },
+                    owner = h.Owner == null ? null : new
+                    {
+                        userId = h.Owner.UserId,
+                        name = h.Owner.Name,
+                        email = h.Owner.Email,
+                        phoneNumber = h.Owner.PhoneNumber,
+                        profileImage = h.Owner.ProfileImage,
+                        createdAt = h.Owner.CreatedAt,
                     },
                     buildingHistory = h.BuildingHistory,
                     culturalSignificance = h.CulturalSignificance,

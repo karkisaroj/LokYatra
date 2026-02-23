@@ -1,17 +1,23 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using backend.Entities; 
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
     public class Homestay
     {
-        [Key] public int Id { get; set; }
+        [Key]
+        public int Id { get; set; }
 
-        // Links to the owner (User) who created this homestay
+        // Foreign Key → User
         public int OwnerId { get; set; }
 
-        // Links to a nearby CulturalSite
+        [ForeignKey(nameof(OwnerId))]
+        public User? Owner { get; set; }
+
+        // Foreign Key → CulturalSite
         public int? NearCulturalSiteId { get; set; }
+
         [ForeignKey(nameof(NearCulturalSiteId))]
         public CulturalSite? NearCulturalSite { get; set; }
 
@@ -19,7 +25,7 @@ namespace backend.Models
         public string Name { get; set; } = string.Empty;
         public string Location { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
-        public string Category { get; set; } = string.Empty;        
+        public string Category { get; set; } = string.Empty;
         public decimal PricePerNight { get; set; }
 
         // Cultural & Heritage Information
@@ -33,7 +39,7 @@ namespace backend.Models
         public int MaxGuests { get; set; }
         public int Bathrooms { get; set; }
 
-        // Amenities stored as text[] in PostgreSQL (like ImageUrls)
+        // Amenities stored as text[] in PostgreSQL
         [Column(TypeName = "text[]")]
         public string[] Amenities { get; set; } = [];
 
@@ -41,7 +47,7 @@ namespace backend.Models
         [Column(TypeName = "text[]")]
         public string[] ImageUrls { get; set; } = [];
 
-        // Visibility toggle - owner can pause/unpause
+        // Visibility toggle
         public bool IsVisible { get; set; } = true;
 
         public DateTimeOffset CreatedAt { get; set; }
