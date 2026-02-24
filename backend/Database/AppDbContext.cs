@@ -11,10 +11,15 @@ namespace backend.Database
         public DbSet<Story> Stories => Set<Story>();
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Homestay> Homestays => Set<Homestay>();
+        public DbSet<SavedHomestay> SavedHomestays { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+            modelBuilder.Entity<SavedHomestay>()
+                .HasIndex(s => new { s.UserId, s.HomestayId })
+                .IsUnique();
 
             modelBuilder.Entity<User>(entity =>
             {

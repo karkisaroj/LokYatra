@@ -10,7 +10,7 @@ namespace backend.Models
         public int Id { get; set; }
 
         // Foreign Key → User
-        public int OwnerId { get; set; }
+        public int? OwnerId { get; set; }
 
         [ForeignKey(nameof(OwnerId))]
         public User? Owner { get; set; }

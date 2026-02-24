@@ -28,7 +28,6 @@ namespace backend.Models
     public class Booking
     {
         [Key] public int Id { get; set; }
-
         public int HomestayId { get; set; }
         public int TouristId { get; set; }
 

@@ -25,8 +25,8 @@ namespace backend.Controllers
 
         // ── GET api/User/me
         [Authorize]
-        [HttpGet("me")]
-        public async Task<ActionResult<UserDto>> GetMe()
+        [HttpGet("current-user")]
+        public async Task<ActionResult<UserDto>> GetCurrentUser()
         {
             var userId = GetCurrentUserId();
             if (userId == null) return Unauthorized();
