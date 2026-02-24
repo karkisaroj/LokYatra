@@ -51,7 +51,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       LoginButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      // Step 1: Login
+      //Login
       final loginRes = await _dio.post(
         loginEndpoint,
         data: {'email': event.email, 'password': event.password},
@@ -65,13 +65,13 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       final accessToken = loginRes.data['accessToken'] as String;
       final refreshToken = loginRes.data['refreshToken'] as String;
 
-      // Step 2: Save tokens securely
+      // Save tokens securely
       await SecureStorageService.saveTokens(accessToken, refreshToken);
 
-      // Step 3: Fetch profile using fresh token
+      //  Fetch profile using fresh token
       try {
         final profileRes = await _dio.get(
-          'api/User/me',
+          'api/User/current-user',
           options: Options(headers: {
             'Authorization': 'Bearer $accessToken',
             'Accept': 'application/json',

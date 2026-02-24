@@ -23,9 +23,9 @@ class UserRemoteDatasource {
     });
   }
 
-  /// GET api/User/me
-  Future<Response> getMe() async =>
-      _dio.get('api/User/me', options: await _authOptions());
+  /// GET api/User/current-user
+  Future<Response> getCurrentUser() async =>
+      _dio.get('api/User/current-user', options: await _authOptions());
 
   /// GET api/User/getUsers  (admin only)
   Future<Response> getUsers() async =>

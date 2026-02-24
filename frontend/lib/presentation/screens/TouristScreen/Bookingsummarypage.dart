@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../data/datasources/booking_remote_datasource.dart';
+import '../../../data/datasources/User_remote_datasource.dart';
 
 class BookingSummaryPage extends StatefulWidget {
   final dynamic homestay;
@@ -26,21 +27,21 @@ class BookingSummaryPage extends StatefulWidget {
 }
 
 class _BookingSummaryPageState extends State<BookingSummaryPage> {
-  static const _cream = Color(0xFFFAF7F2);
-  static const _brown = Color(0xFF8B5E3C);
-  static const _dark  = Color(0xFF2D1B10);
+  static const _cream  = Color(0xFFFAF7F2);
+  static const _brown  = Color(0xFF8B5E3C);
+  static const _dark   = Color(0xFF2D1B10);
 
-  // Meal add-ons (fixed platform prices)
   static const _breakfastPricePerDay = 600.0;
   static const _dinnerPricePerDay    = 1200.0;
 
   bool _includeBreakfast = false;
   bool _includeDinner    = false;
   bool _usePoints        = false;
-  bool _khaltiPayment    = false; // false = pay at arrival
+  bool _khaltiSelected   = false;
   bool _loading          = false;
+  bool _pointsLoading    = true;
 
-  int   _availablePoints = 0;
+  int _availablePoints = 0;
 
   @override
   void initState() {
@@ -49,14 +50,21 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
   }
 
   Future<void> _loadPoints() async {
-    // Points are stored locally after login — fetch from backend if needed
-    // For now read from SecureStorageService or default 0
-    // TODO: add getQuizPoints() to SecureStorageService when quiz is built
-    setState(() => _availablePoints = 0);
+    try {
+      final res = await UserRemoteDatasource().getCurrentUser();
+      if (res.statusCode == 200 && mounted) {
+        final data = res.data as Map<String, dynamic>;
+        setState(() {
+          _availablePoints = data['quizPoints'] as int? ?? 0;
+          _pointsLoading   = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _pointsLoading = false);
+    }
   }
 
-  int get _nights =>
-      widget.checkOut.difference(widget.checkIn).inDays;
+  int get _nights => widget.checkOut.difference(widget.checkIn).inDays;
 
   double get _roomTotal =>
       (widget.homestay.pricePerNight ?? 0) * widget.rooms * _nights;
@@ -69,7 +77,6 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
 
   double get _subTotal => _roomTotal + _breakfastTotal + _dinnerTotal;
 
-  // Max redeemable = min(available pts, 20% of subtotal * 10 pts/Rs.)
   int get _redeemablePoints {
     final maxDiscount = _subTotal * 0.20;
     final maxPoints   = (maxDiscount * 10).floor();
@@ -102,16 +109,17 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
         rooms:           widget.rooms,
         guests:          widget.guests,
         pointsToRedeem:  _usePoints ? _redeemablePoints : 0,
-        paymentMethod:   _khaltiPayment ? 'Khalti' : 'PayAtArrival',
+        paymentMethod:   _khaltiSelected ? 'Khalti' : 'PayAtArrival',
         specialRequests: mealNotes,
       );
 
       if (!mounted) return;
-
       if (res.statusCode == 200) {
         _showSuccess();
       } else {
-        _showError('Booking failed: ${res.statusCode}');
+        final msg = (res.data as Map<String, dynamic>?)?['message']
+            ?? 'Booking failed (${res.statusCode})';
+        _showError(msg.toString());
       }
     } catch (e) {
       _showError('Error: $e');
@@ -125,52 +133,43 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.r)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: const BoxDecoration(
-                  color: Color(0xFFE8F5E9), shape: BoxShape.circle),
-              child: Icon(Icons.check_rounded,
-                  color: Colors.green[700], size: 40.sp),
-            ),
-            SizedBox(height: 16.h),
-            Text('Booking Requested!',
-                style: GoogleFonts.playfairDisplay(
-                    fontSize: 20.sp, fontWeight: FontWeight.bold)),
-            SizedBox(height: 8.h),
-            Text(
-                _khaltiPayment
-                    ? 'Your booking is pending owner confirmation. Pay via Khalti once confirmed.'
-                    : 'Your booking is pending owner confirmation. Pay at arrival.',
-                textAlign: TextAlign.center,
-                style: GoogleFonts.dmSans(
-                    fontSize: 13.sp, color: Colors.grey[600])),
-            SizedBox(height: 20.h),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).popUntil(
-                          (route) => route.isFirst);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _brown,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10.r)),
-                ),
-                child: Text('Back to Home',
-                    style: GoogleFonts.dmSans(
-                        fontWeight: FontWeight.w600)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: const BoxDecoration(
+                color: Color(0xFFE8F5E9), shape: BoxShape.circle),
+            child: Icon(Icons.check_rounded, color: Colors.green[700], size: 40.sp),
+          ),
+          SizedBox(height: 16.h),
+          Text('Booking Requested!',
+              style: GoogleFonts.playfairDisplay(
+                  fontSize: 20.sp, fontWeight: FontWeight.bold)),
+          SizedBox(height: 8.h),
+          Text(
+            _khaltiSelected
+                ? 'Booking sent! Once the owner confirms, you can pay via Khalti.'
+                : 'Your booking is pending owner confirmation. Pay cash at arrival.',
+            textAlign: TextAlign.center,
+            style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600]),
+          ),
+          SizedBox(height: 20.h),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).popUntil((r) => r.isFirst),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _brown,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r)),
               ),
+              child: Text('Back to Home',
+                  style: GoogleFonts.dmSans(fontWeight: FontWeight.w600)),
             ),
-          ],
-        ),
+          ),
+        ]),
       ),
     );
   }
@@ -191,15 +190,12 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              size: 18.sp, color: _dark),
+          icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18.sp, color: _dark),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text('Booking Summary',
             style: GoogleFonts.playfairDisplay(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
-                color: _dark)),
+                fontSize: 18.sp, fontWeight: FontWeight.bold, color: _dark)),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1),
           child: Divider(height: 1, color: Colors.grey.shade200),
@@ -207,193 +203,186 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
       ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-            // Stay details card
-            _SummaryCard(
-              title: 'Stay Details',
-              child: Column(
-                children: [
-                  _SummaryRow('Homestay', widget.homestay.name ?? ''),
-                  _SummaryRow('Check-in',  _fmtDate(widget.checkIn)),
-                  _SummaryRow('Check-out', _fmtDate(widget.checkOut)),
-                  _SummaryRow('Nights',    '$_nights nights'),
-                  _SummaryRow('Rooms',     '${widget.rooms} room${widget.rooms > 1 ? 's' : ''}'),
-                  _SummaryRow('Guests',    '${widget.guests} guest${widget.guests > 1 ? 's' : ''}'),
-                ],
+          // Stay details
+          _SummaryCard(
+            title: 'Stay Details',
+            child: Column(children: [
+              _SummaryRow('Homestay', widget.homestay.name ?? ''),
+              _SummaryRow('Check-in',  _fmtDate(widget.checkIn)),
+              _SummaryRow('Check-out', _fmtDate(widget.checkOut)),
+              _SummaryRow('Nights',    '$_nights night${_nights != 1 ? 's' : ''}'),
+              _SummaryRow('Rooms',     '${widget.rooms} room${widget.rooms > 1 ? 's' : ''}'),
+              _SummaryRow('Guests',    '${widget.guests} guest${widget.guests > 1 ? 's' : ''}'),
+            ]),
+          ),
+
+          SizedBox(height: 14.h),
+
+          // Meal add-ons
+          _SummaryCard(
+            title: 'Meals (optional)',
+            child: Column(children: [
+              _MealOption(
+                label: 'Breakfast ($_nights day${_nights != 1 ? 's' : ''})',
+                sublabel: 'Rs. ${_breakfastPricePerDay.toInt()} per day',
+                value: _fmt(_breakfastPricePerDay * _nights),
+                checked: _includeBreakfast,
+                onChanged: (v) => setState(() => _includeBreakfast = v ?? false),
               ),
-            ),
-
-            SizedBox(height: 14.h),
-
-            // Meals add-on card
-            _SummaryCard(
-              title: 'Meals Included',
-              child: Column(
-                children: [
-                  _MealOption(
-                    label: 'Breakfast ($_nights days)',
-                    sublabel:
-                    'Rs. ${_breakfastPricePerDay.toInt()} per day',
-                    value: _fmt(_breakfastPricePerDay * _nights),
-                    checked: _includeBreakfast,
-                    onChanged: (v) =>
-                        setState(() => _includeBreakfast = v ?? false),
-                  ),
-                  SizedBox(height: 8.h),
-                  _MealOption(
-                    label: 'Dinner ($_nights days)',
-                    sublabel:
-                    'Rs. ${_dinnerPricePerDay.toInt()} per day',
-                    value: _fmt(_dinnerPricePerDay * _nights),
-                    checked: _includeDinner,
-                    onChanged: (v) =>
-                        setState(() => _includeDinner = v ?? false),
-                  ),
-                ],
+              SizedBox(height: 8.h),
+              _MealOption(
+                label: 'Dinner ($_nights day${_nights != 1 ? 's' : ''})',
+                sublabel: 'Rs. ${_dinnerPricePerDay.toInt()} per day',
+                value: _fmt(_dinnerPricePerDay * _nights),
+                checked: _includeDinner,
+                onChanged: (v) => setState(() => _includeDinner = v ?? false),
               ),
-            ),
+            ]),
+          ),
 
-            SizedBox(height: 14.h),
+          SizedBox(height: 14.h),
 
-            // Points card
-            if (_availablePoints > 0)
-              _SummaryCard(
-                title: 'Use Points',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _MealOption(
-                      label:
-                      'Use $_redeemablePoints pts = ${_fmt(_redeemablePoints / 10.0)} off',
-                      sublabel: '',
-                      value: '-${_fmt(_redeemablePoints / 10.0)}',
-                      valueColor: _brown,
-                      checked: _usePoints,
-                      onChanged: (v) =>
-                          setState(() => _usePoints = v ?? false),
-                    ),
-                    SizedBox(height: 6.h),
-                    Text(
-                        'Available: $_availablePoints pts',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 12.sp,
-                            color: Colors.grey[500])),
-                  ],
-                ),
+          // Quiz points
+          _SummaryCard(
+            title: 'Quiz Points',
+            child: _pointsLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _availablePoints == 0
+                ? Row(children: [
+              Icon(Icons.stars_outlined, size: 16.sp, color: Colors.grey[400]),
+              SizedBox(width: 8.w),
+              Expanded(child: Text(
+                'You have no quiz points yet. Complete quizzes to earn discounts!',
+                style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500]),
+              )),
+            ])
+                : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              _MealOption(
+                label: 'Use $_redeemablePoints pts  →  ${_fmt(_redeemablePoints / 10.0)} off',
+                sublabel: 'Max 20% discount',
+                value: '-${_fmt(_redeemablePoints / 10.0)}',
+                valueColor: _brown,
+                checked: _usePoints,
+                onChanged: (v) => setState(() => _usePoints = v ?? false),
               ),
+              SizedBox(height: 6.h),
+              Text('Available: $_availablePoints pts  (10 pts = Rs. 1)',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 11.sp, color: Colors.grey[500])),
+            ]),
+          ),
 
-            if (_availablePoints > 0) SizedBox(height: 14.h),
+          SizedBox(height: 14.h),
 
-            // Price breakdown
-            _SummaryCard(
-              title: 'Price Breakdown',
-              child: Column(
-                children: [
-                  _SummaryRow(
-                      'Room (${widget.rooms} × $_nights nights)',
-                      _fmt(_roomTotal)),
-                  if (_includeBreakfast)
-                    _SummaryRow(
-                        'Breakfast', _fmt(_breakfastTotal)),
-                  if (_includeDinner)
-                    _SummaryRow('Dinner', _fmt(_dinnerTotal)),
-                  if (_usePoints)
-                    _SummaryRow('Points Discount',
-                        '-${_fmt(_pointsDiscount)}',
-                        valueColor: Colors.green[700]),
-                  Divider(color: Colors.grey.shade200,
-                      height: 20.h),
-                  Row(
-                    mainAxisAlignment:
-                    MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Total',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 15.sp,
-                              fontWeight: FontWeight.w700,
-                              color: _dark)),
-                      Text(_fmt(_totalPrice),
-                          style: GoogleFonts.dmSans(
-                              fontSize: 18.sp,
-                              fontWeight: FontWeight.w800,
-                              color: _brown)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 14.h),
-
-            // Payment method
-            _SummaryCard(
-              title: 'Payment Method',
-              child: Column(
-                children: [
-                  _PaymentOption(
-                    label: 'Pay at Arrival',
-                    sublabel: 'Pay cash when you arrive',
-                    icon: Icons.payments_outlined,
-                    selected: !_khaltiPayment,
-                    onTap: () =>
-                        setState(() => _khaltiPayment = false),
-                  ),
-                  SizedBox(height: 8.h),
-                  _PaymentOption(
-                    label: 'Pay via Khalti',
-                    sublabel: 'Secure online payment',
-                    icon: Icons.account_balance_wallet_outlined,
-                    selected: _khaltiPayment,
-                    onTap: () =>
-                        setState(() => _khaltiPayment = true),
-                  ),
-                ],
-              ),
-            ),
-
-            SizedBox(height: 28.h),
-
-            // Confirm button
-            SizedBox(
-              width: double.infinity,
-              height: 52.h,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _confirm,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _brown,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r)),
-                ),
-                child: _loading
-                    ? const CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2)
-                    : Text(
-                    _khaltiPayment
-                        ? 'Confirm & Pay via Khalti'
-                        : 'Confirm Booking',
+          // Price breakdown
+          _SummaryCard(
+            title: 'Price Breakdown',
+            child: Column(children: [
+              _SummaryRow(
+                  'Room (${widget.rooms} × $_nights night${_nights != 1 ? 's' : ''})',
+                  _fmt(_roomTotal)),
+              if (_includeBreakfast)
+                _SummaryRow('Breakfast', _fmt(_breakfastTotal)),
+              if (_includeDinner)
+                _SummaryRow('Dinner', _fmt(_dinnerTotal)),
+              if (_usePoints)
+                _SummaryRow('Points Discount', '-${_fmt(_pointsDiscount)}',
+                    valueColor: Colors.green[700]),
+              Divider(color: Colors.grey.shade200, height: 20.h),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Total',
+                    style: GoogleFonts.dmSans(fontSize: 15.sp,
+                        fontWeight: FontWeight.w700, color: _dark)),
+                Text(_fmt(_totalPrice),
+                    style: GoogleFonts.dmSans(fontSize: 18.sp,
+                        fontWeight: FontWeight.w800, color: _brown)),
+              ]),
+              SizedBox(height: 4.h),
+              Align(
+                alignment: Alignment.centerRight,
+                child: Text('+13% VAT may apply',
                     style: GoogleFonts.dmSans(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w700)),
+                        fontSize: 10.sp, color: Colors.grey[400])),
               ),
-            ),
+            ]),
+          ),
 
-            SizedBox(height: 20.h),
-          ],
-        ),
+          SizedBox(height: 14.h),
+
+          // Payment method
+          _SummaryCard(
+            title: 'Payment Method',
+            child: Column(children: [
+              _PaymentOption(
+                label: 'Pay at Arrival',
+                sublabel: 'Pay cash when you check in',
+                icon: Icons.payments_outlined,
+                selected: !_khaltiSelected,
+                onTap: () => setState(() => _khaltiSelected = false),
+              ),
+              SizedBox(height: 8.h),
+              // Khalti — shown but tagged "coming soon"
+              Stack(children: [
+                _PaymentOption(
+                  label: 'Pay via Khalti',
+                  sublabel: 'Online payment (coming soon)',
+                  icon: Icons.account_balance_wallet_outlined,
+                  selected: _khaltiSelected,
+                  onTap: () => setState(() => _khaltiSelected = true),
+                  disabled: true,
+                ),
+                Positioned(
+                  top: 8.h, right: 8.w,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade100,
+                      borderRadius: BorderRadius.circular(10.r),
+                    ),
+                    child: Text('Coming Soon',
+                        style: GoogleFonts.dmSans(fontSize: 10.sp,
+                            fontWeight: FontWeight.bold, color: Colors.purple[800])),
+                  ),
+                ),
+              ]),
+            ]),
+          ),
+
+          SizedBox(height: 28.h),
+
+          // Confirm button
+          SizedBox(
+            width: double.infinity,
+            height: 52.h,
+            child: ElevatedButton(
+              onPressed: _loading ? null : _confirm,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _brown,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14.r)),
+              ),
+              child: _loading
+                  ? const CircularProgressIndicator(
+                  color: Colors.white, strokeWidth: 2)
+                  : Text('Confirm Booking',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 16.sp, fontWeight: FontWeight.w700)),
+            ),
+          ),
+
+          SizedBox(height: 20.h),
+        ]),
       ),
     );
   }
 
   String _fmtDate(DateTime d) {
-    const months = [
-      'Jan','Feb','Mar','Apr','May','Jun',
-      'Jul','Aug','Sep','Oct','Nov','Dec'
-    ];
+    const months = ['Jan','Feb','Mar','Apr','May','Jun',
+      'Jul','Aug','Sep','Oct','Nov','Dec'];
     return '${d.day} ${months[d.month - 1]} ${d.year}';
   }
 }
@@ -406,29 +395,22 @@ class _SummaryCard extends StatelessWidget {
   const _SummaryCard({required this.title, required this.child});
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title,
-              style: GoogleFonts.dmSans(
-                  fontSize: 14.sp,
-                  fontWeight: FontWeight.w700,
-                  color: const Color(0xFF2D1B10))),
-          SizedBox(height: 12.h),
-          child,
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: EdgeInsets.all(16.w),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(14.r),
+      border: Border.all(color: Colors.grey.shade200),
+    ),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(title,
+          style: GoogleFonts.dmSans(fontSize: 14.sp,
+              fontWeight: FontWeight.w700, color: const Color(0xFF2D1B10))),
+      SizedBox(height: 12.h),
+      child,
+    ]),
+  );
 }
 
 class _SummaryRow extends StatelessWidget {
@@ -438,24 +420,17 @@ class _SummaryRow extends StatelessWidget {
   const _SummaryRow(this.label, this.value, {this.valueColor});
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: 8.h),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label,
-              style: GoogleFonts.dmSans(
-                  fontSize: 13.sp, color: Colors.grey[600])),
-          Text(value,
-              style: GoogleFonts.dmSans(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: valueColor ?? const Color(0xFF2D1B10))),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsets.only(bottom: 8.h),
+    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Flexible(child: Text(label,
+          style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600]))),
+      SizedBox(width: 10.w),
+      Text(value,
+          style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.w600,
+              color: valueColor ?? const Color(0xFF2D1B10))),
+    ]),
+  );
 }
 
 class _MealOption extends StatelessWidget {
@@ -465,65 +440,45 @@ class _MealOption extends StatelessWidget {
   final Color? valueColor;
   final bool checked;
   final ValueChanged<bool?> onChanged;
-
   const _MealOption({
-    required this.label,
-    required this.sublabel,
-    required this.value,
-    this.valueColor,
-    required this.checked,
-    required this.onChanged,
+    required this.label, required this.sublabel,
+    required this.value, this.valueColor,
+    required this.checked, required this.onChanged,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
-      decoration: BoxDecoration(
+  Widget build(BuildContext context) => Container(
+    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+    decoration: BoxDecoration(
+      color: checked
+          ? const Color(0xFF8B5E3C).withOpacity(0.05)
+          : Colors.grey.shade50,
+      borderRadius: BorderRadius.circular(10.r),
+      border: Border.all(
         color: checked
-            ? const Color(0xFF8B5E3C).withValues(alpha: 0.05)
-            : Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(10.r),
-        border: Border.all(
-          color: checked
-              ? const Color(0xFF8B5E3C).withValues(alpha: 0.3)
-              : Colors.grey.shade200,
-        ),
+            ? const Color(0xFF8B5E3C).withOpacity(0.3)
+            : Colors.grey.shade200,
       ),
-      child: Row(
-        children: [
-          Checkbox(
-            value: checked,
-            onChanged: onChanged,
-            activeColor: const Color(0xFF8B5E3C),
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(4.r)),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.w600)),
-                if (sublabel.isNotEmpty)
-                  Text(sublabel,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 11.sp,
-                          color: Colors.grey[500])),
-              ],
-            ),
-          ),
-          Text(value,
-              style: GoogleFonts.dmSans(
-                  fontSize: 13.sp,
-                  fontWeight: FontWeight.w600,
-                  color: valueColor ?? const Color(0xFF2D1B10))),
-        ],
+    ),
+    child: Row(children: [
+      Checkbox(
+        value: checked,
+        onChanged: onChanged,
+        activeColor: const Color(0xFF8B5E3C),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.r)),
       ),
-    );
-  }
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: GoogleFonts.dmSans(
+            fontSize: 13.sp, fontWeight: FontWeight.w600)),
+        if (sublabel.isNotEmpty)
+          Text(sublabel, style: GoogleFonts.dmSans(
+              fontSize: 11.sp, color: Colors.grey[500])),
+      ])),
+      Text(value, style: GoogleFonts.dmSans(
+          fontSize: 13.sp, fontWeight: FontWeight.w600,
+          color: valueColor ?? const Color(0xFF2D1B10))),
+    ]),
+  );
 }
 
 class _PaymentOption extends StatelessWidget {
@@ -532,66 +487,47 @@ class _PaymentOption extends StatelessWidget {
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
-
+  final bool disabled;
   const _PaymentOption({
-    required this.label,
-    required this.sublabel,
-    required this.icon,
-    required this.selected,
-    required this.onTap,
+    required this.label, required this.sublabel,
+    required this.icon, required this.selected,
+    required this.onTap, this.disabled = false,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: disabled ? null : onTap,
+    child: Opacity(
+      opacity: disabled ? 0.55 : 1,
       child: Container(
-        padding: EdgeInsets.symmetric(
-            horizontal: 14.w, vertical: 12.h),
+        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
         decoration: BoxDecoration(
           color: selected
-              ? const Color(0xFF8B5E3C).withValues(alpha: 0.05)
+              ? const Color(0xFF8B5E3C).withOpacity(0.05)
               : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(10.r),
           border: Border.all(
-            color: selected
-                ? const Color(0xFF8B5E3C)
-                : Colors.grey.shade200,
+            color: selected ? const Color(0xFF8B5E3C) : Colors.grey.shade200,
             width: selected ? 1.5 : 1,
           ),
         ),
-        child: Row(
-          children: [
-            Icon(icon,
-                size: 22.sp,
+        child: Row(children: [
+          Icon(icon, size: 22.sp,
+              color: selected ? const Color(0xFF8B5E3C) : Colors.grey[500]),
+          SizedBox(width: 12.w),
+          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(label, style: GoogleFonts.dmSans(fontSize: 13.sp,
+                fontWeight: FontWeight.w600,
                 color: selected
-                    ? const Color(0xFF8B5E3C)
-                    : Colors.grey[500]),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 13.sp,
-                          fontWeight: FontWeight.w600,
-                          color: selected
-                              ? const Color(0xFF8B5E3C)
-                              : const Color(0xFF2D1B10))),
-                  Text(sublabel,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 11.sp,
-                          color: Colors.grey[500])),
-                ],
-              ),
-            ),
-            if (selected)
-              Icon(Icons.check_circle_rounded,
-                  size: 20.sp, color: const Color(0xFF8B5E3C)),
-          ],
-        ),
+                    ? const Color(0xFF8B5E3C) : const Color(0xFF2D1B10))),
+            Text(sublabel, style: GoogleFonts.dmSans(
+                fontSize: 11.sp, color: Colors.grey[500])),
+          ])),
+          if (selected && !disabled)
+            Icon(Icons.check_circle_rounded, size: 20.sp,
+                color: const Color(0xFF8B5E3C)),
+        ]),
       ),
-    );
-  }
+    ),
+  );
 }

@@ -57,7 +57,7 @@ class _OwnerProfilePageState extends State<OwnerProfilePage> {
 
   Future<void> _fetchFromServer() async {
     try {
-      final res = await UserRemoteDatasource().getMe();
+      final res = await UserRemoteDatasource().getCurrentUser();
       if (res.statusCode == 200) {
         final data = res.data as Map<String, dynamic>;
         final serverName  = data['name']         as String? ?? '';

@@ -6,7 +6,12 @@ import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 import 'package:lokyatra_frontend/data/datasources/user_remote_datasource.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_event.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/booking_bloc.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/booking_event.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/booking_state.dart';
 import '../OwnerScreen/ProfileImageWidget.dart';
+import 'Savedhomestayspage.dart';
+import 'TouristBookingsPage.dart';
 
 class TouristProfilePage extends StatefulWidget {
   const TouristProfilePage({super.key});
@@ -16,67 +21,69 @@ class TouristProfilePage extends StatefulWidget {
 }
 
 class _TouristProfilePageState extends State<TouristProfilePage> {
-  static const _brown = Color(0xFF5C4033);
+  static const _terracotta = Color(0xFFCD6E4E);
+  static const _dark       = Color(0xFF2D1B10);
+  static const _cream      = Color(0xFFFAF7F2);
 
   String? _profileImageUrl;
-  String _name = '';
+  String _name  = '';
   String _email = '';
   String _phone = '';
+  int _quizPoints     = 0;
+  final int _upcomingCount  = 0;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _loadProfile();
+    _loadBookingCount();
   }
 
   Future<void> _loadProfile() async {
-    // Load from SQLite (non-sensitive)
-    final name  = await SqliteService().get("user_name");
-    final email = await SqliteService().get("user_email");
-    final image = await SqliteService().get("user_image");
-    final phone = await SqliteService().get("user_phone");
+    final name   = await SqliteService().get('user_name');
+    final email  = await SqliteService().get('user_email');
+    final image  = await SqliteService().get('user_image');
+    final phone  = await SqliteService().get('user_phone');
+    final points = await SqliteService().get('user_quiz_points');
 
     if (mounted) {
       setState(() {
-        _name  = name ?? '';
-        _email = email ?? '';
-        _phone = phone ?? '';
+        _name            = name  ?? '';
+        _email           = email ?? '';
+        _phone           = phone ?? '';
+        _quizPoints      = int.tryParse(points ?? '0') ?? 0;
         _profileImageUrl = (image != null && image.isNotEmpty) ? image : null;
       });
     }
 
-    // If profile image is missing locally, fetch fresh from backend
-    if (image == null || image.isEmpty) {
-      await _fetchFromServer();
-    } else {
-      if (mounted) setState(() => _loading = false);
-    }
+    await _fetchFromServer();
   }
 
   Future<void> _fetchFromServer() async {
     try {
-      final res = await UserRemoteDatasource().getMe();
+      final res = await UserRemoteDatasource().getCurrentUser();
       if (res.statusCode == 200) {
-        final data = res.data as Map<String, dynamic>;
+        final data        = res.data as Map<String, dynamic>;
         final serverName  = data['name']         as String? ?? '';
         final serverEmail = data['email']        as String? ?? '';
         final serverPhone = data['phoneNumber']  as String? ?? '';
         final serverImage = data['profileImage'] as String? ?? '';
+        final serverPts   = data['quizPoints']   as int?    ?? 0;
 
-        // Save fresh data back to SQLite
-        await SqliteService().put("user_name", serverName);
-        await SqliteService().put("user_email", serverEmail);
-        await SqliteService().put("user_phone", serverPhone);
-        await SqliteService().put("user_image", serverImage);
+        await SqliteService().put('user_name',        serverName);
+        await SqliteService().put('user_email',       serverEmail);
+        await SqliteService().put('user_phone',       serverPhone);
+        await SqliteService().put('user_image',       serverImage);
+        await SqliteService().put('user_quiz_points', serverPts.toString());
 
         if (mounted) {
           setState(() {
-            _name  = serverName;
-            _email = serverEmail;
-            _phone = serverPhone;
-            _profileImageUrl =
-            serverImage.isNotEmpty ? serverImage : null;
+            _name            = serverName;
+            _email           = serverEmail;
+            _phone           = serverPhone;
+            _quizPoints      = serverPts;
+            _profileImageUrl = serverImage.isNotEmpty ? serverImage : null;
           });
         }
       }
@@ -87,145 +94,376 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
     }
   }
 
+  Future<void> _loadBookingCount() async {
+    try {
+      context.read<BookingBloc>().add(const LoadMyBookings());
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F4),
+      backgroundColor: _cream,
       body: SafeArea(
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 16.h),
           child: Column(
             children: [
+              // ── Header ──────────────────────────────────────────────
+              _buildHeader(),
+
+              // ── Points card ─────────────────────────────────────────
+              Padding(
+                padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 16.h),
+                child: _buildPointsCard(),
+              ),
+
+              // ── Activity section ─────────────────────────────────────
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: _buildActivitySection(),
+              ),
+
               SizedBox(height: 20.h),
 
-              ProfileImageWidget(
-                initialImageUrl: _profileImageUrl,
-                accentColor: _brown,
-                onUploaded: (newUrl) async {
-                  setState(() => _profileImageUrl = newUrl);
-                  await SqliteService().put("user_image", newUrl);
-                },
+              // ── Settings section ─────────────────────────────────────
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: _buildSettingsSection(),
               ),
-
-              SizedBox(height: 14.h),
-
-              Text(
-                _name.isEmpty ? 'Owner' : _name,
-                style: GoogleFonts.playfairDisplay(
-                    fontSize: 20.sp,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF2D1B10)),
-              ),
-              SizedBox(height: 4.h),
-
-              Text(_email,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13.sp, color: Colors.grey[500])),
-
-              if (_phone.isNotEmpty) ...[
-                SizedBox(height: 2.h),
-                Text(_phone,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 12.sp, color: Colors.grey[400])),
-              ],
-
-              SizedBox(height: 6.h),
-
-              Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 12.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: _brown.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Text('Homestay Owner',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 12.sp,
-                        color: _brown,
-                        fontWeight: FontWeight.w600)),
-              ),
-
-              SizedBox(height: 28.h),
-
-              ...[
-                (Icons.person_outline_rounded, 'Edit Profile'),
-                (Icons.notifications_outlined, 'Notifications'),
-                (Icons.help_outline_rounded, 'Help & Support'),
-                (Icons.info_outline_rounded, 'About LokYatra'),
-              ].map((item) =>
-                  _MenuItem(icon: item.$1, label: item.$2)),
 
               SizedBox(height: 24.h),
 
-              SizedBox(
-                width: double.infinity,
-                height: 48.h,
-                child: OutlinedButton.icon(
-                  onPressed: () {
-                    context.read<AuthBloc>().add(LogoutButtonClicked());
-                    Navigator.pushReplacementNamed(context, '/login');
-                  },
-                  icon: Icon(Icons.logout_rounded, size: 18.sp),
-                  label: Text('Logout',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 14.sp,
-                          fontWeight: FontWeight.w600)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.red[600],
-                    side: BorderSide(color: Colors.red.shade300),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r)),
-                  ),
-                ),
+              // ── Logout ───────────────────────────────────────────────
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w),
+                child: _buildLogout(),
               ),
+
+              SizedBox(height: 32.h),
             ],
           ),
         ),
       ),
     );
   }
+
+  // ── Profile header ──────────────────────────────────────────────────────────
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(20.w, 24.h, 20.w, 28.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28.r)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04),
+            blurRadius: 12, offset: const Offset(0, 4))],
+      ),
+      child: Column(children: [
+        // Top row: title + edit icon
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text('Profile',
+              style: GoogleFonts.playfairDisplay(
+                  fontSize: 22.sp, fontWeight: FontWeight.bold, color: _dark)),
+          IconButton(
+            icon: Icon(Icons.edit_outlined, size: 20.sp, color: Colors.grey[500]),
+            onPressed: () {/* navigate to edit profile */},
+          ),
+        ]),
+        SizedBox(height: 20.h),
+
+        // Avatar
+        ProfileImageWidget(
+          initialImageUrl: _profileImageUrl,
+          accentColor: _terracotta,
+          onUploaded: (newUrl) async {
+            setState(() => _profileImageUrl = newUrl);
+            await SqliteService().put('user_image', newUrl);
+          },
+        ),
+        SizedBox(height: 14.h),
+
+        Text(
+          _name.isEmpty ? 'Tourist' : _name,
+          style: GoogleFonts.playfairDisplay(
+              fontSize: 20.sp, fontWeight: FontWeight.bold, color: _dark),
+        ),
+        SizedBox(height: 4.h),
+        Text(_email,
+            style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[500])),
+        if (_phone.isNotEmpty) ...[
+          SizedBox(height: 2.h),
+          Text(_phone,
+              style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[400])),
+        ],
+        SizedBox(height: 10.h),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 5.h),
+          decoration: BoxDecoration(
+            color: _terracotta.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: _terracotta.withOpacity(0.3)),
+          ),
+          child: Text('Tourist',
+              style: GoogleFonts.dmSans(fontSize: 12.sp,
+                  color: _terracotta, fontWeight: FontWeight.w600)),
+        ),
+      ]),
+    );
+  }
+
+  // ── Quiz points card ────────────────────────────────────────────────────────
+  Widget _buildPointsCard() {
+    return Container(
+      margin: EdgeInsets.only(top: 16.h),
+      padding: EdgeInsets.all(20.w),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            _terracotta.withOpacity(0.12),
+            _terracotta.withOpacity(0.05),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(color: _terracotta.withOpacity(0.15)),
+      ),
+      child: Row(children: [
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Total Points',
+              style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600])),
+          SizedBox(height: 4.h),
+          Text('$_quizPoints',
+              style: GoogleFonts.playfairDisplay(
+                  fontSize: 36.sp, fontWeight: FontWeight.bold, color: _dark)),
+          SizedBox(height: 12.h),
+          GestureDetector(
+            onTap: () {/* navigate to points history */},
+            child: Row(children: [
+              Text('View Points History',
+                  style: GoogleFonts.dmSans(fontSize: 13.sp,
+                      color: _terracotta, fontWeight: FontWeight.w600)),
+              SizedBox(width: 4.w),
+              Icon(Icons.chevron_right_rounded, size: 16.sp, color: _terracotta),
+            ]),
+          ),
+        ])),
+        Container(
+          padding: EdgeInsets.all(16.w),
+          decoration: BoxDecoration(
+            color: _terracotta.withOpacity(0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.workspace_premium_rounded,
+              size: 36.sp, color: _terracotta),
+        ),
+      ]),
+    );
+  }
+
+  // ── Activity section (bookings, saved, reviews, quiz) ──────────────────────
+  Widget _buildActivitySection() {
+    return BlocBuilder<BookingBloc, BookingState>(
+      builder: (context, state) {
+        int upcomingCount = 0;
+        if (state is MyBookingsLoaded) {
+          upcomingCount = state.bookings.where((b) {
+            final s = (b['booking']?['status'] ?? '').toString();
+            return s == 'Pending' || s == 'Confirmed';
+          }).length;
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20.r),
+            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04),
+                blurRadius: 10, offset: const Offset(0, 4))],
+          ),
+          child: Column(children: [
+            _ActivityTile(
+              icon: Icons.calendar_month_outlined,
+              iconColor: _terracotta,
+              label: 'My Bookings',
+              sublabel: upcomingCount > 0
+                  ? '$upcomingCount upcoming'
+                  : 'No upcoming bookings',
+              onTap: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => BlocProvider.value(
+                  value: context.read<BookingBloc>(),
+                  child: const TouristBookingsPage(),
+                ),
+              )),
+              isFirst: true,
+            ),
+            _divider(),
+            _ActivityTile(
+              icon: Icons.favorite_outline_rounded,
+              iconColor: Colors.redAccent,
+              label: 'Your Saved',
+              sublabel: 'Saved homestays',
+              onTap: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => const SavedHomestaysPage(),
+              )),
+            ),
+            _divider(),
+            _ActivityTile(
+              icon: Icons.rate_review_outlined,
+              iconColor: Colors.amber[700]!,
+              label: 'My Reviews',
+              sublabel: 'Coming soon',
+              onTap: () {},
+            ),
+            _divider(),
+            _ActivityTile(
+              icon: Icons.emoji_events_outlined,
+              iconColor: Colors.green[700]!,
+              label: 'Quiz History',
+              sublabel: '$_quizPoints total points earned',
+              onTap: () {},
+              isLast: true,
+            ),
+          ]),
+        );
+      },
+    );
+  }
+
+  Widget _divider() => Divider(
+    height: 1, indent: 20.w, endIndent: 20.w,
+    color: Colors.grey.shade100,
+  );
+
+  // ── Settings section ────────────────────────────────────────────────────────
+  Widget _buildSettingsSection() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04),
+            blurRadius: 10, offset: const Offset(0, 4))],
+      ),
+      child: Column(children: [
+        _ActivityTile(
+          icon: Icons.person_outline_rounded,
+          iconColor: Colors.blue[600]!,
+          label: 'Edit Profile',
+          sublabel: 'Update your information',
+          onTap: () {},
+          isFirst: true,
+        ),
+        _divider(),
+        _ActivityTile(
+          icon: Icons.notifications_outlined,
+          iconColor: Colors.purple[600]!,
+          label: 'Notifications',
+          sublabel: 'Manage alerts',
+          onTap: () {},
+        ),
+        _divider(),
+        _ActivityTile(
+          icon: Icons.help_outline_rounded,
+          iconColor: Colors.teal[600]!,
+          label: 'Help & Support',
+          sublabel: 'Get assistance',
+          onTap: () {},
+        ),
+        _divider(),
+        _ActivityTile(
+          icon: Icons.info_outline_rounded,
+          iconColor: Colors.grey[600]!,
+          label: 'About LokYatra',
+          sublabel: 'v1.0.0',
+          onTap: () {},
+          isLast: true,
+        ),
+      ]),
+    );
+  }
+
+  // ── Logout button ───────────────────────────────────────────────────────────
+  Widget _buildLogout() {
+    return SizedBox(
+      width: double.infinity,
+      height: 50.h,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          context.read<AuthBloc>().add(LogoutButtonClicked());
+          Navigator.pushReplacementNamed(context, '/login');
+        },
+        icon: Icon(Icons.logout_rounded, size: 18.sp),
+        label: Text('Logout',
+            style: GoogleFonts.dmSans(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.red[600],
+          side: BorderSide(color: Colors.red.shade300),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14.r)),
+        ),
+      ),
+    );
+  }
 }
 
-class _MenuItem extends StatelessWidget {
+// ── Activity tile widget ──────────────────────────────────────────────────────
+
+class _ActivityTile extends StatelessWidget {
   final IconData icon;
+  final Color iconColor;
   final String label;
-  final VoidCallback? onTap;
+  final String sublabel;
+  final VoidCallback onTap;
+  final bool isFirst;
+  final bool isLast;
 
-  static const _brown = Color(0xFF5C4033);
-
-  const _MenuItem({required this.icon, required this.label, this.onTap});
+  const _ActivityTile({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.sublabel,
+    required this.onTap,
+    this.isFirst = false,
+    this.isLast  = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.only(bottom: 10.h),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12.r),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 2)),
-        ],
-      ),
-      child: ListTile(
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         onTap: onTap,
-        leading: Container(
-          padding: EdgeInsets.all(8.w),
-          decoration: BoxDecoration(
-            color: _brown.withOpacity(0.08),
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Icon(icon, size: 18.sp, color: _brown),
+        borderRadius: BorderRadius.vertical(
+          top:    isFirst ? Radius.circular(20.r) : Radius.zero,
+          bottom: isLast  ? Radius.circular(20.r) : Radius.zero,
         ),
-        title: Text(label,
-            style: GoogleFonts.dmSans(
-                fontSize: 14.sp, fontWeight: FontWeight.w500)),
-        trailing: Icon(Icons.chevron_right_rounded,
-            color: Colors.grey[400], size: 20.sp),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+          child: Row(children: [
+            Container(
+              width: 42.w,
+              height: 42.h,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12.r),
+              ),
+              child: Icon(icon, size: 20.sp, color: iconColor),
+            ),
+            SizedBox(width: 14.w),
+            Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(label,
+                  style: GoogleFonts.dmSans(fontSize: 14.sp,
+                      fontWeight: FontWeight.w600, color: const Color(0xFF2D1B10))),
+              SizedBox(height: 2.h),
+              Text(sublabel,
+                  style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
+            ])),
+            Icon(Icons.chevron_right_rounded,
+                color: Colors.grey[350], size: 20.sp),
+          ]),
+        ),
       ),
     );
   }

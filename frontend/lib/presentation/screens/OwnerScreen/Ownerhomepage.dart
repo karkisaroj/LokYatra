@@ -54,7 +54,7 @@ class _OwnerHomePageState extends State<OwnerHomePage> {
     final isOnline = await sqlite.isOnline();
     if (isOnline) {
       try {
-        final res = await UserRemoteDatasource().getMe();
+        final res = await UserRemoteDatasource().getCurrentUser();
         if (res.statusCode == 200) {
           final data = res.data as Map<String, dynamic>;
           final serverImage = data['profileImage'] as String? ?? '';
