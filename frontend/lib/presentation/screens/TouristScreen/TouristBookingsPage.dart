@@ -202,6 +202,8 @@ class _BookingCard extends StatelessWidget {
     final guests       = b['guests'] as int? ?? 0;
     final total        = (b['totalPrice'] as num?)?.toDouble() ?? 0;
     final payMethod    = b['paymentMethod']?.toString() ?? '';
+    final payStatus    = b['paymentStatus']?.toString() ?? 'Unpaid';
+    final isPaid       = payStatus == 'Paid';
     final specialReq   = b['specialRequests']?.toString() ?? '';
     final rejReason    = b['rejectionReason']?.toString() ?? '';
     final canCancel    = status == 'Pending' || status == 'Confirmed';
@@ -214,7 +216,7 @@ class _BookingCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06),
             blurRadius: 14, offset: const Offset(0, 6))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -307,7 +309,7 @@ class _BookingCard extends StatelessWidget {
 
             SizedBox(height: 14.h),
 
-            // Total amount + payment
+            // Total amount + payment status
             Container(
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
@@ -326,19 +328,57 @@ class _BookingCard extends StatelessWidget {
                             color: _terracotta, fontWeight: FontWeight.w800)),
                   ],
                 ),
-                SizedBox(height: 6.h),
-                Row(children: [
-                  Icon(Icons.check_circle_rounded,
-                      size: 13.sp,
-                      color: payMethod == 'Khalti'
-                          ? Colors.purple[700] : Colors.green[700]),
-                  SizedBox(width: 5.w),
-                  Text(payMethod == 'Khalti' ? 'Paid via Khalti' : 'Pay at Arrival',
-                      style: GoogleFonts.dmSans(fontSize: 12.sp,
-                          color: payMethod == 'Khalti'
-                              ? Colors.purple[700] : Colors.green[700],
-                          fontWeight: FontWeight.w500)),
-                ]),
+                SizedBox(height: 10.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Payment method
+                    Row(children: [
+                      Icon(
+                        payMethod == 'Khalti'
+                            ? Icons.phone_android_rounded : Icons.money_rounded,
+                        size: 13.sp,
+                        color: payMethod == 'Khalti'
+                            ? Colors.purple[700] : Colors.green[700],
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        payMethod == 'Khalti' ? 'Khalti' : 'Cash on Arrival',
+                        style: GoogleFonts.dmSans(fontSize: 12.sp,
+                            color: payMethod == 'Khalti'
+                                ? Colors.purple[700] : Colors.green[700],
+                            fontWeight: FontWeight.w500),
+                      ),
+                    ]),
+                    // Payment status pill — updates when owner marks paid
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 10.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: isPaid
+                            ? Colors.green.shade100 : Colors.amber.shade100,
+                        borderRadius: BorderRadius.circular(20.r),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(
+                          isPaid
+                              ? Icons.check_circle_rounded
+                              : Icons.hourglass_empty_rounded,
+                          size: 11.sp,
+                          color: isPaid
+                              ? Colors.green[800] : Colors.amber[800],
+                        ),
+                        SizedBox(width: 4.w),
+                        Text(isPaid ? 'Payment Received' : 'Payment Pending',
+                            style: GoogleFonts.dmSans(
+                              fontSize: 11.sp, fontWeight: FontWeight.bold,
+                              color: isPaid
+                                  ? Colors.green[800] : Colors.amber[800],
+                            )),
+                      ]),
+                    ),
+                  ],
+                ),
               ]),
             ),
 

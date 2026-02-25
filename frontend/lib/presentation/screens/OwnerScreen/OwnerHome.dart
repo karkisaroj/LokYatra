@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayListingsPage.dart';
-import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/booking_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
 import 'OwnerBookingsPage.dart';
 import 'Ownerhomepage.dart';
@@ -21,7 +20,6 @@ class OwnerHome extends StatefulWidget {
 class _OwnerHomeState extends State<OwnerHome> {
   int _currentTab = 0;
   late final HomestayBloc _homestayBloc;
-  late final BookingBloc  _bookingBloc;
 
   static const _brown = Color(0xFF5C4033);
 
@@ -29,13 +27,11 @@ class _OwnerHomeState extends State<OwnerHome> {
   void initState() {
     super.initState();
     _homestayBloc = HomestayBloc();
-    _bookingBloc  = BookingBloc();
   }
 
   @override
   void dispose() {
     _homestayBloc.close();
-    _bookingBloc.close();
     super.dispose();
   }
 
@@ -54,31 +50,23 @@ class _OwnerHomeState extends State<OwnerHome> {
 
   @override
   Widget build(BuildContext context) {
-    return ScreenUtilInit(
-      designSize: const Size(390, 844),
-      minTextAdapt: true,
-      splitScreenMode: true,
-      builder: (_, __) => MultiBlocProvider(
-        providers: [
-          BlocProvider.value(value: _homestayBloc),
-          BlocProvider.value(value: _bookingBloc),
-        ],
-        child: Scaffold(
-          body: IndexedStack(
-            index: _currentTab,
-            children: [
-              const OwnerHomePage(),
-              const HomestayListingsPage(),
-              const OwnerBookingsPage(),   // ← real page, replaces comingSoon
-              _comingSoon('Balance', Icons.account_balance_wallet_outlined),
-              const OwnerProfilePage(),
-            ],
-          ),
-          bottomNavigationBar: _BottomNav(
-            currentIndex: _currentTab,
-            onTap: (i) => setState(() => _currentTab = i),
-            selectedColor: _brown,
-          ),
+    return BlocProvider.value(
+      value: _homestayBloc,
+      child: Scaffold(
+        body: IndexedStack(
+          index: _currentTab,
+          children: [
+            FocusScope(child: const OwnerHomePage()),
+            FocusScope(child: const HomestayListingsPage()),
+            FocusScope(child: const OwnerBookingsPage()),
+            FocusScope(child: _comingSoon('Balance', Icons.account_balance_wallet_outlined)),
+            FocusScope(child: const OwnerProfilePage()),
+          ],
+        ),
+        bottomNavigationBar: _BottomNav(
+          currentIndex: _currentTab,
+          onTap: (i) => setState(() => _currentTab = i),
+          selectedColor: _brown,
         ),
       ),
     );
@@ -96,11 +84,11 @@ class _BottomNav extends StatelessWidget {
   });
 
   static const _items = [
-    (Icons.home_rounded,              Icons.home_outlined,                    'Home'),
-    (Icons.holiday_village,           Icons.holiday_village_outlined,         'Listings'),
-    (Icons.calendar_month,            Icons.calendar_month_outlined,          'Bookings'),
-    (Icons.account_balance_wallet,    Icons.account_balance_wallet_outlined,  'Balance'),
-    (Icons.person_rounded,            Icons.person_outline_rounded,           'Profile'),
+    (Icons.home_rounded,           Icons.home_outlined,                   'Home'),
+    (Icons.holiday_village,        Icons.holiday_village_outlined,        'Listings'),
+    (Icons.calendar_month,         Icons.calendar_month_outlined,         'Bookings'),
+    (Icons.account_balance_wallet, Icons.account_balance_wallet_outlined, 'Balance'),
+    (Icons.person_rounded,         Icons.person_outline_rounded,          'Profile'),
   ];
 
   @override
@@ -125,32 +113,36 @@ class _BottomNav extends StatelessWidget {
                 child: GestureDetector(
                   behavior: HitTestBehavior.opaque,
                   onTap: () => onTap(i),
-                  child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(selected ? active : inactive,
-                          key: ValueKey(selected),
-                          size: 22.sp,
-                          color: selected ? selectedColor : Colors.grey[400]),
-                    ),
-                    SizedBox(height: 3.h),
-                    Text(label,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 10.sp,
-                          fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
-                          color: selected ? selectedColor : Colors.grey[400],
-                        )),
-                    SizedBox(height: 3.h),
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 250),
-                      height: 2.h,
-                      width: selected ? 18.w : 0,
-                      decoration: BoxDecoration(
-                        color: selectedColor,
-                        borderRadius: BorderRadius.circular(2),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(selected ? active : inactive,
+                            key: ValueKey(selected),
+                            size: 22.sp,
+                            color: selected ? selectedColor : Colors.grey[400]),
                       ),
-                    ),
-                  ]),
+                      SizedBox(height: 3.h),
+                      Text(label,
+                          style: GoogleFonts.dmSans(
+                            fontSize: 10.sp,
+                            fontWeight: selected
+                                ? FontWeight.w700 : FontWeight.normal,
+                            color: selected ? selectedColor : Colors.grey[400],
+                          )),
+                      SizedBox(height: 3.h),
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        height: 2.h,
+                        width: selected ? 18.w : 0,
+                        decoration: BoxDecoration(
+                          color: selectedColor,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               );
             }),

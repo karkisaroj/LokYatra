@@ -1,3 +1,5 @@
+// lib/data/datasources/booking_remote_datasource.dart
+
 import 'package:dio/dio.dart';
 import 'package:lokyatra_frontend/core/constants.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
@@ -21,6 +23,8 @@ class BookingRemoteDatasource {
       'Content-Type': 'application/json',
     });
   }
+
+  // ── Tourist ──────────────────────────────────────────────────────────────
 
   Future<Response> createBooking({
     required int homestayId,
@@ -54,6 +58,8 @@ class BookingRemoteDatasource {
   Future<Response> cancelBooking(int id) async =>
       _dio.patch('api/Booking/$id/cancel', options: await _authOptions());
 
+  // ── Owner ─────────────────────────────────────────────────────────────────
+
   Future<Response> getOwnerBookings() async =>
       _dio.get('api/Booking/owner-bookings', options: await _authOptions());
 
@@ -62,11 +68,26 @@ class BookingRemoteDatasource {
       _dio.patch(
         'api/Booking/$id/status',
         data: {
-          'status': status,
+          'status':          status,
           'rejectionReason': rejectionReason,
         },
         options: await _authOptions(),
       );
+
+  /// PATCH api/Booking/{id}/payment — owner marks cash payment as received
+  Future<Response> markPaymentReceived(int id) async =>
+      _dio.patch('api/Booking/$id/payment', options: await _authOptions());
+
+  /// GET api/Booking/owner-revenue — earnings summary for the owner dashboard
+  Future<Response> getOwnerRevenue() async =>
+      _dio.get('api/Booking/owner-revenue', options: await _authOptions());
+
+  // ── Admin ─────────────────────────────────────────────────────────────────
+
+  Future<Response> getAllBookings() async =>
+      _dio.get('api/Booking/all', options: await _authOptions());
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
 
   String _fmtDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';

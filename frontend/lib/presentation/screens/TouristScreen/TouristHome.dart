@@ -1,12 +1,3 @@
-// lib/presentation/screens/TouristScreen/TouristHome.dart
-//
-// Fixes applied vs original:
-//   1. Each IndexedStack page wrapped in FocusScope → prevents the
-//      _FocusInheritedScope assertion crash when switching tabs
-//   2. BookingBloc created & owned here (disposed on widget disposal) →
-//      TouristProfilePage can context.read<BookingBloc>() without crashing
-//   3. FavouriteButton replaces the static grey heart icon on homestay cards
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -44,8 +35,6 @@ class _TouristHomeState extends State<TouristHome> {
   int _currentIndex = 0;
   static const _terracotta = Color(0xFFCD6E4E);
 
-  // BookingBloc lives here — persists across tab switches and is
-  // provided down to TouristProfilePage via BlocProvider.value.
   late final BookingBloc _bookingBloc;
 
   @override
@@ -62,12 +51,6 @@ class _TouristHomeState extends State<TouristHome> {
 
   @override
   Widget build(BuildContext context) {
-    // FIX 1: Wrap every page in FocusScope to prevent the
-    // _FocusInheritedScope assertion crash that IndexedStack causes
-    // when child widgets use inherited focus nodes (TextField, etc.)
-    //
-    // FIX 2: Provide BookingBloc to the profile tab so TouristProfilePage
-    // can call context.read<BookingBloc>() without blowing up.
     final pages = [
       FocusScope(child: const _HomeTab()),
       FocusScope(child: const TouristSitesPage()),
@@ -102,10 +85,8 @@ class _TouristHomeState extends State<TouristHome> {
         selectedItemColor: _terracotta,
         unselectedItemColor: Colors.grey[400],
         backgroundColor: Colors.white,
-        selectedLabelStyle:
-        GoogleFonts.dmSans(fontSize: 11.sp, fontWeight: FontWeight.bold),
-        unselectedLabelStyle:
-        GoogleFonts.dmSans(fontSize: 11.sp, fontWeight: FontWeight.w500),
+        selectedLabelStyle: GoogleFonts.dmSans(fontSize: 11.sp, fontWeight: FontWeight.bold),
+        unselectedLabelStyle: GoogleFonts.dmSans(fontSize: 11.sp, fontWeight: FontWeight.w500),
         elevation: 20,
         items: const [
           BottomNavigationBarItem(
@@ -133,10 +114,6 @@ class _TouristHomeState extends State<TouristHome> {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Home Tab
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _HomeTab extends StatefulWidget {
   const _HomeTab();
@@ -167,16 +144,14 @@ class _HomeTabState extends State<_HomeTab> {
       try {
         final res = await UserRemoteDatasource().getCurrentUser();
         if (res.statusCode == 200) {
-          final data        = res.data as Map<String, dynamic>;
+          final data = res.data as Map<String, dynamic>;
           final serverImage = data['profileImage'] as String? ?? '';
           if (serverImage.isNotEmpty && serverImage != cachedImage) {
             await sqlite.put('user_profile_image', serverImage);
             if (mounted) setState(() => _profileImageUrl = serverImage);
           }
         }
-      } catch (e) {
-        debugPrint('Error refreshing profile image: $e');
-      }
+      } catch (e) {}
     }
   }
 
@@ -207,7 +182,6 @@ class _HomeTabState extends State<_HomeTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Header row
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -238,16 +212,34 @@ class _HomeTabState extends State<_HomeTab> {
                   ),
                   SizedBox(height: 20.h),
 
-                  // Search bar
-                  _SearchBar(
-                    controller: _searchController,
+                  GestureDetector(
                     onTap: () => Navigator.push(context,
                         MaterialPageRoute(
                             builder: (_) => const TouristSearchPage())),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16.r),
+                        boxShadow: [BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.04),
+                            blurRadius: 10, offset: const Offset(0, 4))],
+                      ),
+                      child: TextField(
+                        controller: _searchController,
+                        enabled: false,
+                        style: GoogleFonts.dmSans(fontSize: 14.sp),
+                        decoration: InputDecoration(
+                          hintText: 'Search for sites, homestays...',
+                          hintStyle: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey[400]),
+                          prefixIcon: Icon(Icons.search, color: const Color(0xFFCD6E4E), size: 22.sp),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+                        ),
+                      ),
+                    ),
                   ),
                   SizedBox(height: 24.h),
 
-                  // Category section
                   Text('Browse by Category',
                       style: GoogleFonts.playfairDisplay(
                           fontSize: 20.sp,
@@ -260,12 +252,25 @@ class _HomeTabState extends State<_HomeTab> {
             ),
           ),
 
-          // ── Popular Sites ──────────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Column(children: [
               Padding(
                 padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: _SectionHeader(title: 'Popular Sites', onSeeAll: () {}),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Popular Sites',
+                        style: GoogleFonts.playfairDisplay(
+                            fontSize: 20.sp, fontWeight: FontWeight.bold,
+                            color: const Color(0xFF2D1B10))),
+                    TextButton(
+                      onPressed: () {},
+                      child: Text('See All',
+                          style: GoogleFonts.dmSans(fontSize: 13.sp,
+                              color: const Color(0xFFCD6E4E), fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
               ),
               SizedBox(height: 12.h),
               BlocBuilder<SitesBloc, SitesState>(
@@ -304,11 +309,24 @@ class _HomeTabState extends State<_HomeTab> {
             ]),
           ),
 
-          // ── Popular Stays ──────────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(20.w, 32.h, 20.w, 12.h),
-              child: _SectionHeader(title: 'Popular Stays', onSeeAll: () {}),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Popular Stays',
+                      style: GoogleFonts.playfairDisplay(
+                          fontSize: 20.sp, fontWeight: FontWeight.bold,
+                          color: const Color(0xFF2D1B10))),
+                  TextButton(
+                    onPressed: () {},
+                    child: Text('See All',
+                        style: GoogleFonts.dmSans(fontSize: 13.sp,
+                            color: const Color(0xFFCD6E4E), fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
             ),
           ),
           SliverToBoxAdapter(
@@ -357,10 +375,6 @@ class _HomeTabState extends State<_HomeTab> {
     );
   }
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Supporting widgets
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _SearchBar extends StatelessWidget {
   final TextEditingController controller;
@@ -464,31 +478,6 @@ class _CategoryCard extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final VoidCallback onSeeAll;
-  const _SectionHeader({required this.title, required this.onSeeAll});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(title,
-            style: GoogleFonts.playfairDisplay(
-                fontSize: 20.sp, fontWeight: FontWeight.bold,
-                color: const Color(0xFF2D1B10))),
-        TextButton(
-          onPressed: onSeeAll,
-          child: Text('See All',
-              style: GoogleFonts.dmSans(fontSize: 13.sp,
-                  color: const Color(0xFFCD6E4E), fontWeight: FontWeight.bold)),
-        ),
-      ],
-    );
-  }
-}
-
 class _HorizontalSiteCard extends StatelessWidget {
   final CulturalSite site;
   final VoidCallback onTap;
@@ -555,7 +544,6 @@ class _HorizontalSiteCard extends StatelessWidget {
   }
 }
 
-// FIX 3: FavouriteButton replaces the static grey heart icon
 class _HomestayCard extends StatelessWidget {
   final Homestay homestay;
   final VoidCallback onTap;
@@ -583,8 +571,6 @@ class _HomestayCard extends StatelessWidget {
               blurRadius: 15, offset: const Offset(0, 8))],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
-          // Image + favourite button
           Stack(children: [
             ClipRRect(
               borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),

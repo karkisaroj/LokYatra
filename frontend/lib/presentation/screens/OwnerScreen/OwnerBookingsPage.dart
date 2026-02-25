@@ -1,3 +1,5 @@
+// lib/presentation/screens/OwnerScreen/OwnerBookingsPage.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -13,28 +15,50 @@ class OwnerBookingsPage extends StatefulWidget {
   State<OwnerBookingsPage> createState() => _OwnerBookingsPageState();
 }
 
-class _OwnerBookingsPageState extends State<OwnerBookingsPage>
-    with SingleTickerProviderStateMixin {
-  static const _dark       = Color(0xFF2D1B10);
-  static const _cream      = Color(0xFFFAF7F2);
-  static const _brown      = Color(0xFF5C4033);
-  static const _terracotta = Color(0xFFCD6E4E);
-
-  late final TabController _tabController;
-  final _tabs = const ['Pending', 'Confirmed', 'Rejected', 'All'];
+// This state owns the BookingBloc and provides it to the view below.
+// By owning the bloc here we avoid depending on any parent BlocProvider,
+// which eliminates all IndexedStack / FocusScope context timing crashes.
+class _OwnerBookingsPageState extends State<OwnerBookingsPage> {
+  late final BookingBloc _bloc;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: _tabs.length, vsync: this);
-    context.read<BookingBloc>().add(const LoadOwnerBookings());
+    _bloc = BookingBloc()..add(const LoadOwnerBookings());
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _bloc.close();
     super.dispose();
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider.value(
+      value: _bloc,
+      child: const _OwnerBookingsView(),
+    );
+  }
+}
+
+// All the actual UI lives here — it can safely use context.read<BookingBloc>()
+// because BlocProvider.value is always directly above it.
+class _OwnerBookingsView extends StatefulWidget {
+  const _OwnerBookingsView();
+
+  @override
+  State<_OwnerBookingsView> createState() => _OwnerBookingsViewState();
+}
+
+class _OwnerBookingsViewState extends State<_OwnerBookingsView> {
+  static const _terracotta = Color(0xFFCD6E4E);
+  static const _dark       = Color(0xFF2D1B10);
+  static const _cream      = Color(0xFFFAF7F2);
+
+  int _selectedTab = 0;
+  OwnerRevenueLoaded? _revenue;
+  List<Map<String, dynamic>> _bookings = [];
 
   @override
   Widget build(BuildContext context) {
@@ -43,35 +67,29 @@ class _OwnerBookingsPageState extends State<OwnerBookingsPage>
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: false,
         title: Text('Bookings',
             style: GoogleFonts.playfairDisplay(
                 fontSize: 20.sp, fontWeight: FontWeight.bold, color: _dark)),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.refresh_rounded, color: _brown, size: 22.sp),
-            onPressed: () =>
-                context.read<BookingBloc>().add(const LoadOwnerBookings()),
-          ),
-        ],
-        bottom: TabBar(
-          controller: _tabController,
-          labelColor: _brown,
-          unselectedLabelColor: Colors.grey[500],
-          indicatorColor: _brown,
-          indicatorWeight: 2.5,
-          labelStyle: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.bold),
-          unselectedLabelStyle: GoogleFonts.dmSans(fontSize: 13.sp),
-          tabs: _tabs.map((t) => Tab(text: t)).toList(),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: Colors.grey.shade200),
         ),
       ),
       body: BlocConsumer<BookingBloc, BookingState>(
         listener: (context, state) {
+          if (state is OwnerBookingsLoaded) {
+            setState(() => _bookings = state.bookings);
+          }
+          if (state is OwnerRevenueLoaded) {
+            setState(() => _revenue = state);
+          }
           if (state is BookingActionSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               content: Text(state.message, style: GoogleFonts.dmSans()),
               backgroundColor: Colors.green[700],
               behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r)),
             ));
           }
           if (state is BookingError) {
@@ -79,227 +97,481 @@ class _OwnerBookingsPageState extends State<OwnerBookingsPage>
               content: Text(state.message, style: GoogleFonts.dmSans()),
               backgroundColor: Colors.red[700],
               behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r)),
             ));
           }
         },
         builder: (context, state) {
-          if (state is BookingLoading) {
+          if (state is BookingLoading && _revenue == null) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (state is BookingError) {
-            return _ErrorView(
-              message: state.message,
-              onRetry: () =>
-                  context.read<BookingBloc>().add(const LoadOwnerBookings()),
-            );
-          }
-          if (state is OwnerBookingsLoaded) {
-            String getStatus(Map<String, dynamic> b) =>
-                (b['booking']?['status'] ?? '').toString();
-            return TabBarView(
-              controller: _tabController,
-              children: [
-                _BookingList(
-                  bookings: state.bookings.where((b) => getStatus(b) == 'Pending').toList(),
-                  emptyMessage: 'No pending bookings',
-                  emptyIcon: Icons.hourglass_empty_rounded,
+
+          // Always use cached _bookings — the current state may be
+          // OwnerRevenueLoaded which would make the list appear empty.
+          final bookings = _bookings;
+
+          final pending   = bookings.where((b) => _st(b) == 'Pending').toList();
+          final confirmed = bookings.where((b) => _st(b) == 'Confirmed').toList();
+          final completed = bookings.where((b) => _st(b) == 'Completed').toList();
+
+          final tabs = [
+            ('Pending',   pending,   pending.length),
+            ('Confirmed', confirmed, confirmed.length),
+            ('Completed', completed, completed.length),
+            ('All',       bookings,  bookings.length),
+          ];
+
+          return Column(children: [
+            // ── Revenue summary card ───────────────────────────────────────
+            if (_revenue != null)
+              _RevenueCard(revenue: _revenue!),
+
+            // ── Tab bar ────────────────────────────────────────────────────
+            Container(
+              color: Colors.white,
+              padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 12.h),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(14.r),
                 ),
-                _BookingList(
-                  bookings: state.bookings.where((b) => getStatus(b) == 'Confirmed').toList(),
-                  emptyMessage: 'No confirmed bookings',
-                  emptyIcon: Icons.check_circle_outline_rounded,
+                padding: EdgeInsets.all(4.w),
+                child: Row(
+                  children: List.generate(4, (i) => Expanded(
+                    child: GestureDetector(
+                      onTap: () => setState(() => _selectedTab = i),
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 200),
+                        padding: EdgeInsets.symmetric(vertical: 8.h),
+                        decoration: BoxDecoration(
+                          color: _selectedTab == i
+                              ? Colors.white : Colors.transparent,
+                          borderRadius: BorderRadius.circular(10.r),
+                          boxShadow: _selectedTab == i
+                              ? [BoxShadow(
+                              color: Colors.black.withOpacity(0.06),
+                              blurRadius: 6, offset: const Offset(0, 2))]
+                              : [],
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(tabs[i].$1,
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 11.sp,
+                                  fontWeight: _selectedTab == i
+                                      ? FontWeight.bold : FontWeight.normal,
+                                  color: _selectedTab == i
+                                      ? _dark : Colors.grey[500],
+                                )),
+                            if (tabs[i].$3 > 0) ...[
+                              SizedBox(height: 2.h),
+                              Container(
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: 6.w, vertical: 1.h),
+                                decoration: BoxDecoration(
+                                  color: _selectedTab == i
+                                      ? _terracotta : Colors.grey.shade400,
+                                  borderRadius: BorderRadius.circular(8.r),
+                                ),
+                                child: Text('${tabs[i].$3}',
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: 9.sp,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold)),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  )),
                 ),
-                _BookingList(
-                  bookings: state.bookings.where((b) => getStatus(b) == 'Rejected').toList(),
-                  emptyMessage: 'No rejected bookings',
-                  emptyIcon: Icons.cancel_outlined,
+              ),
+            ),
+
+            // ── Booking list ───────────────────────────────────────────────
+            Expanded(
+              child: RefreshIndicator(
+                color: _terracotta,
+                onRefresh: () async =>
+                    context.read<BookingBloc>().add(const LoadOwnerBookings()),
+                child: tabs[_selectedTab].$2.isEmpty
+                    ? _EmptyState(label: tabs[_selectedTab].$1)
+                    : ListView.builder(
+                  padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 32.h),
+                  itemCount: tabs[_selectedTab].$2.length,
+                  itemBuilder: (_, i) => _BookingCard(
+                    data: tabs[_selectedTab].$2[i],
+                    onConfirm: () => context.read<BookingBloc>().add(
+                        UpdateBookingStatus(
+                            tabs[_selectedTab].$2[i]['booking']['id'] as int,
+                            'Confirmed')),
+                    onReject: (reason) => context.read<BookingBloc>().add(
+                        UpdateBookingStatus(
+                            tabs[_selectedTab].$2[i]['booking']['id'] as int,
+                            'Rejected',
+                            rejectionReason: reason)),
+                    onComplete: () => context.read<BookingBloc>().add(
+                        UpdateBookingStatus(
+                            tabs[_selectedTab].$2[i]['booking']['id'] as int,
+                            'Completed')),
+                    onMarkPaid: () => _confirmMarkPaid(
+                        context,
+                        tabs[_selectedTab].$2[i]['booking']['id'] as int,
+                        tabs[_selectedTab].$2[i]['booking']['totalPrice'],
+                        tabs[_selectedTab].$2[i]['booking']['paymentMethod']?.toString() ?? ''),
+                  ),
                 ),
-                _BookingList(
-                  bookings: state.bookings,
-                  emptyMessage: 'No bookings yet',
-                  emptyIcon: Icons.calendar_today_outlined,
-                ),
-              ],
-            );
-          }
-          return const SizedBox.shrink();
+              ),
+            ),
+          ]);
         },
       ),
     );
   }
-}
 
-// ── Booking list with pull-to-refresh ────────────────────────────────────────
+  String _st(Map<String, dynamic> b) =>
+      (b['booking']?['status'] ?? '').toString();
 
-class _BookingList extends StatelessWidget {
-  final List<Map<String, dynamic>> bookings;
-  final String emptyMessage;
-  final IconData emptyIcon;
-  const _BookingList({
-    required this.bookings,
-    required this.emptyMessage,
-    required this.emptyIcon,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (bookings.isEmpty) {
-      return Center(
-        child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(emptyIcon, size: 56.sp, color: Colors.grey[300]),
-          SizedBox(height: 14.h),
-          Text(emptyMessage,
-              style: GoogleFonts.dmSans(fontSize: 15.sp, color: Colors.grey[400])),
+  void _confirmMarkPaid(BuildContext ctx, int id, dynamic amount, String method) {
+    final methodLabel = method == 'Khalti' ? 'Khalti' : 'Cash on Arrival';
+    showDialog(
+      context: ctx,
+      builder: (dCtx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+        title: Text('Confirm Payment Received',
+            style: GoogleFonts.playfairDisplay(
+                fontSize: 18.sp, fontWeight: FontWeight.bold)),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: Colors.green.shade200),
+            ),
+            child: Column(children: [
+              Icon(Icons.payments_outlined, color: Colors.green[700], size: 32.sp),
+              SizedBox(height: 8.h),
+              Text('Rs. ${(amount as num?)?.toStringAsFixed(0) ?? '—'}',
+                  style: GoogleFonts.dmSans(fontSize: 22.sp,
+                      fontWeight: FontWeight.w800, color: Colors.green[800])),
+              SizedBox(height: 4.h),
+              Text('via $methodLabel',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 13.sp, color: Colors.green[700])),
+            ]),
+          ),
+          SizedBox(height: 12.h),
+          Text('This will mark the payment as received and add it to your revenue.',
+              textAlign: TextAlign.center,
+              style: GoogleFonts.dmSans(
+                  fontSize: 13.sp, color: Colors.grey[600])),
         ]),
-      );
-    }
-    return RefreshIndicator(
-      onRefresh: () async =>
-          context.read<BookingBloc>().add(const LoadOwnerBookings()),
-      child: ListView.builder(
-        padding: EdgeInsets.all(16.w),
-        itemCount: bookings.length,
-        itemBuilder: (_, i) => _OwnerBookingCard(data: bookings[i]),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx),
+            child: Text('Cancel',
+                style: GoogleFonts.dmSans(color: Colors.grey[600])),
+          ),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
+            label: Text('Mark as Paid',
+                style: GoogleFonts.dmSans(fontWeight: FontWeight.w600)),
+            onPressed: () {
+              Navigator.pop(dCtx);
+              ctx.read<BookingBloc>().add(MarkPaymentReceived(id));
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green[700],
+              foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10.r)),
+            ),
+          ),
+        ],
       ),
     );
   }
 }
 
+// ── Revenue summary card ──────────────────────────────────────────────────────
+
+class _RevenueCard extends StatelessWidget {
+  final OwnerRevenueLoaded revenue;
+  const _RevenueCard({required this.revenue});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(18.w),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF2D1B10), Color(0xFF5C3D2E)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20.r),
+        boxShadow: [BoxShadow(
+            color: const Color(0xFF2D1B10).withOpacity(0.3),
+            blurRadius: 16, offset: const Offset(0, 8))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text('Total Revenue',
+              style: GoogleFonts.dmSans(
+                  fontSize: 13.sp, color: Colors.white70)),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20.r),
+            ),
+            child: Row(children: [
+              Icon(Icons.check_circle_outline_rounded,
+                  size: 12.sp, color: Colors.greenAccent),
+              SizedBox(width: 4.w),
+              Text('${revenue.paidBookings} paid',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 11.sp, color: Colors.white70)),
+            ]),
+          ),
+        ]),
+        SizedBox(height: 6.h),
+        Text('Rs. ${revenue.totalRevenue.toStringAsFixed(0)}',
+            style: GoogleFonts.playfairDisplay(
+                fontSize: 32.sp, fontWeight: FontWeight.bold,
+                color: Colors.white)),
+
+        SizedBox(height: 16.h),
+        Row(children: [
+          Expanded(child: _RevenuePill(
+            label: 'Cash',
+            amount: revenue.cashRevenue,
+            icon: Icons.money_rounded,
+            color: Colors.greenAccent,
+          )),
+          SizedBox(width: 10.w),
+          Expanded(child: _RevenuePill(
+            label: 'Khalti',
+            amount: revenue.khaltiRevenue,
+            icon: Icons.phone_android_rounded,
+            color: Colors.purpleAccent,
+          )),
+          SizedBox(width: 10.w),
+          Expanded(child: _RevenuePill(
+            label: 'Pending',
+            amount: revenue.pendingRevenue,
+            icon: Icons.hourglass_bottom_rounded,
+            color: Colors.amberAccent,
+          )),
+        ]),
+      ]),
+    );
+  }
+}
+
+class _RevenuePill extends StatelessWidget {
+  final String label;
+  final double amount;
+  final IconData icon;
+  final Color color;
+  const _RevenuePill(
+      {required this.label, required this.amount,
+        required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 10.h),
+    decoration: BoxDecoration(
+      color: Colors.white.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(12.r),
+    ),
+    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Icon(icon, size: 12.sp, color: color),
+        SizedBox(width: 4.w),
+        Text(label, style: GoogleFonts.dmSans(
+            fontSize: 10.sp, color: Colors.white60)),
+      ]),
+      SizedBox(height: 4.h),
+      Text('Rs. ${amount.toStringAsFixed(0)}',
+          style: GoogleFonts.dmSans(fontSize: 13.sp,
+              fontWeight: FontWeight.bold, color: Colors.white)),
+    ]),
+  );
+}
+
 // ── Individual booking card ───────────────────────────────────────────────────
 
-class _OwnerBookingCard extends StatelessWidget {
+class _BookingCard extends StatelessWidget {
   final Map<String, dynamic> data;
-  const _OwnerBookingCard({required this.data});
+  final VoidCallback onConfirm;
+  final VoidCallback onComplete;
+  final VoidCallback onMarkPaid;
+  final void Function(String reason) onReject;
+
+  const _BookingCard({
+    required this.data,
+    required this.onConfirm,
+    required this.onComplete,
+    required this.onMarkPaid,
+    required this.onReject,
+  });
 
   static const _dark       = Color(0xFF2D1B10);
-  static const _brown      = Color(0xFF5C4033);
   static const _terracotta = Color(0xFFCD6E4E);
 
   @override
   Widget build(BuildContext context) {
-    final b            = (data['booking'] as Map<String, dynamic>?) ?? {};
-    final id           = b['id'] as int? ?? 0;
-    final touristName  = data['touristName']?.toString() ?? 'Guest';
-    final touristPhone = data['touristPhone']?.toString() ?? '';
-    final homestayName = data['homestayName']?.toString() ?? '';
-    final status       = b['status']?.toString() ?? 'Pending';
-    final checkIn      = _fmtDate(b['checkIn']);
-    final checkOut     = _fmtDate(b['checkOut']);
-    final nights       = b['nights'] as int? ?? 0;
-    final rooms        = b['rooms'] as int? ?? 0;
-    final guests       = b['guests'] as int? ?? 0;
-    final total        = (b['totalPrice'] as num?)?.toDouble() ?? 0;
-    final payMethod    = b['paymentMethod']?.toString() ?? '';
-    final specialReq   = b['specialRequests']?.toString() ?? '';
-    final rejReason    = b['rejectionReason']?.toString() ?? '';
-    final isPending    = status == 'Pending';
-    final isConfirmed  = status == 'Confirmed';
+    final b             = (data['booking'] as Map<String, dynamic>?) ?? {};
+    final status        = b['status']?.toString()        ?? 'Pending';
+    final payStatus     = b['paymentStatus']?.toString() ?? 'Unpaid';
+    final payMethod     = b['paymentMethod']?.toString() ?? '';
+    final touristName   = data['touristName']?.toString()  ?? 'Tourist';
+    final touristPhone  = data['touristPhone']?.toString() ?? '';
+    final homestayName  = data['homestayName']?.toString() ?? 'Homestay';
+    final checkIn       = _fmt(b['checkIn']);
+    final checkOut      = _fmt(b['checkOut']);
+    final nights        = b['nights']    as int?    ?? 0;
+    final rooms         = b['rooms']     as int?    ?? 0;
+    final guests        = b['guests']    as int?    ?? 0;
+    final total         = (b['totalPrice'] as num?)?.toDouble() ?? 0;
+    final specialReq    = b['specialRequests']?.toString() ?? '';
+    final rejReason     = b['rejectionReason']?.toString() ?? '';
+    final isPaid        = payStatus == 'Paid';
+    final canMarkPaid   = (status == 'Confirmed' || status == 'Completed') && !isPaid;
 
     return Container(
       margin: EdgeInsets.only(bottom: 16.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16.r),
-        border: Border.all(color: _borderColor(status), width: isPending ? 1.5 : 1),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04),
-            blurRadius: 10, offset: const Offset(0, 4))],
+        borderRadius: BorderRadius.circular(18.r),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05),
+            blurRadius: 12, offset: const Offset(0, 5))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-        // ── Card header ──────────────────────────────────────────────
+        // ── Header: homestay name + status badges ──────────────────────────
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+          padding: EdgeInsets.all(14.w),
           decoration: BoxDecoration(
-            color: _bgColor(status),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+            color: Colors.grey.shade50,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(18.r)),
           ),
           child: Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(homestayName,
-                  style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[600])),
-              Text('Booking #$id',
-                  style: GoogleFonts.dmSans(fontSize: 14.sp,
+                  style: GoogleFonts.playfairDisplay(fontSize: 16.sp,
                       fontWeight: FontWeight.bold, color: _dark)),
+              SizedBox(height: 2.h),
+              Text('${nights}n · ${rooms} room${rooms != 1 ? 's' : ''} · $guests guest${guests != 1 ? 's' : ''}',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 11.sp, color: Colors.grey[500])),
             ])),
-            _StatusBadge(status: status),
+            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              _StatusBadge(status),
+              SizedBox(height: 4.h),
+              _PaymentBadge(payStatus: payStatus, payMethod: payMethod),
+            ]),
           ]),
         ),
 
         Padding(
-          padding: EdgeInsets.all(16.w),
+          padding: EdgeInsets.all(14.w),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-            // Tourist info row
+            // Tourist info
             Row(children: [
-              CircleAvatar(
-                radius: 18.r,
-                backgroundColor: const Color(0xFFE8DCCD),
-                child: Text(
-                  touristName.isNotEmpty ? touristName[0].toUpperCase() : 'G',
-                  style: GoogleFonts.dmSans(fontSize: 14.sp,
-                      fontWeight: FontWeight.bold, color: _dark),
+              Container(
+                width: 38.w, height: 38.h,
+                decoration: BoxDecoration(
+                  color: _terracotta.withOpacity(0.1),
+                  shape: BoxShape.circle,
                 ),
+                child: Icon(Icons.person_rounded, size: 20.sp, color: _terracotta),
               ),
               SizedBox(width: 10.w),
               Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(touristName,
                     style: GoogleFonts.dmSans(fontSize: 14.sp,
-                        fontWeight: FontWeight.bold, color: _dark)),
+                        fontWeight: FontWeight.w600, color: _dark)),
                 if (touristPhone.isNotEmpty)
-                  Row(children: [
-                    Icon(Icons.phone_outlined, size: 12.sp, color: Colors.grey[500]),
-                    SizedBox(width: 4.w),
-                    Text(touristPhone,
-                        style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
-                  ]),
+                  Text(touristPhone,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12.sp, color: Colors.grey[500])),
               ])),
             ]),
 
-            SizedBox(height: 14.h),
-            Divider(color: Colors.grey.shade100),
             SizedBox(height: 12.h),
 
-            // Check-in / check-out
+            // Dates
             Row(children: [
-              Expanded(child: _InfoTile(
-                  icon: Icons.login_rounded, label: 'Check-in', value: checkIn)),
-              SizedBox(width: 10.w),
-              Expanded(child: _InfoTile(
-                  icon: Icons.logout_rounded, label: 'Check-out', value: checkOut)),
-            ]),
-            SizedBox(height: 10.h),
-
-            // Nights / rooms / guests chips
-            Wrap(spacing: 8.w, children: [
-              _ChipInfo('$nights night${nights != 1 ? 's' : ''}',
-                  Icons.nights_stay_outlined),
-              _ChipInfo('$rooms room${rooms != 1 ? 's' : ''}',
-                  Icons.king_bed_outlined),
-              _ChipInfo('$guests guest${guests != 1 ? 's' : ''}',
-                  Icons.people_outline_rounded),
+              Expanded(child: _DateTile(
+                  label: 'Check-in', value: checkIn,
+                  icon: Icons.login_rounded)),
+              SizedBox(width: 8.w),
+              Expanded(child: _DateTile(
+                  label: 'Check-out', value: checkOut,
+                  icon: Icons.logout_rounded)),
             ]),
 
             SizedBox(height: 12.h),
 
-            // Price + payment method
+            // Total + payment method
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+              padding: EdgeInsets.all(12.w),
               decoration: BoxDecoration(
                 color: const Color(0xFFFAF7F2),
                 borderRadius: BorderRadius.circular(10.r),
-                border: Border.all(color: Colors.grey.shade200),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text('Total Amount',
-                        style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500])),
+                    Text('Total',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 11.sp, color: Colors.grey[500])),
                     Text('Rs. ${total.toStringAsFixed(0)}',
-                        style: GoogleFonts.dmSans(fontSize: 18.sp,
-                            color: _terracotta, fontWeight: FontWeight.w800)),
+                        style: GoogleFonts.dmSans(fontSize: 20.sp,
+                            fontWeight: FontWeight.w800, color: _terracotta)),
                   ]),
-                  _PayMethodBadge(payMethod: payMethod),
+                  // Payment method label
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 10.w, vertical: 5.h),
+                    decoration: BoxDecoration(
+                      color: payMethod == 'Khalti'
+                          ? Colors.purple.shade50 : Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(20.r),
+                      border: Border.all(
+                        color: payMethod == 'Khalti'
+                            ? Colors.purple.shade200 : Colors.green.shade200,
+                      ),
+                    ),
+                    child: Row(children: [
+                      Icon(
+                        payMethod == 'Khalti'
+                            ? Icons.phone_android_rounded : Icons.money_rounded,
+                        size: 13.sp,
+                        color: payMethod == 'Khalti'
+                            ? Colors.purple[700] : Colors.green[700],
+                      ),
+                      SizedBox(width: 4.w),
+                      Text(
+                        payMethod == 'Khalti' ? 'Khalti' : 'Cash on Arrival',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 11.sp, fontWeight: FontWeight.w600,
+                          color: payMethod == 'Khalti'
+                              ? Colors.purple[700] : Colors.green[700],
+                        ),
+                      ),
+                    ]),
+                  ),
                 ],
               ),
             ),
@@ -308,66 +580,90 @@ class _OwnerBookingCard extends StatelessWidget {
             if (specialReq.isNotEmpty) ...[
               SizedBox(height: 10.h),
               Container(
-                width: double.infinity,
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
                   color: Colors.amber.shade50,
                   borderRadius: BorderRadius.circular(8.r),
                   border: Border.all(color: Colors.amber.shade200),
                 ),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(Icons.sticky_note_2_outlined, size: 14.sp, color: Colors.amber[700]),
-                  SizedBox(width: 6.w),
-                  Expanded(child: Text(specialReq,
-                      style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.amber[900]))),
-                ]),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.sticky_note_2_outlined,
+                          size: 13.sp, color: Colors.amber[700]),
+                      SizedBox(width: 6.w),
+                      Expanded(child: Text(specialReq,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12.sp, color: Colors.amber[900]))),
+                    ]),
               ),
             ],
 
             // Rejection reason
-            if (status == 'Rejected' && rejReason.isNotEmpty) ...[
+            if (rejReason.isNotEmpty) ...[
               SizedBox(height: 10.h),
               Container(
-                width: double.infinity,
                 padding: EdgeInsets.all(10.w),
                 decoration: BoxDecoration(
                   color: Colors.red.shade50,
                   borderRadius: BorderRadius.circular(8.r),
                   border: Border.all(color: Colors.red.shade200),
                 ),
-                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Icon(Icons.cancel_outlined, size: 14.sp, color: Colors.red[700]),
-                  SizedBox(width: 6.w),
-                  Expanded(child: Text('Reason: $rejReason',
-                      style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.red[800]))),
-                ]),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.cancel_outlined,
+                          size: 13.sp, color: Colors.red[700]),
+                      SizedBox(width: 6.w),
+                      Expanded(child: Text(rejReason,
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12.sp, color: Colors.red[700]))),
+                    ]),
               ),
             ],
 
-            // ── Action buttons ─────────────────────────────────────
-            if (isPending) ...[
-              SizedBox(height: 16.h),
+            // ── Action buttons ─────────────────────────────────────────────
+            SizedBox(height: 14.h),
+
+            // Pending → Confirm / Reject
+            if (status == 'Pending') ...[
               Row(children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _showRejectDialog(context, id),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Colors.red),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10.r)),
-                      padding: EdgeInsets.symmetric(vertical: 12.h),
-                    ),
-                    child: Text('Reject',
-                        style: GoogleFonts.dmSans(fontSize: 14.sp,
-                            color: Colors.red, fontWeight: FontWeight.w600)),
+                Expanded(child: ElevatedButton(
+                  onPressed: onConfirm,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[700],
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.r)),
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
                   ),
-                ),
+                  child: Text('Confirm',
+                      style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
+                )),
                 SizedBox(width: 10.w),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => context
-                        .read<BookingBloc>()
-                        .add(UpdateBookingStatus(id, 'Confirmed')),
+                Expanded(child: OutlinedButton(
+                  onPressed: () => _showRejectDialog(context),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.red.shade300),
+                    foregroundColor: Colors.red[700],
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.r)),
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
+                  ),
+                  child: Text('Reject',
+                      style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
+                )),
+              ]),
+            ],
+
+            // Confirmed → Mark as Paid AND/OR Mark as Completed
+            if (status == 'Confirmed') ...[
+              Row(children: [
+                if (canMarkPaid) ...[
+                  Expanded(child: ElevatedButton.icon(
+                    icon: Icon(Icons.payments_rounded, size: 16.sp),
+                    label: Text('Mark as Paid',
+                        style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
+                    onPressed: onMarkPaid,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.green[700],
                       foregroundColor: Colors.white,
@@ -376,43 +672,70 @@ class _OwnerBookingCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(10.r)),
                       padding: EdgeInsets.symmetric(vertical: 12.h),
                     ),
-                    child: Text('Confirm',
-                        style: GoogleFonts.dmSans(fontSize: 14.sp,
-                            fontWeight: FontWeight.w600)),
+                  )),
+                  SizedBox(width: 10.w),
+                ],
+                Expanded(child: OutlinedButton(
+                  onPressed: onComplete,
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.blue.shade300),
+                    foregroundColor: Colors.blue[700],
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10.r)),
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
                   ),
-                ),
+                  child: Text('Complete Stay',
+                      style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
+                )),
               ]),
             ],
 
-            if (isConfirmed) ...[
-              SizedBox(height: 12.h),
+            // Completed + unpaid → still allow marking paid
+            if (status == 'Completed' && canMarkPaid)
               SizedBox(
                 width: double.infinity,
-                child: OutlinedButton.icon(
-                  icon: Icon(Icons.done_all_rounded, size: 16.sp),
-                  label: Text('Mark as Completed',
-                      style: GoogleFonts.dmSans(fontSize: 13.sp,
-                          fontWeight: FontWeight.w600)),
-                  onPressed: () => context
-                      .read<BookingBloc>()
-                      .add(UpdateBookingStatus(id, 'Completed')),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: _brown,
-                    side: BorderSide(color: _brown),
+                child: ElevatedButton.icon(
+                  icon: Icon(Icons.payments_rounded, size: 16.sp),
+                  label: Text('Mark as Paid',
+                      style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
+                  onPressed: onMarkPaid,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green[700],
+                    foregroundColor: Colors.white,
+                    elevation: 0,
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10.r)),
-                    padding: EdgeInsets.symmetric(vertical: 10.h),
+                    padding: EdgeInsets.symmetric(vertical: 13.h),
                   ),
                 ),
               ),
-            ],
+
+            // Paid confirmation pill
+            if (isPaid)
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 10.h),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(10.r),
+                  border: Border.all(color: Colors.green.shade200),
+                ),
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(Icons.check_circle_rounded,
+                      size: 16.sp, color: Colors.green[700]),
+                  SizedBox(width: 6.w),
+                  Text('Payment Received',
+                      style: GoogleFonts.dmSans(fontSize: 13.sp,
+                          fontWeight: FontWeight.w600, color: Colors.green[700])),
+                ]),
+              ),
           ]),
         ),
       ]),
     );
   }
 
-  void _showRejectDialog(BuildContext context, int bookingId) {
+  void _showRejectDialog(BuildContext context) {
     final ctrl = TextEditingController();
     showDialog(
       context: context,
@@ -422,17 +745,19 @@ class _OwnerBookingCard extends StatelessWidget {
             style: GoogleFonts.playfairDisplay(
                 fontSize: 18.sp, fontWeight: FontWeight.bold)),
         content: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('Provide a reason for the tourist (optional).',
+          Text('Provide a reason for the tourist:',
               style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600])),
           SizedBox(height: 12.h),
           TextField(
             controller: ctrl,
             maxLines: 3,
-            style: GoogleFonts.dmSans(fontSize: 13.sp),
+            style: GoogleFonts.dmSans(fontSize: 14.sp),
             decoration: InputDecoration(
-              hintText: 'e.g. Dates unavailable, maintenance...',
-              hintStyle: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[400]),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r)),
+              hintText: 'e.g. No availability on those dates...',
+              hintStyle: GoogleFonts.dmSans(
+                  fontSize: 13.sp, color: Colors.grey[400]),
+              border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10.r)),
               contentPadding: EdgeInsets.all(12.w),
             ),
           ),
@@ -446,16 +771,14 @@ class _OwnerBookingCard extends StatelessWidget {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(ctx);
-              context.read<BookingBloc>().add(
-                UpdateBookingStatus(bookingId, 'Rejected',
-                    rejectionReason: ctrl.text.trim()),
-              );
+              onReject(ctrl.text.trim());
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red[700],
               foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8.r)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8.r)),
             ),
             child: Text('Reject',
                 style: GoogleFonts.dmSans(fontWeight: FontWeight.w600)),
@@ -465,106 +788,82 @@ class _OwnerBookingCard extends StatelessWidget {
     );
   }
 
-  Color _borderColor(String s) {
-    switch (s) {
-      case 'Pending':   return const Color(0xFFCD6E4E).withOpacity(0.3);
-      case 'Confirmed': return Colors.green.shade200;
-      case 'Rejected':  return Colors.red.shade200;
-      case 'Completed': return Colors.blue.shade200;
-      default:          return Colors.grey.shade200;
-    }
-  }
-
-  Color _bgColor(String s) {
-    switch (s) {
-      case 'Pending':   return const Color(0xFFFFF8F5);
-      case 'Confirmed': return Colors.green.shade50;
-      case 'Rejected':  return Colors.red.shade50;
-      case 'Completed': return Colors.blue.shade50;
-      default:          return Colors.grey.shade50;
-    }
-  }
-
-  String _fmtDate(dynamic raw) {
+  String _fmt(dynamic raw) {
     if (raw == null) return '—';
     try {
       final d = DateTime.parse(raw.toString());
       const m = ['Jan','Feb','Mar','Apr','May','Jun',
         'Jul','Aug','Sep','Oct','Nov','Dec'];
-      return '${d.day} ${m[d.month - 1]} ${d.year}';
+      return '${m[d.month - 1]} ${d.day}, ${d.year}';
     } catch (_) { return raw.toString(); }
   }
 }
 
-// ── Small reusable widgets ────────────────────────────────────────────────────
+// ── Tiny shared widgets ───────────────────────────────────────────────────────
 
 class _StatusBadge extends StatelessWidget {
   final String status;
-  const _StatusBadge({required this.status});
+  const _StatusBadge(this.status);
 
   @override
   Widget build(BuildContext context) {
-    final (color, icon) = switch (status) {
-      'Pending'   => (const Color(0xFFCD6E4E), Icons.hourglass_top_rounded),
-      'Confirmed' => (Colors.green[700]!, Icons.check_circle_rounded),
-      'Rejected'  => (Colors.red[700]!, Icons.cancel_rounded),
-      'Completed' => (Colors.blue[700]!, Icons.done_all_rounded),
-      _           => (Colors.grey, Icons.help_outline),
+    final (bg, fg) = switch (status) {
+      'Pending'   => (Colors.orange.shade100,    Colors.orange.shade800),
+      'Confirmed' => (Colors.green.shade100,     Colors.green.shade800),
+      'Rejected'  => (Colors.red.shade100,       Colors.red.shade800),
+      'Completed' => (Colors.blue.shade100,      Colors.blue.shade800),
+      'Cancelled' => (Colors.grey.shade200,      Colors.grey.shade700),
+      _           => (Colors.grey.shade200,      Colors.grey.shade700),
     };
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: color.withOpacity(0.4)),
-      ),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 12.sp, color: color),
-        SizedBox(width: 4.w),
-        Text(status,
-            style: GoogleFonts.dmSans(fontSize: 12.sp,
-                fontWeight: FontWeight.bold, color: color)),
-      ]),
+      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+      decoration: BoxDecoration(color: bg,
+          borderRadius: BorderRadius.circular(20.r)),
+      child: Text(status,
+          style: GoogleFonts.dmSans(fontSize: 11.sp,
+              fontWeight: FontWeight.bold, color: fg)),
     );
   }
 }
 
-class _PayMethodBadge extends StatelessWidget {
+class _PaymentBadge extends StatelessWidget {
+  final String payStatus;
   final String payMethod;
-  const _PayMethodBadge({required this.payMethod});
+  const _PaymentBadge({required this.payStatus, required this.payMethod});
 
   @override
   Widget build(BuildContext context) {
-    final isKhalti = payMethod == 'Khalti';
+    final isPaid = payStatus == 'Paid';
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
       decoration: BoxDecoration(
-        color: isKhalti ? Colors.purple.shade50 : Colors.green.shade50,
-        borderRadius: BorderRadius.circular(8.r),
+        color: isPaid ? Colors.green.shade50 : Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(20.r),
+        border: Border.all(
+            color: isPaid ? Colors.green.shade300 : Colors.amber.shade300),
       ),
-      child: Row(children: [
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
         Icon(
-          isKhalti ? Icons.account_balance_wallet_outlined : Icons.payments_outlined,
-          size: 13.sp,
-          color: isKhalti ? Colors.purple[700] : Colors.green[700],
+          isPaid ? Icons.check_circle_rounded : Icons.hourglass_empty_rounded,
+          size: 10.sp,
+          color: isPaid ? Colors.green[700] : Colors.amber[700],
         ),
-        SizedBox(width: 4.w),
-        Text(
-          isKhalti ? 'Khalti' : 'Pay at Arrival',
-          style: GoogleFonts.dmSans(fontSize: 11.sp,
-              fontWeight: FontWeight.w600,
-              color: isKhalti ? Colors.purple[700] : Colors.green[700]),
-        ),
+        SizedBox(width: 3.w),
+        Text(isPaid ? 'Paid' : 'Unpaid',
+            style: GoogleFonts.dmSans(
+              fontSize: 10.sp, fontWeight: FontWeight.bold,
+              color: isPaid ? Colors.green[700] : Colors.amber[700],
+            )),
       ]),
     );
   }
 }
 
-class _InfoTile extends StatelessWidget {
-  final IconData icon;
+class _DateTile extends StatelessWidget {
   final String label;
   final String value;
-  const _InfoTile({required this.icon, required this.label, required this.value});
+  final IconData icon;
+  const _DateTile({required this.label, required this.value, required this.icon});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -574,67 +873,37 @@ class _InfoTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(8.r),
     ),
     child: Row(children: [
-      Icon(icon, size: 14.sp, color: Colors.grey[500]),
+      Icon(icon, size: 14.sp, color: const Color(0xFFCD6E4E)),
       SizedBox(width: 6.w),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label,
-            style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[500])),
-        Text(value,
-            style: GoogleFonts.dmSans(fontSize: 12.sp,
-                fontWeight: FontWeight.w600, color: const Color(0xFF2D1B10))),
-      ])),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: GoogleFonts.dmSans(
+                fontSize: 10.sp, color: Colors.grey[500])),
+            Text(value, style: GoogleFonts.dmSans(
+                fontSize: 12.sp, fontWeight: FontWeight.w600,
+                color: const Color(0xFF2D1B10))),
+          ])),
     ]),
   );
 }
 
-class _ChipInfo extends StatelessWidget {
+class _EmptyState extends StatelessWidget {
   final String label;
-  final IconData icon;
-  const _ChipInfo(this.label, this.icon);
+  const _EmptyState({required this.label});
 
   @override
-  Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 5.h),
-    decoration: BoxDecoration(
-      color: Colors.grey.shade100,
-      borderRadius: BorderRadius.circular(8.r),
-    ),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 12.sp, color: Colors.grey[600]),
-      SizedBox(width: 4.w),
-      Text(label,
-          style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[700])),
+  Widget build(BuildContext context) => ListView(children: [
+    SizedBox(height: 80.h),
+    Column(children: [
+      Icon(Icons.inbox_outlined, size: 60.sp, color: Colors.grey[300]),
+      SizedBox(height: 14.h),
+      Text('No $label bookings',
+          style: GoogleFonts.playfairDisplay(fontSize: 18.sp,
+              fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
+      SizedBox(height: 6.h),
+      Text('They will appear here when guests book your homestay.',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[500])),
     ]),
-  );
-}
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  const _ErrorView({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) => Center(
-    child: Padding(
-      padding: EdgeInsets.all(24.w),
-      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.wifi_off_rounded, size: 48.sp, color: Colors.grey[300]),
-        SizedBox(height: 12.h),
-        Text(message, textAlign: TextAlign.center,
-            style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey[500])),
-        SizedBox(height: 16.h),
-        ElevatedButton(
-          onPressed: onRetry,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF5C4033),
-            foregroundColor: Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-          ),
-          child: Text('Retry',
-              style: GoogleFonts.dmSans(fontWeight: FontWeight.w600)),
-        ),
-      ]),
-    ),
-  );
+  ]);
 }
