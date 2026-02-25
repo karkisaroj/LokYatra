@@ -40,7 +40,6 @@ namespace backend.Controllers
             updatedAt = b.UpdatedAt,
         };
 
-        // ── Tourist: create booking
         [HttpPost]
         [Authorize(Roles = "tourist")]
         public async Task<ActionResult<object>> Create([FromBody] CreateBookingDto dto)
@@ -49,19 +48,16 @@ namespace backend.Controllers
             if (homestay is null) return NotFound("Homestay not found");
             if (!homestay.IsVisible) return BadRequest("Homestay is not available");
 
-            // Validate rooms
             if (dto.Rooms < 1) return BadRequest("At least 1 room required");
             if (dto.Rooms > homestay.NumberOfRooms)
                 return BadRequest($"Only {homestay.NumberOfRooms} rooms available");
 
-            // Validate dates
             if (dto.CheckOut <= dto.CheckIn)
                 return BadRequest("Check-out must be after check-in");
 
-            var nights = (dto.CheckOut.DayNumber - dto.CheckIn.DayNumber);
+            var nights = dto.CheckOut.DayNumber - dto.CheckIn.DayNumber;
             if (nights < 1) return BadRequest("Minimum 1 night stay");
 
-            // Check for conflicting confirmed bookings
             var conflict = await db.Bookings.AnyAsync(b =>
                 b.HomestayId == dto.HomestayId &&
                 b.Status == BookingStatus.Confirmed &&
@@ -69,10 +65,8 @@ namespace backend.Controllers
                 b.CheckOut > dto.CheckIn);
             if (conflict) return Conflict("Selected dates are not available");
 
-            // Pricing
             var subTotal = homestay.PricePerNight * dto.Rooms * nights;
 
-            // Points redemption (10 points = Rs. 1, max 20% off)
             decimal pointsDiscount = 0;
             int pointsRedeemed = 0;
             if (dto.PointsToRedeem > 0)
@@ -81,10 +75,9 @@ namespace backend.Controllers
                 if (tourist != null && tourist.QuizPoints >= dto.PointsToRedeem)
                 {
                     var requestedDiscount = dto.PointsToRedeem / 10m;
-                    var maxDiscount = subTotal * 0.20m; // max 20%
+                    var maxDiscount = subTotal * 0.20m;
                     pointsDiscount = Math.Min(requestedDiscount, maxDiscount);
                     pointsRedeemed = (int)(pointsDiscount * 10);
-
                     tourist.QuizPoints -= pointsRedeemed;
                 }
             }
@@ -118,7 +111,6 @@ namespace backend.Controllers
             return Ok(MapBooking(booking));
         }
 
-        // ── Tourist: my bookings 
         [HttpGet("my-bookings")]
         [Authorize(Roles = "tourist")]
         public async Task<ActionResult<IEnumerable<object>>> MyBookings()
@@ -128,7 +120,6 @@ namespace backend.Controllers
                 .OrderByDescending(b => b.CreatedAt)
                 .ToListAsync();
 
-            // Attach homestay name for display
             var result = new List<object>();
             foreach (var b in bookings)
             {
@@ -144,7 +135,6 @@ namespace backend.Controllers
             return Ok(result);
         }
 
-        // ── Tourist: cancel booking
         [HttpPatch("{id:int}/cancel")]
         [Authorize(Roles = "tourist")]
         public async Task<ActionResult> Cancel(int id)
@@ -161,7 +151,75 @@ namespace backend.Controllers
             return Ok(new { message = "Booking cancelled" });
         }
 
-        // ── Owner: see bookings for their homestays 
+        [HttpPatch("{id:int}/payment")]
+        [Authorize(Roles = "owner")]
+        public async Task<IActionResult> MarkPaymentReceived(int id)
+        {
+            var booking = await db.Bookings.FindAsync(id);
+            if (booking is null) return NotFound("Booking not found");
+
+            var homestay = await db.Homestays.FindAsync(booking.HomestayId);
+            if (homestay?.OwnerId != CurrentUserId) return Forbid();
+
+            if (booking.Status != BookingStatus.Confirmed && booking.Status != BookingStatus.Completed)
+                return BadRequest("Only confirmed or completed bookings can be marked as paid");
+
+            if (booking.PaymentStatus == PaymentStatus.Paid)
+                return BadRequest("Payment already recorded");
+
+            booking.PaymentStatus = PaymentStatus.Paid;
+            booking.UpdatedAt = DateTimeOffset.UtcNow;
+            await db.SaveChangesAsync();
+
+            return Ok(new
+            {
+                bookingId = booking.Id,
+                paymentStatus = booking.PaymentStatus.ToString(),
+                totalPrice = booking.TotalPrice,
+                paymentMethod = booking.PaymentMethod.ToString(),
+                message = "Payment marked as received",
+            });
+        }
+
+        [HttpGet("owner-revenue")]
+        [Authorize(Roles = "owner")]
+        public async Task<IActionResult> GetOwnerRevenue()
+        {
+            var myHomestayIds = await db.Homestays
+                .Where(h => h.OwnerId == CurrentUserId)
+                .Select(h => h.Id)
+                .ToListAsync();
+
+            var bookings = await db.Bookings
+                .Where(b => myHomestayIds.Contains(b.HomestayId))
+                .ToListAsync();
+
+            var paid = bookings.Where(b => b.PaymentStatus == PaymentStatus.Paid).ToList();
+
+            var cashRevenue = paid
+                .Where(b => b.PaymentMethod == PaymentMethod.PayAtArrival)
+                .Sum(b => b.TotalPrice);
+
+            var khaltiRevenue = paid
+                .Where(b => b.PaymentMethod == PaymentMethod.Khalti)
+                .Sum(b => b.TotalPrice);
+
+            var pending = bookings
+                .Where(b => b.PaymentStatus == PaymentStatus.Unpaid &&
+                            (b.Status == BookingStatus.Confirmed || b.Status == BookingStatus.Completed))
+                .Sum(b => b.TotalPrice);
+
+            return Ok(new
+            {
+                totalRevenue = cashRevenue + khaltiRevenue,
+                cashRevenue,
+                khaltiRevenue,
+                pendingRevenue = pending,
+                paidBookings = paid.Count,
+                totalBookings = bookings.Count,
+            });
+        }
+
         [HttpGet("owner-bookings")]
         [Authorize(Roles = "owner")]
         public async Task<ActionResult<IEnumerable<object>>> OwnerBookings()
@@ -192,7 +250,6 @@ namespace backend.Controllers
             return Ok(result);
         }
 
-        // ── Owner: confirm or reject 
         [HttpPatch("{id:int}/status")]
         [Authorize(Roles = "owner")]
         public async Task<ActionResult> UpdateStatus(int id, [FromBody] UpdateBookingStatusDto dto)
@@ -200,7 +257,6 @@ namespace backend.Controllers
             var booking = await db.Bookings.FindAsync(id);
             if (booking is null) return NotFound();
 
-            // Verify this booking belongs to owner's homestay
             var homestay = await db.Homestays.FindAsync(booking.HomestayId);
             if (homestay?.OwnerId != CurrentUserId) return Forbid();
 
@@ -215,7 +271,6 @@ namespace backend.Controllers
             return Ok(new { message = $"Booking {dto.Status.ToLower()}" });
         }
 
-        // ── Admin: all bookings 
         [HttpGet("all")]
         [Authorize(Roles = "admin")]
         public async Task<ActionResult<IEnumerable<object>>> AllBookings(
