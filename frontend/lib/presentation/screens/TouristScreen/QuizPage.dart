@@ -1,3 +1,5 @@
+// lib/presentation/screens/TouristScreen/QuizPage.dart
+
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -21,17 +23,20 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
 
   _QuizPhase _phase = _QuizPhase.loading;
 
+  // Home data
   int  _totalPoints   = 0;
   int  _attemptsToday = 0;
   int  _attemptsLeft  = 3;
   List<Map<String, dynamic>> _history = [];
 
+  // Playing
   List<Map<String, dynamic>> _questions = [];
   int    _current   = 0;
   int    _timeLeft  = 20;
   Timer? _timer;
   final  Map<int, int> _answers = {};
 
+  // Results
   Map<String, dynamic>? _result;
   String? _error;
 
@@ -152,7 +157,10 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18.sp, color: _dark),
+          onPressed: () { _timer?.cancel(); Navigator.pop(context, _phase == _QuizPhase.results); },
+        ),
         title: Text('Nepal Quiz',
             style: GoogleFonts.playfairDisplay(
                 fontSize: 20.sp, fontWeight: FontWeight.bold, color: _dark)),
@@ -223,13 +231,13 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
                       style: GoogleFonts.playfairDisplay(
                           fontSize: 32.sp, fontWeight: FontWeight.bold, color: Colors.white)),
                   SizedBox(height: 4.h),
-                  Text('≈ Rs. ${(_totalPoints / 10).toStringAsFixed(0)} booking discount',
+                  Text('≈ Rs. ${(_totalPoints / 2).toStringAsFixed(0)} booking discount',
                       style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.white60)),
                 ])),
             Container(
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
+                  color: Colors.white.withOpacity(0.15), shape: BoxShape.circle),
               child: Icon(Icons.emoji_events_rounded, color: _gold, size: 40.sp),
             ),
           ]),
@@ -300,7 +308,7 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
               '20 seconds to answer each question',
               '10 points for every correct answer',
               '3 attempts per day',
-              '10 pts = Rs. 1 off at booking (max 20%)',
+              '10 pts = Rs. 5 off at booking (max 20%)',
             ]) _HowRow(s),
           ]),
         ),
@@ -445,7 +453,7 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
                   margin: EdgeInsets.only(bottom: 12.h),
                   padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: _brown.withValues(alpha: 0.08),
+                    color: _brown.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Text(q['category'].toString(),
@@ -481,7 +489,7 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
                         width: 30.w, height: 30.h,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: isSelected ? Colors.blue : _brown.withValues(alpha: 0.08),
+                          color: isSelected ? Colors.blue : _brown.withOpacity(0.08),
                         ),
                         child: Center(child: Text(String.fromCharCode(65 + i),
                             style: GoogleFonts.dmSans(
@@ -542,9 +550,9 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
           width: double.infinity,
           padding: EdgeInsets.all(24.w),
           decoration: BoxDecoration(
-            color: hColor.withValues(alpha: 0.08),
+            color: hColor.withOpacity(0.08),
             borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: hColor.withValues(alpha: 0.3)),
+            border: Border.all(color: hColor.withOpacity(0.3)),
           ),
           child: Column(children: [
             Text(hMsg, style: GoogleFonts.playfairDisplay(
@@ -572,7 +580,7 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
               Icon(Icons.info_outline_rounded, size: 16.sp, color: Colors.amber[700]),
               SizedBox(width: 8.w),
               Expanded(child: Text(
-                '+$earned pts added! Use them at booking for discounts on meals or accommodation.',
+                '+$earned pts added! Use them at booking for discounts — 10 pts = Rs. 5 off meals or accommodation.',
                 style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.amber[900]),
               )),
             ]),
@@ -673,9 +681,7 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
           Expanded(child: OutlinedButton.icon(
             icon: Icon(Icons.home_outlined, size: 18.sp),
             label: Text('Done', style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
-            onPressed: () { _timer?.cancel();
-              _loadHistory();
-               },
+            onPressed: () { _timer?.cancel(); Navigator.pop(context, true); },
             style: OutlinedButton.styleFrom(
               foregroundColor: _brown, side: BorderSide(color: _brown),
               padding: EdgeInsets.symmetric(vertical: 14.h),
