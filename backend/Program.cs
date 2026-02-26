@@ -6,13 +6,23 @@ using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 using System.Security.Claims;
 using System.Text;
-
+using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // Listen on all interfaces so Android phone can reach the dev machine
 builder.WebHost.UseUrls("http://0.0.0.0:5257");
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter()
+        );
+
+        
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+    });
 builder.Services.AddOpenApi();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("UserDatabase"))
@@ -59,7 +69,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICloudImageService, CloudinaryImageService>();
-
+builder.Services.AddHttpClient();
 var app = builder.Build();
 
 app.UseCors("AllowAll");

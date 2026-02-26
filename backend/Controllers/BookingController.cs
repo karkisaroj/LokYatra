@@ -1,5 +1,6 @@
 ﻿using backend.Database;
 using backend.DTO;
+using backend.Entities;
 using backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -47,26 +48,33 @@ namespace backend.Controllers
             var homestay = await db.Homestays.FindAsync(dto.HomestayId);
             if (homestay is null) return NotFound("Homestay not found");
             if (!homestay.IsVisible) return BadRequest("Homestay is not available");
-
             if (dto.Rooms < 1) return BadRequest("At least 1 room required");
             if (dto.Rooms > homestay.NumberOfRooms)
                 return BadRequest($"Only {homestay.NumberOfRooms} rooms available");
-
             if (dto.CheckOut <= dto.CheckIn)
                 return BadRequest("Check-out must be after check-in");
 
             var nights = dto.CheckOut.DayNumber - dto.CheckIn.DayNumber;
             if (nights < 1) return BadRequest("Minimum 1 night stay");
 
-            var conflict = await db.Bookings.AnyAsync(b =>
-                b.HomestayId == dto.HomestayId &&
-                b.Status == BookingStatus.Confirmed &&
-                b.CheckIn < dto.CheckOut &&
-                b.CheckOut > dto.CheckIn);
-            if (conflict) return Conflict("Selected dates are not available");
+            var overlappingBookings = await db.Bookings
+                .Where(b => b.HomestayId == dto.HomestayId
+                    && (b.Status == BookingStatus.Pending || b.Status == BookingStatus.Confirmed)
+                    && b.CheckIn < dto.CheckOut
+                    && b.CheckOut > dto.CheckIn)
+                .ToListAsync();
+
+            int alreadyBookedRooms = overlappingBookings.Sum(b => b.Rooms);
+
+            if (alreadyBookedRooms + dto.Rooms > homestay.NumberOfRooms)
+            {
+                Console.WriteLine($"[AVAILABILITY] Homestay {dto.HomestayId} | " +
+                                  $"Already booked: {alreadyBookedRooms} | Requested: {dto.Rooms} | " +
+                                  $"Total rooms: {homestay.NumberOfRooms}");
+                return Conflict("Selected dates are not available");
+            }
 
             var subTotal = homestay.PricePerNight * dto.Rooms * nights;
-
             decimal pointsDiscount = 0;
             int pointsRedeemed = 0;
             if (dto.PointsToRedeem > 0)
@@ -103,11 +111,11 @@ namespace backend.Controllers
                 SpecialRequests = dto.SpecialRequests,
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow,
+                Status = BookingStatus.Pending
             };
 
             db.Bookings.Add(booking);
             await db.SaveChangesAsync();
-
             return Ok(MapBooking(booking));
         }
 
@@ -289,11 +297,19 @@ namespace backend.Controllers
             {
                 var tourist = await db.Users.FindAsync(b.TouristId);
                 var homestay = await db.Homestays.FindAsync(b.HomestayId);
+
+                // Owner looked up via homestay's OwnerId (no nav property needed)
+                User? owner = null;
+                if (homestay != null)
+                    owner = await db.Users.FindAsync(homestay.OwnerId);
+
                 result.Add(new
                 {
                     booking = MapBooking(b),
-                    touristName = tourist?.Name ?? "",
-                    homestayName = homestay?.Name ?? "",
+                    touristName = tourist?.Name ?? $"Deleted User (#{b.TouristId})",
+                    touristPhone = tourist?.PhoneNumber ?? "",
+                    homestayName = homestay?.Name ?? $"Deleted Homestay (#{b.HomestayId})",
+                    ownerName = owner?.Name ?? $"Deleted Owner",
                 });
             }
             return Ok(result);
