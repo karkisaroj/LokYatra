@@ -82,10 +82,10 @@ namespace backend.Controllers
                 var tourist = await db.Users.FindAsync(CurrentUserId);
                 if (tourist != null && tourist.QuizPoints >= dto.PointsToRedeem)
                 {
-                    var requestedDiscount = dto.PointsToRedeem / 10m;
+                    var requestedDiscount = dto.PointsToRedeem / 2m;
                     var maxDiscount = subTotal * 0.20m;
                     pointsDiscount = Math.Min(requestedDiscount, maxDiscount);
-                    pointsRedeemed = (int)(pointsDiscount * 10);
+                    pointsRedeemed = (int)(pointsDiscount * 2);
                     tourist.QuizPoints -= pointsRedeemed;
                 }
             }
