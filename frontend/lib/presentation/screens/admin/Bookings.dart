@@ -18,7 +18,6 @@ class Bookings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Provide BookingBloc locally so the admin page is fully self-contained
     return BlocProvider(
       create: (_) => BookingBloc()..add(const LoadAllBookings()),
       child: const _AdminBookingsBody(),
@@ -26,9 +25,6 @@ class Bookings extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Body
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _AdminBookingsBody extends StatefulWidget {
   const _AdminBookingsBody();
@@ -40,7 +36,6 @@ class _AdminBookingsBody extends StatefulWidget {
 class _AdminBookingsBodyState extends State<_AdminBookingsBody> {
   static const _slate      = Color(0xFF3D5A80);
   static const _bg         = Color(0xFFF4F6F9);
-  static const _terracotta = Color(0xFFCD6E4E);
 
   String _search     = '';
   String _statusFilter = 'All'; // All | Pending | Confirmed | Completed | Cancelled | Rejected
@@ -76,7 +71,6 @@ class _AdminBookingsBodyState extends State<_AdminBookingsBody> {
     return list;
   }
 
-  // Count per status
   Map<String, int> _counts(List<Map<String, dynamic>> all) {
     final m = <String, int>{
       'All': all.length,
@@ -90,7 +84,6 @@ class _AdminBookingsBodyState extends State<_AdminBookingsBody> {
     return m;
   }
 
-  // Total revenue from Completed bookings
   double _revenue(List<Map<String, dynamic>> all) => all
       .where((b) => (b['booking']?['status'] ?? '') == 'Completed')
       .fold(0.0, (sum, b) =>
@@ -145,7 +138,6 @@ class _AdminBookingsBodyState extends State<_AdminBookingsBody> {
         return Container(
           color: _bg,
           child: Column(children: [
-            // ── Stats row ──────────────────────────────────────────────────
             _StatsRow(
               total:    all.length,
               pending:  counts['Pending']   ?? 0,
@@ -153,7 +145,6 @@ class _AdminBookingsBodyState extends State<_AdminBookingsBody> {
               revenue:  revenue,
             ),
 
-            // ── Search + refresh ───────────────────────────────────────────
             Padding(
               padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0),
               child: Row(children: [
@@ -193,7 +184,6 @@ class _AdminBookingsBodyState extends State<_AdminBookingsBody> {
               ]),
             ),
 
-            // ── Status filter chips ────────────────────────────────────────
             SizedBox(
               height: 46.h,
               child: ListView(
@@ -237,7 +227,7 @@ class _AdminBookingsBodyState extends State<_AdminBookingsBody> {
                                   horizontal: 5.w, vertical: 1.h),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? Colors.white.withOpacity(0.3)
+                                    ? Colors.white.withValues(alpha: 0.3)
                                     : Colors.grey.shade200,
                                 borderRadius: BorderRadius.circular(10.r),
                               ),
@@ -258,7 +248,6 @@ class _AdminBookingsBodyState extends State<_AdminBookingsBody> {
               ),
             ),
 
-            // ── Results count ──────────────────────────────────────────────
             Padding(
               padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 6.h),
               child: Row(children: [
@@ -268,7 +257,6 @@ class _AdminBookingsBodyState extends State<_AdminBookingsBody> {
               ]),
             ),
 
-            // ── Booking list ───────────────────────────────────────────────
             Expanded(
               child: RefreshIndicator(
                 color: _slate,
@@ -301,9 +289,6 @@ class _AdminBookingsBodyState extends State<_AdminBookingsBody> {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Stats row
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _StatsRow extends StatelessWidget {
   final int total;
@@ -373,9 +358,6 @@ class _StatBox extends StatelessWidget {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Admin booking card
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _AdminBookingCard extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -414,16 +396,15 @@ class _AdminBookingCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14.r),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [BoxShadow(
-            color: Colors.black.withOpacity(0.04),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-        // ── Header bar ────────────────────────────────────────────────────
         Container(
           padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
           decoration: BoxDecoration(
-            color: _slate.withOpacity(0.04),
+            color: _slate.withValues(alpha: 0.04),
             borderRadius: BorderRadius.vertical(top: Radius.circular(14.r)),
             border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
           ),
@@ -442,7 +423,6 @@ class _AdminBookingCard extends StatelessWidget {
                     style: GoogleFonts.dmSans(
                         fontSize: 11.sp, color: Colors.grey[400])),
               ]),
-              // Status badge
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
                 decoration: BoxDecoration(
@@ -462,7 +442,6 @@ class _AdminBookingCard extends StatelessWidget {
           padding: EdgeInsets.all(14.w),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-            // ── People row ────────────────────────────────────────────────
             Row(children: [
               Expanded(child: _PersonTile(
                 icon: Icons.person_outline_rounded,
@@ -482,7 +461,6 @@ class _AdminBookingCard extends StatelessWidget {
 
             SizedBox(height: 12.h),
 
-            // ── Homestay ──────────────────────────────────────────────────
             Row(children: [
               Icon(Icons.hotel_outlined, size: 14.sp, color: Colors.grey[500]),
               SizedBox(width: 6.w),
@@ -496,7 +474,6 @@ class _AdminBookingCard extends StatelessWidget {
             Divider(height: 1, color: Colors.grey.shade100),
             SizedBox(height: 10.h),
 
-            // ── Dates + stats ─────────────────────────────────────────────
             Row(children: [
               _InfoChip(
                   icon: Icons.login_rounded,
@@ -540,7 +517,6 @@ class _AdminBookingCard extends StatelessWidget {
             Divider(height: 1, color: Colors.grey.shade100),
             SizedBox(height: 10.h),
 
-            // ── Total ─────────────────────────────────────────────────────
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -554,7 +530,6 @@ class _AdminBookingCard extends StatelessWidget {
               ],
             ),
 
-            // ── Special requests ──────────────────────────────────────────
             if (specialReq.isNotEmpty) ...[
               SizedBox(height: 8.h),
               Container(
@@ -576,7 +551,6 @@ class _AdminBookingCard extends StatelessWidget {
               ),
             ],
 
-            // ── Rejection reason ──────────────────────────────────────────
             if (rejReason.isNotEmpty) ...[
               SizedBox(height: 8.h),
               Container(
@@ -642,9 +616,6 @@ class _AdminBookingCard extends StatelessWidget {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Small supporting widgets
-// ─────────────────────────────────────────────────────────────────────────────
 
 class _PersonTile extends StatelessWidget {
   final IconData icon;
@@ -661,7 +632,7 @@ class _PersonTile extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: EdgeInsets.all(10.w),
     decoration: BoxDecoration(
-      color: color.withOpacity(0.06),
+      color: color.withValues(alpha: 0.06),
       borderRadius: BorderRadius.circular(10.r),
     ),
     child: Row(children: [

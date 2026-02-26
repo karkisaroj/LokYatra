@@ -1,0 +1,42 @@
+// lib/data/datasources/khalti_remote_datasource.dart
+
+import 'package:dio/dio.dart';
+import 'package:lokyatra_frontend/core/constants.dart';
+import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
+
+class KhaltiRemoteDatasource {
+  final Dio _dio = Dio(BaseOptions(
+    baseUrl: apiBaseUrl,
+    connectTimeout: connectTimeout,
+    receiveTimeout: receiveTimeout,
+    responseType: ResponseType.json,
+    validateStatus: (status) => status != null && status < 600,
+  ));
+
+  Future<Options> _authOptions() async {
+    final token = await SecureStorageService.getAccessToken();
+    if (token == null) throw Exception('Not authenticated');
+    return Options(headers: {
+      'Authorization': 'Bearer $token',
+      'Accept': 'application/json',
+      'Content-Type': 'application/json',
+    });
+  }
+
+  /// Initiates Khalti payment for a confirmed booking.
+  /// Returns: { pidx, paymentUrl, bookingId, amount }
+  Future<Response> initiatePayment(int bookingId) async =>
+      _dio.post(
+        'api/Khalti/initiate/$bookingId',
+        options: await _authOptions(),
+      );
+
+  /// Verifies payment after WebView redirects back.
+  /// Body: { "pidx": "..." }
+  Future<Response> verifyPayment(String pidx) async =>
+      _dio.post(
+        'api/Khalti/verify',
+        data: {'pidx': pidx},
+        options: await _authOptions(),
+      );
+}

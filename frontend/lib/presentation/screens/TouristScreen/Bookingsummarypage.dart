@@ -1,8 +1,11 @@
+// lib/presentation/screens/TouristScreen/BookingSummaryPage.dart
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../data/datasources/booking_remote_datasource.dart';
 import '../../../data/datasources/User_remote_datasource.dart';
+import 'payment_option_tile.dart'; // ← reusable widget
 
 class BookingSummaryPage extends StatefulWidget {
   final dynamic homestay;
@@ -27,9 +30,10 @@ class BookingSummaryPage extends StatefulWidget {
 }
 
 class _BookingSummaryPageState extends State<BookingSummaryPage> {
-  static const _cream  = Color(0xFFFAF7F2);
-  static const _brown  = Color(0xFF8B5E3C);
-  static const _dark   = Color(0xFF2D1B10);
+  static const _cream        = Color(0xFFFAF7F2);
+  static const _brown        = Color(0xFF8B5E3C);
+  static const _dark         = Color(0xFF2D1B10);
+  static const _khaltiPurple = Color(0xFF5C2D91);
 
   static const _breakfastPricePerDay = 600.0;
   static const _dinnerPricePerDay    = 1200.0;
@@ -64,6 +68,8 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
     }
   }
 
+  // ── Computed values ───────────────────────────────────────────────────────
+
   int get _nights => widget.checkOut.difference(widget.checkIn).inDays;
 
   double get _roomTotal =>
@@ -83,15 +89,14 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
     return _availablePoints < maxPoints ? _availablePoints : maxPoints;
   }
 
-  double get _pointsDiscount =>
-      _usePoints ? _redeemablePoints / 10.0 : 0;
-
-  double get _totalPrice => _subTotal - _pointsDiscount;
+  double get _pointsDiscount => _usePoints ? _redeemablePoints / 10.0 : 0;
+  double get _totalPrice     => _subTotal - _pointsDiscount;
 
   String _fmt(double v) => 'Rs. ${v.toStringAsFixed(0).replaceAllMapped(
-    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-        (m) => '${m[1]},',
+    RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]},',
   )}';
+
+  // ── Actions ───────────────────────────────────────────────────────────────
 
   Future<void> _confirm() async {
     setState(() => _loading = true);
@@ -148,8 +153,8 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
           SizedBox(height: 8.h),
           Text(
             _khaltiSelected
-                ? 'Booking sent! Once the owner confirms, you can pay via Khalti.'
-                : 'Your booking is pending owner confirmation. Pay cash at arrival.',
+                ? 'Once the owner confirms your booking, a "Pay with Khalti" button will appear in My Bookings.'
+                : 'Your booking is pending owner confirmation. Pay cash when you check in.',
             textAlign: TextAlign.center,
             style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600]),
           ),
@@ -182,6 +187,8 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
     ));
   }
 
+  // ── Build ─────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -205,11 +212,11 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
         padding: EdgeInsets.all(20.w),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-          // Stay details
+          // ── Stay details ─────────────────────────────────────────────────
           _SummaryCard(
             title: 'Stay Details',
             child: Column(children: [
-              _SummaryRow('Homestay', widget.homestay.name ?? ''),
+              _SummaryRow('Homestay',  widget.homestay.name ?? ''),
               _SummaryRow('Check-in',  _fmtDate(widget.checkIn)),
               _SummaryRow('Check-out', _fmtDate(widget.checkOut)),
               _SummaryRow('Nights',    '$_nights night${_nights != 1 ? 's' : ''}'),
@@ -220,23 +227,23 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
 
           SizedBox(height: 14.h),
 
-          // Meal add-ons
+          // ── Meals ────────────────────────────────────────────────────────
           _SummaryCard(
             title: 'Meals (optional)',
             child: Column(children: [
               _MealOption(
-                label: 'Breakfast ($_nights day${_nights != 1 ? 's' : ''})',
+                label:    'Breakfast ($_nights day${_nights != 1 ? 's' : ''})',
                 sublabel: 'Rs. ${_breakfastPricePerDay.toInt()} per day',
-                value: _fmt(_breakfastPricePerDay * _nights),
-                checked: _includeBreakfast,
+                value:    _fmt(_breakfastPricePerDay * _nights),
+                checked:  _includeBreakfast,
                 onChanged: (v) => setState(() => _includeBreakfast = v ?? false),
               ),
               SizedBox(height: 8.h),
               _MealOption(
-                label: 'Dinner ($_nights day${_nights != 1 ? 's' : ''})',
+                label:    'Dinner ($_nights day${_nights != 1 ? 's' : ''})',
                 sublabel: 'Rs. ${_dinnerPricePerDay.toInt()} per day',
-                value: _fmt(_dinnerPricePerDay * _nights),
-                checked: _includeDinner,
+                value:    _fmt(_dinnerPricePerDay * _nights),
+                checked:  _includeDinner,
                 onChanged: (v) => setState(() => _includeDinner = v ?? false),
               ),
             ]),
@@ -244,49 +251,50 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
 
           SizedBox(height: 14.h),
 
-          // Quiz points
+          // ── Quiz points ──────────────────────────────────────────────────
           _SummaryCard(
             title: 'Quiz Points',
             child: _pointsLoading
                 ? const Center(child: CircularProgressIndicator())
                 : _availablePoints == 0
                 ? Row(children: [
-              Icon(Icons.stars_outlined, size: 16.sp, color: Colors.grey[400]),
+              Icon(Icons.stars_outlined,
+                  size: 16.sp, color: Colors.grey[400]),
               SizedBox(width: 8.w),
               Expanded(child: Text(
-                'You have no quiz points yet. Complete quizzes to earn discounts!',
-                style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500]),
+                'No quiz points yet. Play the quiz on your profile to earn discounts!',
+                style: GoogleFonts.dmSans(
+                    fontSize: 12.sp, color: Colors.grey[500]),
               )),
             ])
-                : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              _MealOption(
-                label: 'Use $_redeemablePoints pts  →  ${_fmt(_redeemablePoints / 10.0)} off',
-                sublabel: 'Max 20% discount',
-                value: '-${_fmt(_redeemablePoints / 10.0)}',
-                valueColor: _brown,
-                checked: _usePoints,
-                onChanged: (v) => setState(() => _usePoints = v ?? false),
-              ),
-              SizedBox(height: 6.h),
-              Text('Available: $_availablePoints pts  (10 pts = Rs. 1)',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 11.sp, color: Colors.grey[500])),
-            ]),
+                : Column(crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _MealOption(
+                    label:    'Use $_redeemablePoints pts  →  ${_fmt(_redeemablePoints / 10.0)} off',
+                    sublabel: 'Max 20% discount · 10 pts = Rs. 1',
+                    value:    '-${_fmt(_redeemablePoints / 10.0)}',
+                    valueColor: _brown,
+                    checked:  _usePoints,
+                    onChanged: (v) => setState(() => _usePoints = v ?? false),
+                  ),
+                  SizedBox(height: 6.h),
+                  Text('Available: $_availablePoints pts',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 11.sp, color: Colors.grey[500])),
+                ]),
           ),
 
           SizedBox(height: 14.h),
 
-          // Price breakdown
+          // ── Price breakdown ──────────────────────────────────────────────
           _SummaryCard(
             title: 'Price Breakdown',
             child: Column(children: [
               _SummaryRow(
                   'Room (${widget.rooms} × $_nights night${_nights != 1 ? 's' : ''})',
                   _fmt(_roomTotal)),
-              if (_includeBreakfast)
-                _SummaryRow('Breakfast', _fmt(_breakfastTotal)),
-              if (_includeDinner)
-                _SummaryRow('Dinner', _fmt(_dinnerTotal)),
+              if (_includeBreakfast) _SummaryRow('Breakfast', _fmt(_breakfastTotal)),
+              if (_includeDinner)    _SummaryRow('Dinner',    _fmt(_dinnerTotal)),
               if (_usePoints)
                 _SummaryRow('Points Discount', '-${_fmt(_pointsDiscount)}',
                     valueColor: Colors.green[700]),
@@ -311,55 +319,70 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
 
           SizedBox(height: 14.h),
 
-          // Payment method
+          // ── Payment method ───────────────────────────────────────────────
           _SummaryCard(
             title: 'Payment Method',
             child: Column(children: [
-              _PaymentOption(
-                label: 'Pay at Arrival',
+
+              // Cash on arrival
+              PaymentOptionTile(
+                label:    'Pay at Arrival',
                 sublabel: 'Pay cash when you check in',
-                icon: Icons.payments_outlined,
+                icon:     Icons.payments_outlined,
                 selected: !_khaltiSelected,
-                onTap: () => setState(() => _khaltiSelected = false),
+                onTap:    () => setState(() => _khaltiSelected = false),
               ),
-              SizedBox(height: 8.h),
-              // Khalti — shown but tagged "coming soon"
-              Stack(children: [
-                _PaymentOption(
-                  label: 'Pay via Khalti',
-                  sublabel: 'Online payment (coming soon)',
-                  icon: Icons.account_balance_wallet_outlined,
-                  selected: _khaltiSelected,
-                  onTap: () => setState(() => _khaltiSelected = true),
-                  disabled: true,
-                ),
-                Positioned(
-                  top: 8.h, right: 8.w,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                    decoration: BoxDecoration(
-                      color: Colors.purple.shade100,
-                      borderRadius: BorderRadius.circular(10.r),
-                    ),
-                    child: Text('Coming Soon',
-                        style: GoogleFonts.dmSans(fontSize: 10.sp,
-                            fontWeight: FontWeight.bold, color: Colors.purple[800])),
+
+              SizedBox(height: 10.h),
+
+              // Khalti — fully live
+              PaymentOptionTile(
+                label:       'Pay via Khalti',
+                sublabel:    'Secure online payment after owner confirms',
+                icon:        Icons.account_balance_wallet_outlined,
+                selected:    _khaltiSelected,
+                accentColor: _khaltiPurple,
+                badge:       'Online',
+                badgeColor:  _khaltiPurple,
+                onTap:       () => setState(() => _khaltiSelected = true),
+              ),
+
+              // Info note when Khalti selected
+              if (_khaltiSelected) ...[
+                SizedBox(height: 10.h),
+                Container(
+                  padding: EdgeInsets.all(12.w),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.shade50,
+                    borderRadius: BorderRadius.circular(10.r),
+                    border: Border.all(color: Colors.purple.shade200),
                   ),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline_rounded,
+                            size: 14.sp, color: Colors.purple[700]),
+                        SizedBox(width: 8.w),
+                        Expanded(child: Text(
+                          'Your booking will be sent to the owner. Once confirmed, go to My Bookings → tap "Pay with Khalti" to complete payment.',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12.sp, color: Colors.purple[800]),
+                        )),
+                      ]),
                 ),
-              ]),
+              ],
             ]),
           ),
 
           SizedBox(height: 28.h),
 
-          // Confirm button
+          // ── Confirm button ───────────────────────────────────────────────
           SizedBox(
             width: double.infinity,
             height: 52.h,
             child: ElevatedButton(
               onPressed: _loading ? null : _confirm,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _brown,
+                backgroundColor: _khaltiSelected ? _khaltiPurple : _brown,
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
@@ -368,9 +391,22 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
               child: _loading
                   ? const CircularProgressIndicator(
                   color: Colors.white, strokeWidth: 2)
-                  : Text('Confirm Booking',
+                  : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(
+                  _khaltiSelected
+                      ? Icons.account_balance_wallet_outlined
+                      : Icons.check_rounded,
+                  size: 18.sp,
+                ),
+                SizedBox(width: 8.w),
+                Text(
+                  _khaltiSelected
+                      ? 'Request Booking (Pay via Khalti)'
+                      : 'Confirm Booking',
                   style: GoogleFonts.dmSans(
-                      fontSize: 16.sp, fontWeight: FontWeight.w700)),
+                      fontSize: 15.sp, fontWeight: FontWeight.w700),
+                ),
+              ]),
             ),
           ),
 
@@ -387,7 +423,7 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
   }
 }
 
-// ── Sub-widgets ───────────────────────────────────────────────────────────────
+// ── Private sub-widgets ───────────────────────────────────────────────────────
 
 class _SummaryCard extends StatelessWidget {
   final String title;
@@ -406,7 +442,8 @@ class _SummaryCard extends StatelessWidget {
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(title,
           style: GoogleFonts.dmSans(fontSize: 14.sp,
-              fontWeight: FontWeight.w700, color: const Color(0xFF2D1B10))),
+              fontWeight: FontWeight.w700,
+              color: const Color(0xFF2D1B10))),
       SizedBox(height: 12.h),
       child,
     ]),
@@ -467,67 +504,17 @@ class _MealOption extends StatelessWidget {
         activeColor: const Color(0xFF8B5E3C),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4.r)),
       ),
-      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: GoogleFonts.dmSans(
-            fontSize: 13.sp, fontWeight: FontWeight.w600)),
-        if (sublabel.isNotEmpty)
-          Text(sublabel, style: GoogleFonts.dmSans(
-              fontSize: 11.sp, color: Colors.grey[500])),
-      ])),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: GoogleFonts.dmSans(
+                fontSize: 13.sp, fontWeight: FontWeight.w600)),
+            if (sublabel.isNotEmpty)
+              Text(sublabel, style: GoogleFonts.dmSans(
+                  fontSize: 11.sp, color: Colors.grey[500])),
+          ])),
       Text(value, style: GoogleFonts.dmSans(
           fontSize: 13.sp, fontWeight: FontWeight.w600,
           color: valueColor ?? const Color(0xFF2D1B10))),
     ]),
-  );
-}
-
-class _PaymentOption extends StatelessWidget {
-  final String label;
-  final String sublabel;
-  final IconData icon;
-  final bool selected;
-  final VoidCallback onTap;
-  final bool disabled;
-  const _PaymentOption({
-    required this.label, required this.sublabel,
-    required this.icon, required this.selected,
-    required this.onTap, this.disabled = false,
-  });
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: disabled ? null : onTap,
-    child: Opacity(
-      opacity: disabled ? 0.55 : 1,
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
-        decoration: BoxDecoration(
-          color: selected
-              ? const Color(0xFF8B5E3C).withOpacity(0.05)
-              : Colors.grey.shade50,
-          borderRadius: BorderRadius.circular(10.r),
-          border: Border.all(
-            color: selected ? const Color(0xFF8B5E3C) : Colors.grey.shade200,
-            width: selected ? 1.5 : 1,
-          ),
-        ),
-        child: Row(children: [
-          Icon(icon, size: 22.sp,
-              color: selected ? const Color(0xFF8B5E3C) : Colors.grey[500]),
-          SizedBox(width: 12.w),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label, style: GoogleFonts.dmSans(fontSize: 13.sp,
-                fontWeight: FontWeight.w600,
-                color: selected
-                    ? const Color(0xFF8B5E3C) : const Color(0xFF2D1B10))),
-            Text(sublabel, style: GoogleFonts.dmSans(
-                fontSize: 11.sp, color: Colors.grey[500])),
-          ])),
-          if (selected && !disabled)
-            Icon(Icons.check_circle_rounded, size: 20.sp,
-                color: const Color(0xFF8B5E3C)),
-        ]),
-      ),
-    ),
   );
 }

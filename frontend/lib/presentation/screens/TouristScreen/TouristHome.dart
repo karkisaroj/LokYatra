@@ -73,12 +73,11 @@ class _TouristHomeState extends State<TouristHome> {
           setState(() => _currentIndex = index);
 
           if (index == 0) {
-            Future.microtask(() {
               if (mounted) {
                 context.read<HomestayBloc>().add(const ResetHomestayState());
                 context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
               }
-            });
+
           }
         },
         type: BottomNavigationBarType.fixed,

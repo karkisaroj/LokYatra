@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../state_management/Bloc/booking/booking_bloc.dart';
 import '../../state_management/Bloc/booking/booking_event.dart';
 import '../../state_management/Bloc/booking/booking_state.dart';
+import 'KhaltiPaymentPage.dart';
 
 class TouristBookingsPage extends StatefulWidget {
   const TouristBookingsPage({super.key});
@@ -207,6 +208,9 @@ class _BookingCard extends StatelessWidget {
     final specialReq   = b['specialRequests']?.toString() ?? '';
     final rejReason    = b['rejectionReason']?.toString() ?? '';
     final canCancel    = status == 'Pending' || status == 'Confirmed';
+    final canPayKhalti = status == 'Confirmed'
+        && payMethod == 'Khalti'
+        && !isPaid;
 
     // Generate a booking reference like LY-20251204-001
     final bookingRef = 'LY-${DateTime.now().year}${id.toString().padLeft(6, '0')}';
@@ -429,6 +433,53 @@ class _BookingCard extends StatelessWidget {
                         fontSize: 12.sp, color: Colors.red[700])),
                   ])),
                 ]),
+              ),
+            ],
+
+            // Pay with Khalti button (Confirmed + Khalti method + Unpaid)
+            if (canPayKhalti) ...[
+              SizedBox(height: 14.h),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  icon: Container(
+                    width: 20.w, height: 20.h,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
+                    child: Center(child: Text('K',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 11.sp, fontWeight: FontWeight.bold,
+                            color: Colors.white))),
+                  ),
+                  label: Text('Pay with Khalti — Rs. ${total.toStringAsFixed(0)}',
+                      style: GoogleFonts.dmSans(
+                          fontWeight: FontWeight.bold, fontSize: 13.sp)),
+                  onPressed: () async {
+                    final homestayName = data['homestayName']?.toString()
+                        ?? 'Homestay';
+                    final paid = await Navigator.push<bool>(
+                      context,
+                      MaterialPageRoute(builder: (_) => KhaltiPaymentPage(
+                        bookingId: id,
+                        amount: total,
+                        homestayName: homestayName,
+                      )),
+                    );
+                    if (paid == true && context.mounted) {
+                      context.read<BookingBloc>().add(const LoadMyBookings());
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF5C2D91),
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r)),
+                    padding: EdgeInsets.symmetric(vertical: 14.h),
+                  ),
+                ),
               ),
             ],
 
