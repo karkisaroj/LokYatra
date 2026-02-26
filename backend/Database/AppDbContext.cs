@@ -14,7 +14,7 @@ namespace backend.Database
         public DbSet<SavedHomestay> SavedHomestays { get; set; }
         public DbSet<QuizQuestion> QuizQuestions { get; set; }
         public DbSet<QuizAttempt> QuizAttempts { get; set; }
-
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
