@@ -12,7 +12,8 @@ namespace backend.Database
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Homestay> Homestays => Set<Homestay>();
         public DbSet<SavedHomestay> SavedHomestays { get; set; }
-
+        public DbSet<QuizQuestion> QuizQuestions { get; set; }
+        public DbSet<QuizAttempt> QuizAttempts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

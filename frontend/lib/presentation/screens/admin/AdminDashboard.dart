@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Bookings.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Adminhomestaydetailpage.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Payments.dart';
-import 'package:lokyatra_frontend/presentation/screens/admin/Quizzes.dart';
+import 'package:lokyatra_frontend/presentation/screens/admin/AdminAddQuizzes.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Reports.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Reviews.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Settings.dart';
@@ -42,7 +42,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     PageConfig(icon: const Icon(Icons.house), title: "Homestays", child: Homestays(subtitleNotifier: subtitleNotifier)),
     PageConfig(icon: const Icon(Icons.calendar_month), title: "Bookings", child: const Bookings()),
     PageConfig(icon: const Icon(Icons.payment), title: "Payments", child: const Payments()),
-    PageConfig(icon: const Icon(Icons.quiz), title: "Quizzes", child: const Quizzes()),
+    PageConfig(icon: const Icon(Icons.quiz), title: "Quizzes", child: const TouristAddQuizzes()),
     PageConfig(icon: const Icon(Icons.reviews), title: "Reviews", child: const Reviews()),
     PageConfig(icon: const Icon(Icons.report_sharp), title: "Reports", child: const Reports()),
     PageConfig(icon: const Icon(Icons.settings), title: "Settings", child: const Settings()),

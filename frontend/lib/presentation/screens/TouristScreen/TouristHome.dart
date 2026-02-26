@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
+import 'package:lokyatra_frontend/presentation/screens/TouristScreen/QuizPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristProfilePage.dart';
 import 'package:lokyatra_frontend/presentation/widgets/FavouriteButton.dart';
 import '../../../core/services/sqlite_service.dart';
@@ -54,7 +55,7 @@ class _TouristHomeState extends State<TouristHome> {
     final pages = [
       FocusScope(child: const _HomeTab()),
       FocusScope(child: const TouristSitesPage()),
-      FocusScope(child: const Center(child: Text('Quiz coming soon'))),
+      FocusScope(child: const TouristQuizPage()),
       FocusScope(child: const TouristStayPage()),
       FocusScope(
         child: BlocProvider.value(
@@ -150,7 +151,9 @@ class _HomeTabState extends State<_HomeTab> {
             if (mounted) setState(() => _profileImageUrl = serverImage);
           }
         }
-      } catch (e) {}
+      } catch (e) {
+        print(e);
+      }
     }
   }
 
@@ -375,10 +378,10 @@ class _HomeTabState extends State<_HomeTab> {
   }
 }
 
-class _SearchBar extends StatelessWidget {
+class SearchBar extends StatelessWidget {
   final TextEditingController controller;
   final VoidCallback onTap;
-  const _SearchBar({required this.controller, required this.onTap});
+  const SearchBar({super.key, required this.controller, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
