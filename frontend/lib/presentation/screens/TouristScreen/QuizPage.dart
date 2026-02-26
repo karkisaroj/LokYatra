@@ -237,7 +237,7 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
             Container(
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15), shape: BoxShape.circle),
+                  color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
               child: Icon(Icons.emoji_events_rounded, color: _gold, size: 40.sp),
             ),
           ]),
@@ -453,7 +453,7 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
                   margin: EdgeInsets.only(bottom: 12.h),
                   padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: _brown.withOpacity(0.08),
+                    color: _brown.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(20.r),
                   ),
                   child: Text(q['category'].toString(),
@@ -489,7 +489,7 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
                         width: 30.w, height: 30.h,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: isSelected ? Colors.blue : _brown.withOpacity(0.08),
+                          color: isSelected ? Colors.blue : _brown.withValues(alpha: 0.08),
                         ),
                         child: Center(child: Text(String.fromCharCode(65 + i),
                             style: GoogleFonts.dmSans(
@@ -550,9 +550,9 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
           width: double.infinity,
           padding: EdgeInsets.all(24.w),
           decoration: BoxDecoration(
-            color: hColor.withOpacity(0.08),
+            color: hColor.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: hColor.withOpacity(0.3)),
+            border: Border.all(color: hColor.withValues(alpha: 0.3)),
           ),
           child: Column(children: [
             Text(hMsg, style: GoogleFonts.playfairDisplay(
