@@ -4,6 +4,7 @@ using backend.Entities;
 using backend.Models;      
 using backend.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
@@ -22,8 +23,28 @@ namespace backend.Controllers
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return int.TryParse(claim, out var id) ? id : null;
         }
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
+        {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null) return NotFound();
 
-        // ── GET api/User/me
+            var hasher = new PasswordHasher<User>();
+            var result = hasher.VerifyHashedPassword(user, user.PasswordHash, dto.CurrentPassword);
+            if (result == PasswordVerificationResult.Failed)
+                return BadRequest(new { message = "Current password is incorrect" });
+
+            user.PasswordHash = hasher.HashPassword(user, dto.NewPassword);
+            user.UpdatedAt = DateTimeOffset.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Password changed successfully" });
+        }
+
+        
+        // ── GET api/User/current user
         [Authorize]
         [HttpGet("current-user")]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
@@ -76,18 +97,12 @@ namespace backend.Controllers
             return Ok(users.Select(MapToDto));
         }
 
-        // ── DELETE api/User/deleteUser/{userId} ── admin only ────────────────
-        //
-        // Below is the rules:
-        //   1. Cannot delete another admin account
-        //   2. Cannot delete a user with PaymentStatus.Paid bookings (financial records)
-        //   3. BookingStatus.Pending / Confirmed bookings are cancelled before deletion
-        //   4. All homestays owned by the user are cascade-deleted via EF Include()
+       
         [Authorize(Roles = "admin")]
         [HttpDelete("deleteUser/{userId}")]
         public async Task<ActionResult> DeleteUser(int userId)
         {
-            // Load user WITH homestays so EF cascade-deletes them when user is removed
+          
             var user = await _context.Users
                 .Include(u => u.Homestays)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
@@ -95,19 +110,16 @@ namespace backend.Controllers
             if (user == null)
                 return NotFound(new { message = "User not found." });
 
-            // Rule 1: Protect admin accounts from deletion
             if (user.Role == "admin")
                 return BadRequest(new { message = "Cannot delete an admin account." });
 
             var ownedHomestayIds = user.Homestays?
                 .Select(h => h.Id)
-                .ToList() ?? new List<int>();
+                .ToList() ?? [];
 
-            // Rule 2: Block if user has any booking with PaymentStatus.Paid
-            //         (these are financial records that must be preserved)
             var hasPaidBookings = await _context.Bookings.AnyAsync(b =>
                 (ownedHomestayIds.Contains(b.HomestayId) || b.TouristId == userId)
-                && b.PaymentStatus == PaymentStatus.Paid);
+                && b.PaymentStatus == PaymentStatus.Paid || b.Status==BookingStatus.Confirmed );
 
             if (hasPaidBookings)
             {
@@ -121,11 +133,10 @@ namespace backend.Controllers
                 });
             }
 
-            // Rule 3: Cancel any Pending or Confirmed bookings before deletion
             var activeBookings = await _context.Bookings
                 .Where(b =>
                     (ownedHomestayIds.Contains(b.HomestayId) || b.TouristId == userId)
-                    && (b.Status == BookingStatus.Pending || b.Status == BookingStatus.Confirmed))
+                    && (b.Status == BookingStatus.Pending ))
                 .ToListAsync();
 
             foreach (var booking in activeBookings)
@@ -137,7 +148,6 @@ namespace backend.Controllers
             var homestayCount = user.Homestays?.Count ?? 0;
             var userName = user.Name;
 
-            //deletes all Homestays because we loaded them with Include()
             _context.Users.Remove(user);
             await _context.SaveChangesAsync();
 

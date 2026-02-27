@@ -38,7 +38,7 @@ namespace backend.Services
                 return [];
             }
 
-            // Read all file bytes BEFORE launching parallel tasks.
+            // It will do things like read all file bytes BEFORE launching parallel tasks.
             var fileData = new List<(string name, byte[] bytes)>();
             foreach (var file in files)
             {
@@ -58,7 +58,7 @@ namespace backend.Services
                     UseFilename = true,
                     UniqueFilename = true,
                     Overwrite = false,
-                    // Let Cloudinary auto-optimize quality and format
+                    // Let the things do from Cloudinary auto-optimize quality and format
                     Transformation = new Transformation()
                         .Quality("auto")
                         .FetchFormat("auto"),
@@ -69,7 +69,7 @@ namespace backend.Services
                 return result.SecureUrl?.AbsoluteUri;
             });
 
-            // Wait for ALL uploads to finish simultaneously
+            // Waiting for ALL uploads to finish per work like one after another
             var results = await Task.WhenAll(uploadTasks);
 
             var urls = results.Where(u => u != null).Cast<string>().ToList();

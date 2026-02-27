@@ -21,7 +21,7 @@ namespace backend.Controllers
                 return BadRequest(new { message = "Email is required" });
 
             var user = await db.Users
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == dto.Email.ToLower().Trim());
+                .FirstOrDefaultAsync(u => u.Email.Equals(dto.Email.ToLower(), StringComparison.CurrentCultureIgnoreCase));
 
             if (user == null)
                 return Ok(new { message = "If that email exists, a reset link has been sent." });

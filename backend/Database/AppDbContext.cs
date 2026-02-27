@@ -33,7 +33,7 @@ namespace backend.Database
                 entity.Property(e => e.EntryFeeNPR).HasColumnType("decimal(18,2)");
                 entity.Property(e => e.EntryFeeSAARC).HasColumnType("decimal(18,2)");
             });
-
+           
             modelBuilder.Entity<Homestay>(entity =>
             {
                 entity.Property(e => e.PricePerNight).HasColumnType("decimal(18,2)");
