@@ -8,6 +8,7 @@ import 'package:lokyatra_frontend/presentation/screens/TouristScreen/QuizPage.da
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristProfilePage.dart';
 import 'package:lokyatra_frontend/presentation/widgets/FavouriteButton.dart';
 import '../../../core/services/sqlite_service.dart';
+import '../../../core/constants.dart';
 import '../../../data/datasources/User_remote_datasource.dart';
 import '../../../data/models/Site.dart';
 import '../../state_management/Bloc/booking/booking_bloc.dart';
@@ -72,13 +73,11 @@ class _TouristHomeState extends State<TouristHome> {
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() => _currentIndex = index);
-
           if (index == 0) {
-              if (mounted) {
-                context.read<HomestayBloc>().add(const ResetHomestayState());
-                context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
-              }
-
+            if (mounted) {
+              context.read<HomestayBloc>().add(const ResetHomestayState());
+              context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
+            }
           }
         },
         type: BottomNavigationBarType.fixed,
@@ -136,7 +135,7 @@ class _HomeTabState extends State<_HomeTab> {
 
   Future<void> _loadProfileImage() async {
     final sqlite = SqliteService();
-    final cachedImage = await sqlite.get('user_profile_image');
+    final cachedImage = await sqlite.get('user_image');
     if (mounted) setState(() => _profileImageUrl = cachedImage);
 
     final isOnline = await sqlite.isOnline();
@@ -147,12 +146,12 @@ class _HomeTabState extends State<_HomeTab> {
           final data = res.data as Map<String, dynamic>;
           final serverImage = data['profileImage'] as String? ?? '';
           if (serverImage.isNotEmpty && serverImage != cachedImage) {
-            await sqlite.put('user_profile_image', serverImage);
+            await sqlite.put('user_image', serverImage);
             if (mounted) setState(() => _profileImageUrl = serverImage);
           }
         }
       } catch (e) {
-        print(e);
+        debugPrint('profile image error: $e');
       }
     }
   }
@@ -200,15 +199,22 @@ class _HomeTabState extends State<_HomeTab> {
                       CircleAvatar(
                         radius: 22.r,
                         backgroundColor: Colors.grey[300],
-                        backgroundImage: _profileImageUrl != null &&
-                            _profileImageUrl!.isNotEmpty
-                            ? NetworkImage(_profileImageUrl!)
-                            : null,
-                        child: _profileImageUrl == null ||
-                            _profileImageUrl!.isEmpty
-                            ? Icon(Icons.person_rounded,
-                            color: Colors.grey[600], size: 28.sp)
-                            : null,
+                        child: ClipOval(
+                          child: _profileImageUrl != null && _profileImageUrl!.isNotEmpty
+                              ? Image.network(
+                            _profileImageUrl!.startsWith('http')
+                                ? _profileImageUrl!
+                                : '$apiBaseUrl${_profileImageUrl!.startsWith('/') ? _profileImageUrl!.substring(1) : _profileImageUrl!}',
+                            width: 44.r,
+                            height: 44.r,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => Icon(
+                                Icons.person_rounded,
+                                color: Colors.grey[600], size: 28.sp),
+                          )
+                              : Icon(Icons.person_rounded,
+                              color: Colors.grey[600], size: 28.sp),
+                        ),
                       ),
                     ],
                   ),
@@ -418,12 +424,12 @@ class _CategorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final categories = [
-      {'name': 'Temple',     'icon': Icons.temple_hindu_outlined,   'type': 'Site'},
-      {'name': 'Palace',     'icon': Icons.account_balance_outlined, 'type': 'Site'},
-      {'name': 'Stupa',      'icon': Icons.landscape_outlined,       'type': 'Site'},
-      {'name': 'Museum',     'icon': Icons.museum_outlined,          'type': 'Site'},
-      {'name': 'Homestay',   'icon': Icons.home_work_outlined,       'type': 'Stay'},
-      {'name': 'Traditional','icon': Icons.cottage_outlined,         'type': 'Stay'},
+      {'name': 'Temple',      'icon': Icons.temple_hindu_outlined,    'type': 'Site'},
+      {'name': 'Palace',      'icon': Icons.account_balance_outlined,  'type': 'Site'},
+      {'name': 'Stupa',       'icon': Icons.landscape_outlined,        'type': 'Site'},
+      {'name': 'Museum',      'icon': Icons.museum_outlined,           'type': 'Site'},
+      {'name': 'Homestay',    'icon': Icons.home_work_outlined,        'type': 'Stay'},
+      {'name': 'Traditional', 'icon': Icons.cottage_outlined,          'type': 'Stay'},
     ];
 
     return SizedBox(

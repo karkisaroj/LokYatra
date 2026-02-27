@@ -74,7 +74,8 @@ class SqliteService {
         },
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
-      debugPrint('Saved: $key');
+
+      debugPrint('Saved: $key with value: $value');
     } catch (e) {
       debugPrint('Error saving $key: $e');
     }

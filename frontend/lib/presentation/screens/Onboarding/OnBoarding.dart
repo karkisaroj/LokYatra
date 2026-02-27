@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 import 'package:lokyatra_frontend/presentation/screens/authentication/loginPage.dart';
 import '../../../data/models/onboarding.dart';
 import '../../splash/OnboardingDotsIndicator.dart';
@@ -69,7 +70,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     fit: StackFit.expand,
                     children: [
                       Image.asset(
-                        pages[_currentPage].image,  // Fixed: Use _currentPage for correct image
+                        pages[_currentPage].image,
                         fit: BoxFit.fitWidth,
                         alignment: Alignment.bottomCenter,
                       ),
@@ -139,7 +140,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Expanded(  // Added Expanded to prevent overflow
+                Expanded(
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -153,8 +154,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: () {
-                      Navigator.push(
+                    onPressed: ()async {
+                      await SqliteService().put('has_seen_onboarding', true);
+
+                      final check = await SqliteService().get('has_seen_onboarding');
+                      debugPrint("After save check: $check");
+                      Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(builder: (_) => const LoginPage()),
                       );
@@ -179,12 +184,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    onPressed: () {
+                    onPressed: () async {
                       if (_currentPage == pages.length - 1) {
-                        Navigator.push(
+                        await SqliteService().put('has_seen_onboarding', true);
+                        if(!mounted) return;
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(builder: (_) => const LoginPage()),
                         );
+
                       } else {
                         _controller.nextPage(
                           duration: const Duration(milliseconds: 800),
@@ -193,7 +201,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       }
                     },
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,  // Center content
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           _currentPage == pages.length - 1 ? "Get Started" : "Next",

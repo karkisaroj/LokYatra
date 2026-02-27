@@ -12,6 +12,11 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/boo
 import '../OwnerScreen/ProfileImageWidget.dart';
 import 'Savedhomestayspage.dart';
 import 'TouristBookingsPage.dart';
+import 'QuizHistoryPage.dart';
+import 'EditProfilePage.dart';
+import 'HelpSupportPage.dart';
+import 'AboutLokyatraPage.dart';
+import 'ChangePasswordPage.dart';
 
 class TouristProfilePage extends StatefulWidget {
   const TouristProfilePage({super.key});
@@ -26,12 +31,13 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
   static const _cream      = Color(0xFFFAF7F2);
 
   String? _profileImageUrl;
-  String _name  = '';
-  String _email = '';
-  String _phone = '';
-  int _quizPoints     = 0;
-  final int _upcomingCount  = 0;
-  bool _loading = true;
+  String _name   = '';
+  String _email  = '';
+  String _phone  = '';
+  int    _quizPoints = 0;
+  bool   _loading    = true;
+
+  bool get _isVerified => _name.trim().isNotEmpty && _phone.trim().isNotEmpty;
 
   @override
   void initState() {
@@ -49,10 +55,10 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
 
     if (mounted) {
       setState(() {
-        _name            = name  ?? '';
-        _email           = email ?? '';
-        _phone           = phone ?? '';
-        _quizPoints      = int.tryParse(points ?? '0') ?? 0;
+        _name        = name  ?? '';
+        _email       = email ?? '';
+        _phone       = phone ?? '';
+        _quizPoints  = int.tryParse(points ?? '0') ?? 0;
         _profileImageUrl = (image != null && image.isNotEmpty) ? image : null;
       });
     }
@@ -64,7 +70,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
     try {
       final res = await UserRemoteDatasource().getCurrentUser();
       if (res.statusCode == 200) {
-        final data        = res.data as Map<String, dynamic>;
+        final data       = res.data as Map<String, dynamic>;
         final serverName  = data['name']         as String? ?? '';
         final serverEmail = data['email']        as String? ?? '';
         final serverPhone = data['phoneNumber']  as String? ?? '';
@@ -79,25 +85,49 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
 
         if (mounted) {
           setState(() {
-            _name            = serverName;
-            _email           = serverEmail;
-            _phone           = serverPhone;
-            _quizPoints      = serverPts;
+            _name        = serverName;
+            _email       = serverEmail;
+            _phone       = serverPhone;
+            _quizPoints  = serverPts;
             _profileImageUrl = serverImage.isNotEmpty ? serverImage : null;
           });
         }
       }
     } catch (e) {
-      debugPrint('getMe error: $e');
+      debugPrint('fetchProfile error: $e');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _loadBookingCount() async {
-    try {
-      context.read<BookingBloc>().add(const LoadMyBookings());
-    } catch (_) {}
+    try { context.read<BookingBloc>().add(const LoadMyBookings()); } catch (_) {}
+  }
+
+  void _goToQuizHistory() {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => const QuizHistoryPage()));
+  }
+
+  void _goToEditProfile() async {
+    final updated = await Navigator.push<bool>(context,
+        MaterialPageRoute(builder: (_) => const EditProfilePage()));
+    if (updated == true) _loadProfile();
+  }
+
+  void _goToChangePassword() {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => const ChangePasswordPage()));
+  }
+
+  void _goToHelpSupport() {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => const HelpSupportPage()));
+  }
+
+  void _goToAbout() {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => const AboutLokyatraPage()));
   }
 
   @override
@@ -108,48 +138,33 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
         child: _loading
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-          child: Column(
-            children: [
-              // ── Header ──────────────────────────────────────────────
-              _buildHeader(),
-
-              // ── Points card ─────────────────────────────────────────
-              Padding(
-                padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 16.h),
-                child: _buildPointsCard(),
-              ),
-
-              // ── Activity section ─────────────────────────────────────
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: _buildActivitySection(),
-              ),
-
-              SizedBox(height: 20.h),
-
-              // ── Settings section ─────────────────────────────────────
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: _buildSettingsSection(),
-              ),
-
-              SizedBox(height: 24.h),
-
-              // ── Logout ───────────────────────────────────────────────
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w),
-                child: _buildLogout(),
-              ),
-
-              SizedBox(height: 32.h),
-            ],
-          ),
+          child: Column(children: [
+            _buildHeader(),
+            Padding(
+              padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 16.h),
+              child: _buildPointsCard(),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: _buildActivitySection(),
+            ),
+            SizedBox(height: 20.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: _buildSettingsSection(),
+            ),
+            SizedBox(height: 24.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 20.w),
+              child: _buildLogout(),
+            ),
+            SizedBox(height: 32.h),
+          ]),
         ),
       ),
     );
   }
 
-  // ── Profile header ──────────────────────────────────────────────────────────
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
@@ -157,23 +172,22 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(bottom: Radius.circular(28.r)),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 12, offset: const Offset(0, 4))],
       ),
       child: Column(children: [
-        // Top row: title + edit icon
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Text('Profile',
               style: GoogleFonts.playfairDisplay(
                   fontSize: 22.sp, fontWeight: FontWeight.bold, color: _dark)),
           IconButton(
             icon: Icon(Icons.edit_outlined, size: 20.sp, color: Colors.grey[500]),
-            onPressed: () {/* navigate to edit profile */},
+            onPressed: _goToEditProfile,
+            tooltip: 'Edit Profile',
           ),
         ]),
         SizedBox(height: 20.h),
 
-        // Avatar
         ProfileImageWidget(
           initialImageUrl: _profileImageUrl,
           accentColor: _terracotta,
@@ -184,11 +198,18 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
         ),
         SizedBox(height: 14.h),
 
-        Text(
-          _name.isEmpty ? 'Tourist' : _name,
-          style: GoogleFonts.playfairDisplay(
-              fontSize: 20.sp, fontWeight: FontWeight.bold, color: _dark),
-        ),
+        // Name + verified badge
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Text(
+            _name.isEmpty ? 'Tourist' : _name,
+            style: GoogleFonts.playfairDisplay(
+                fontSize: 20.sp, fontWeight: FontWeight.bold, color: _dark),
+          ),
+          if (_isVerified) ...[
+            SizedBox(width: 6.w),
+            Icon(Icons.verified_rounded, size: 20.sp, color: Colors.green[600]),
+          ],
+        ]),
         SizedBox(height: 4.h),
         Text(_email,
             style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[500])),
@@ -198,22 +219,44 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
               style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[400])),
         ],
         SizedBox(height: 10.h),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 5.h),
-          decoration: BoxDecoration(
-            color: _terracotta.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: _terracotta.withOpacity(0.3)),
+
+        // Role badge + verified label
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 5.h),
+            decoration: BoxDecoration(
+              color: _terracotta.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(20.r),
+              border: Border.all(color: _terracotta.withValues(alpha: 0.3)),
+            ),
+            child: Text('Tourist',
+                style: GoogleFonts.dmSans(fontSize: 12.sp,
+                    color: _terracotta, fontWeight: FontWeight.w600)),
           ),
-          child: Text('Tourist',
-              style: GoogleFonts.dmSans(fontSize: 12.sp,
-                  color: _terracotta, fontWeight: FontWeight.w600)),
-        ),
+          if (_isVerified) ...[
+            SizedBox(width: 8.w),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(20.r),
+                border: Border.all(color: Colors.green.shade300),
+              ),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                Icon(Icons.verified_rounded,
+                    size: 12.sp, color: Colors.green[700]),
+                SizedBox(width: 4.w),
+                Text('Verified',
+                    style: GoogleFonts.dmSans(fontSize: 11.sp,
+                        color: Colors.green[700], fontWeight: FontWeight.bold)),
+              ]),
+            ),
+          ],
+        ]),
       ]),
     );
   }
 
-  // ── Quiz points card ────────────────────────────────────────────────────────
   Widget _buildPointsCard() {
     return Container(
       margin: EdgeInsets.only(top: 16.h),
@@ -221,26 +264,31 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            _terracotta.withOpacity(0.12),
-            _terracotta.withOpacity(0.05),
+            _terracotta.withValues(alpha: 0.12),
+            _terracotta.withValues(alpha: 0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(20.r),
-        border: Border.all(color: _terracotta.withOpacity(0.15)),
+        border: Border.all(color: _terracotta.withValues(alpha: 0.15)),
       ),
       child: Row(children: [
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Total Points',
               style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600])),
           SizedBox(height: 4.h),
           Text('$_quizPoints',
               style: GoogleFonts.playfairDisplay(
                   fontSize: 36.sp, fontWeight: FontWeight.bold, color: _dark)),
+          SizedBox(height: 4.h),
+          Text('≈ Rs. ${(_quizPoints / 2).toStringAsFixed(0)} discount value',
+              style: GoogleFonts.dmSans(
+                  fontSize: 12.sp, color: Colors.grey[500])),
           SizedBox(height: 12.h),
           GestureDetector(
-            onTap: () {/* navigate to points history */},
+            onTap: _goToQuizHistory,
             child: Row(children: [
               Text('View Points History',
                   style: GoogleFonts.dmSans(fontSize: 13.sp,
@@ -253,7 +301,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
         Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            color: _terracotta.withOpacity(0.12),
+            color: _terracotta.withValues(alpha: 0.12),
             shape: BoxShape.circle,
           ),
           child: Icon(Icons.workspace_premium_rounded,
@@ -263,7 +311,6 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
     );
   }
 
-  // ── Activity section (bookings, saved, reviews, quiz) ──────────────────────
   Widget _buildActivitySection() {
     return BlocBuilder<BookingBloc, BookingState>(
       builder: (context, state) {
@@ -279,7 +326,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(20.r),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04),
+            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04),
                 blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Column(children: [
@@ -290,12 +337,11 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
               sublabel: upcomingCount > 0
                   ? '$upcomingCount upcoming'
                   : 'No upcoming bookings',
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<BookingBloc>(),
-                  child: const TouristBookingsPage(),
-                ),
-              )),
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => BlocProvider.value(
+                    value: context.read<BookingBloc>(),
+                    child: const TouristBookingsPage(),
+                  ))),
               isFirst: true,
             ),
             _divider(),
@@ -304,9 +350,8 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
               iconColor: Colors.redAccent,
               label: 'Your Saved',
               sublabel: 'Saved homestays',
-              onTap: () => Navigator.push(context, MaterialPageRoute(
-                builder: (_) => const SavedHomestaysPage(),
-              )),
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SavedHomestaysPage())),
             ),
             _divider(),
             _ActivityTile(
@@ -314,7 +359,13 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
               iconColor: Colors.amber[700]!,
               label: 'My Reviews',
               sublabel: 'Coming soon',
-              onTap: () {},
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Reviews coming soon!',
+                      style: GoogleFonts.dmSans()),
+                  behavior: SnackBarBehavior.floating,
+                ),
+              ),
             ),
             _divider(),
             _ActivityTile(
@@ -322,7 +373,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
               iconColor: Colors.green[700]!,
               label: 'Quiz History',
               sublabel: '$_quizPoints total points earned',
-              onTap: () {},
+              onTap: _goToQuizHistory,
               isLast: true,
             ),
           ]),
@@ -332,17 +383,15 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
   }
 
   Widget _divider() => Divider(
-    height: 1, indent: 20.w, endIndent: 20.w,
-    color: Colors.grey.shade100,
-  );
+      height: 1, indent: 20.w, endIndent: 20.w,
+      color: Colors.grey.shade100);
 
-  // ── Settings section ────────────────────────────────────────────────────────
   Widget _buildSettingsSection() {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20.r),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(children: [
@@ -350,17 +399,37 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
           icon: Icons.person_outline_rounded,
           iconColor: Colors.blue[600]!,
           label: 'Edit Profile',
-          sublabel: 'Update your information',
-          onTap: () {},
+          sublabel: _isVerified
+              ? 'Verified profile'
+              : 'Add phone to get verified',
+          trailing: _isVerified
+              ? Icon(Icons.verified_rounded,
+              size: 16.sp, color: Colors.green[600])
+              : null,
+          onTap: _goToEditProfile,
           isFirst: true,
+        ),
+        _divider(),
+        _ActivityTile(
+          icon: Icons.lock_reset_rounded,
+          iconColor: Colors.orange[700]!,
+          label: 'Change Password',
+          sublabel: 'Update your password',
+          onTap: _goToChangePassword,
         ),
         _divider(),
         _ActivityTile(
           icon: Icons.notifications_outlined,
           iconColor: Colors.purple[600]!,
           label: 'Notifications',
-          sublabel: 'Manage alerts',
-          onTap: () {},
+          sublabel: 'Coming soon',
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Notifications coming soon!',
+                  style: GoogleFonts.dmSans()),
+              behavior: SnackBarBehavior.floating,
+            ),
+          ),
         ),
         _divider(),
         _ActivityTile(
@@ -368,7 +437,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
           iconColor: Colors.teal[600]!,
           label: 'Help & Support',
           sublabel: 'Get assistance',
-          onTap: () {},
+          onTap: _goToHelpSupport,
         ),
         _divider(),
         _ActivityTile(
@@ -376,14 +445,13 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
           iconColor: Colors.grey[600]!,
           label: 'About LokYatra',
           sublabel: 'v1.0.0',
-          onTap: () {},
+          onTap: _goToAbout,
           isLast: true,
         ),
       ]),
     );
   }
 
-  // ── Logout button ───────────────────────────────────────────────────────────
   Widget _buildLogout() {
     return SizedBox(
       width: double.infinity,
@@ -395,7 +463,8 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
         },
         icon: Icon(Icons.logout_rounded, size: 18.sp),
         label: Text('Logout',
-            style: GoogleFonts.dmSans(fontSize: 14.sp, fontWeight: FontWeight.w600)),
+            style: GoogleFonts.dmSans(
+                fontSize: 14.sp, fontWeight: FontWeight.w600)),
         style: OutlinedButton.styleFrom(
           foregroundColor: Colors.red[600],
           side: BorderSide(color: Colors.red.shade300),
@@ -407,14 +476,13 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
   }
 }
 
-// ── Activity tile widget ──────────────────────────────────────────────────────
-
 class _ActivityTile extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String label;
   final String sublabel;
   final VoidCallback onTap;
+  final Widget? trailing;
   final bool isFirst;
   final bool isLast;
 
@@ -424,6 +492,7 @@ class _ActivityTile extends StatelessWidget {
     required this.label,
     required this.sublabel,
     required this.onTap,
+    this.trailing,
     this.isFirst = false,
     this.isLast  = false,
   });
@@ -442,10 +511,9 @@ class _ActivityTile extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
           child: Row(children: [
             Container(
-              width: 42.w,
-              height: 42.h,
+              width: 42.w, height: 42.h,
               decoration: BoxDecoration(
-                color: iconColor.withOpacity(0.1),
+                color: iconColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Icon(icon, size: 20.sp, color: iconColor),
@@ -455,11 +523,17 @@ class _ActivityTile extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(label,
                   style: GoogleFonts.dmSans(fontSize: 14.sp,
-                      fontWeight: FontWeight.w600, color: const Color(0xFF2D1B10))),
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFF2D1B10))),
               SizedBox(height: 2.h),
               Text(sublabel,
-                  style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
+                  style: GoogleFonts.dmSans(
+                      fontSize: 12.sp, color: Colors.grey[500])),
             ])),
+            if (trailing != null) ...[
+              trailing!,
+              SizedBox(width: 4.w),
+            ],
             Icon(Icons.chevron_right_rounded,
                 color: Colors.grey[350], size: 20.sp),
           ]),

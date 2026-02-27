@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import '../widgets/Helpers/SecureStorageService.dart';
+import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -11,8 +12,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-
-
   @override
   void initState() {
     super.initState();
@@ -20,14 +19,29 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    final token=await SecureStorageService.getAccessToken();
-
     if (!mounted) return;
 
+    // Step 1: Check if user has seen onboarding before
+    final seenOnboarding = await SqliteService().get('has_seen_onboarding');
+    debugPrint("Type: ${seenOnboarding.runtimeType}");
+    debugPrint("Value: $seenOnboarding");
+
+
+    final token = await SecureStorageService.getAccessToken();
+
+    if (!mounted) return;
+    if (seenOnboarding == null) {
+      // First time ever opening the app — show onboarding
+      Navigator.pushReplacementNamed(context, '/onboarding');
+      return;
+    }
     if (token == null || JwtDecoder.isExpired(token)) {
       Navigator.pushReplacementNamed(context, '/login');
-    } else {
-      try{
+      return;
+    }
+
+    // Step 3: Valid token — go to correct home screen
+    try {
       final decoded = JwtDecoder.decode(token);
       final role = decoded['role'] ??
           decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
@@ -38,17 +52,12 @@ class _SplashScreenState extends State<SplashScreen> {
         Navigator.pushReplacementNamed(context, '/ownerHome');
       } else if (role == 'admin') {
         Navigator.pushReplacementNamed(context, '/adminDashboard');
-      }else if(kIsWeb && role!="admin"){
+      } else {
         Navigator.pushReplacementNamed(context, '/login');
       }
-      else {
-        Navigator.pushReplacementNamed(context, '/login');
-      }
-    }
-      catch(e){
-        debugPrint("JWT decode error: $e");
-        Navigator.pushReplacementNamed(context, '/onboarding');
-      }
+    } catch (e) {
+      debugPrint('JWT decode error: $e');
+      Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
@@ -60,10 +69,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset(
-              'assets/images/lokyatra_logo.png',
-              height: 120,
-            ),
+            Image.asset('assets/images/lokyatra_logo.png', height: 120),
             const SizedBox(height: 24),
             const Text(
               "Explore Nepal's \nCultural Heritage",
@@ -79,10 +85,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 12),
             const Text(
               "Loading...",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
           ],
         ),

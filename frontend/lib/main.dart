@@ -7,6 +7,7 @@ import 'package:lokyatra_frontend/data/datasources/User_remote_datasource.dart';
 // Screens
 import 'package:lokyatra_frontend/presentation/screens/Onboarding/OnBoarding.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerHome.dart';
+import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristProfilePage.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/touristHome.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/AdminDashboard.dart';
 import 'package:lokyatra_frontend/presentation/screens/authentication/loginPage.dart';
@@ -39,9 +40,8 @@ void main() async{
     await SqliteService().deleteOldCache();
     debugPrint(' Old cache cleaned');
 
-  } catch (e, stackTrace) {
+  } catch (e) {
     debugPrint('Error during initialization: $e');
-    debugPrint('Stack trace: $stackTrace');
   }
   runApp(const MyAppRunner());
 }
@@ -79,7 +79,7 @@ class MyAppRunner extends StatelessWidget {
               '/adminDashboard': (context) => const AdminDashboard(),
               '/onboarding': (context) => const OnboardingScreen(),
               '/TouristHome': (context) => const TouristHome(),
-
+              '/TouristProfilePage': (context) => const TouristProfilePage(),
 
             },
             home: const SplashScreen(),
