@@ -1,7 +1,7 @@
 ﻿using backend.Database;
 using backend.DTO;
-using backend.Entities;      
-using backend.Models;      
+using backend.Entities;
+using backend.Models;
 using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -23,6 +23,8 @@ namespace backend.Controllers
             var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             return int.TryParse(claim, out var id) ? id : null;
         }
+
+        //POST api/User/change-password
         [HttpPost("change-password")]
         [Authorize]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto)
@@ -43,8 +45,7 @@ namespace backend.Controllers
             return Ok(new { message = "Password changed successfully" });
         }
 
-        
-        // ── GET api/User/current user
+        // ── GET api/User/current-user ────────────────────────────────────────
         [Authorize]
         [HttpGet("current-user")]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
@@ -58,7 +59,7 @@ namespace backend.Controllers
             return Ok(MapToDto(user));
         }
 
-        // ── PATCH api/User/update-profile 
+        // ── PATCH api/User/update-profile ────────────────────────────────────
         [Authorize]
         [HttpPatch("update-profile")]
         public async Task<ActionResult<UserDto>> UpdateProfile([FromForm] UpdateProfileDto dto)
@@ -88,7 +89,7 @@ namespace backend.Controllers
             return Ok(MapToDto(user));
         }
 
-        // ── GET api/User/getUsers ── admin only 
+        // ── GET api/User/getUsers  (admin only) ──────────────────────────────
         [Authorize(Roles = "admin")]
         [HttpGet("getUsers")]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
@@ -97,12 +98,11 @@ namespace backend.Controllers
             return Ok(users.Select(MapToDto));
         }
 
-       
+        // ── DELETE api/User/deleteUser/{userId}  (admin only) ────────────────
         [Authorize(Roles = "admin")]
         [HttpDelete("deleteUser/{userId}")]
         public async Task<ActionResult> DeleteUser(int userId)
         {
-          
             var user = await _context.Users
                 .Include(u => u.Homestays)
                 .FirstOrDefaultAsync(u => u.UserId == userId);
@@ -117,29 +117,32 @@ namespace backend.Controllers
                 .Select(h => h.Id)
                 .ToList() ?? [];
 
-            var hasPaidBookings = await _context.Bookings.AnyAsync(b =>
+            // ── Block if tourist or owner has paid/confirmed bookings ─────────
+            var hasBlockingBookings = await _context.Bookings.AnyAsync(b =>
                 (ownedHomestayIds.Contains(b.HomestayId) || b.TouristId == userId)
-                && b.PaymentStatus == PaymentStatus.Paid || b.Status==BookingStatus.Confirmed );
+                && (b.PaymentStatus == PaymentStatus.Paid
+                    || b.Status == BookingStatus.Confirmed
+                    || b.Status == BookingStatus.Completed));
 
-            if (hasPaidBookings)
+            if (hasBlockingBookings)
             {
                 return BadRequest(new
                 {
                     message =
-                        $"Cannot delete '{user.Name}' — they have paid bookings on record. " +
-                        "Financial records must be preserved. " +
-                        "You can deactivate the account instead.",
+                        $"Cannot delete '{user.Name}' — they have confirmed, completed, or paid bookings on record. " +
+                        "All bookings must be resolved first. You can deactivate the account instead.",
                     suggestion = "deactivate",
                 });
             }
 
-            var activeBookings = await _context.Bookings
+            // ── Auto-cancel any remaining pending bookings ────────────────────
+            var pendingBookings = await _context.Bookings
                 .Where(b =>
                     (ownedHomestayIds.Contains(b.HomestayId) || b.TouristId == userId)
-                    && (b.Status == BookingStatus.Pending ))
+                    && b.Status == BookingStatus.Pending)
                 .ToListAsync();
 
-            foreach (var booking in activeBookings)
+            foreach (var booking in pendingBookings)
             {
                 booking.Status = BookingStatus.Cancelled;
                 booking.UpdatedAt = DateTimeOffset.UtcNow;
@@ -158,7 +161,7 @@ namespace backend.Controllers
             });
         }
 
-       
+        // ── PATCH api/User/deactivate/{userId}  (admin only) ─────────────────
         [Authorize(Roles = "admin")]
         [HttpPatch("deactivate/{userId}")]
         public async Task<ActionResult> DeactivateUser(int userId)
@@ -176,7 +179,6 @@ namespace backend.Controllers
             return Ok(new { message = $"'{user.Name}' has been deactivated. They can no longer log in." });
         }
 
-     
         private static UserDto MapToDto(User u) => new()
         {
             UserId = u.UserId,
