@@ -1,5 +1,3 @@
-// lib/presentation/state_management/Bloc/user/user_state.dart
-
 import 'package:lokyatra_frontend/data/models/user.dart';
 
 abstract class UserState {}
@@ -13,17 +11,10 @@ class UserLoaded extends UserState {
   UserLoaded(this.users);
 }
 
-
 class UserDeleted extends UserState {
-  final int userId;
-  final int homestaysDeleted;
   final String message;
-
-  UserDeleted(
-      this.userId, {
-        this.homestaysDeleted = 0,
-        this.message = 'User deleted.',
-      });
+  final int    homestaysDeleted;
+  UserDeleted({required this.message, required this.homestaysDeleted});
 }
 
 class UserError extends UserState {

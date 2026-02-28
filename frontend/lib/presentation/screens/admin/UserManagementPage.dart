@@ -16,9 +16,8 @@ class UserManagementPage extends StatefulWidget {
 class _UserManagementPageState extends State<UserManagementPage>
     with SingleTickerProviderStateMixin {
 
-  //  Theme
-  static const admingrey   = Colors.grey;
-  static const _roles       = ['All', 'admin', 'owner', 'tourist'];
+  static const admingrey = Colors.grey;
+  static const _roles    = ['All', 'admin', 'owner', 'tourist'];
 
   String _searchQuery = '';
   late TabController _tabController;
@@ -59,8 +58,7 @@ class _UserManagementPageState extends State<UserManagementPage>
       child: BlocConsumer<UserBloc, UserState>(
         listener: (context, state) {
           if (state is UserLoaded) {
-            widget.subtitleNotifier.value =
-            '${state.users.length} users total';
+            widget.subtitleNotifier.value = '${state.users.length} users total';
           } else if (state is UserLoading) {
             widget.subtitleNotifier.value = 'Loading…';
           } else if (state is UserDeleted) {
@@ -76,7 +74,6 @@ class _UserManagementPageState extends State<UserManagementPage>
           }
         },
         builder: (context, state) {
-          //Loading
           if (state is UserLoading || state is UserInitial) {
             return const Center(
               child: CircularProgressIndicator(
@@ -85,7 +82,6 @@ class _UserManagementPageState extends State<UserManagementPage>
             );
           }
 
-          //  Error
           if (state is UserError) {
             return _ErrorView(
               message: state.message,
@@ -93,92 +89,82 @@ class _UserManagementPageState extends State<UserManagementPage>
             );
           }
 
-          // Data
-          final users =
-          (state is UserLoaded) ? state.users : <User>[];
+          final users    = (state is UserLoaded) ? state.users : <User>[];
           final filtered = _applyFilters(users);
 
-
-          return Column(
-            children: [
-
-              // Search bar
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search by name or email…',
-                    prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                    filled: true,
-                    fillColor: Colors.white,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  onChanged: (v) => setState(() => _searchQuery = v),
-                ),
-              ),
-
-              // Role filter tabs (KEEP THIS)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.grey.shade200),
-                  ),
-                  child: TabBar(
-                    controller: _tabController,
-                    labelColor: Colors.grey,
-                    unselectedLabelColor: Colors.grey.shade500,
-                    indicatorSize: TabBarIndicatorSize.tab,
-                    dividerColor: Colors.transparent,
-                    tabs: _roles.map((r) {
-                      final label = r == 'All'
-                          ? 'All'
-                          : '${r[0].toUpperCase()}${r.substring(1)}s';
-
-                      return Tab(text: label);
-                    }).toList(),
+          return Column(children: [
+            // Search bar
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Search by name or email…',
+                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+                onChanged: (v) => setState(() => _searchQuery = v),
               ),
+            ),
 
-              // User list
-              Expanded(
-                child: filtered.isEmpty
-                    ? _EmptyState(query: _searchQuery, role: _activeRole)
-                    : RefreshIndicator(
-                  onRefresh: () async =>
-                      context.read<UserBloc>().add(FetchUsers()),
-                  child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                    itemCount: filtered.length,
-                    separatorBuilder: (_, _) =>
-                    const SizedBox(height: 10),
-                    itemBuilder: (ctx, i) => _UserCard(
-                      user: filtered[i],
-                      onDelete: () =>
-                          _confirmDelete(ctx, filtered[i]),
-                    ),
+            // Role filter tabs
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  labelColor: Colors.grey,
+                  unselectedLabelColor: Colors.grey.shade500,
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
+                  tabs: _roles.map((r) {
+                    final label = r == 'All'
+                        ? 'All'
+                        : '${r[0].toUpperCase()}${r.substring(1)}s';
+                    return Tab(text: label);
+                  }).toList(),
+                ),
+              ),
+            ),
+
+            // User list
+            Expanded(
+              child: filtered.isEmpty
+                  ? _EmptyState(query: _searchQuery, role: _activeRole)
+                  : RefreshIndicator(
+                onRefresh: () async =>
+                    context.read<UserBloc>().add(FetchUsers()),
+                child: ListView.separated(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, __) =>
+                  const SizedBox(height: 10),
+                  itemBuilder: (ctx, i) => _UserCard(
+                    user: filtered[i],
+                    onDelete: () => _confirmDelete(ctx, filtered[i]),
                   ),
                 ),
               ),
-            ],
-          );
+            ),
+          ]);
         },
       ),
     );
   }
 
-  // ── Confirm delete dialog ────────────────────────────────────────────
   void _confirmDelete(BuildContext context, User user) {
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
         contentPadding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
         actionsPadding:
@@ -193,8 +179,7 @@ class _UserManagementPageState extends State<UserManagementPage>
           ),
           const SizedBox(width: 10),
           const Text('Delete User',
-              style: TextStyle(
-                  fontSize: 17, fontWeight: FontWeight.bold)),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
         ]),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -203,15 +188,13 @@ class _UserManagementPageState extends State<UserManagementPage>
             RichText(
               text: TextSpan(
                 style: const TextStyle(
-                    color: Colors.black87,
-                    fontSize: 14,
-                    height: 1.5),
+                    color: Colors.black87, fontSize: 14, height: 1.5),
                 children: [
                   const TextSpan(text: 'Delete '),
                   TextSpan(
                       text: user.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold)),
+                      style:
+                      const TextStyle(fontWeight: FontWeight.bold)),
                   const TextSpan(text: ' permanently?'),
                 ],
               ),
@@ -277,17 +260,19 @@ class _UserManagementPageState extends State<UserManagementPage>
       ]),
       backgroundColor: color,
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10)),
+      shape:
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       margin: const EdgeInsets.all(16),
-      duration: const Duration(seconds: 3),
+      duration: const Duration(seconds: 4),
     ));
   }
 }
 
+// ── Stats Banner ──────────────────────────────────────────────────────────────
 class StatsBanner extends StatelessWidget {
   final int total, active, admins, owners, tourists;
-  const StatsBanner({super.key,
+  const StatsBanner({
+    super.key,
     required this.total,
     required this.active,
     required this.admins,
@@ -304,15 +289,16 @@ class StatsBanner extends StatelessWidget {
         end: Alignment.bottomRight,
       ),
     ),
-    padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+    padding:
+    const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
     child: Row(children: [
-      _Stat('Total',   total,    Colors.white),
+      _Stat('Total',    total,    Colors.white),
       _div(),
-      _Stat('Active',  active,   Colors.greenAccent.shade200),
+      _Stat('Active',   active,   Colors.greenAccent.shade200),
       _div(),
-      _Stat('Admins',  admins,   Colors.orangeAccent),
+      _Stat('Admins',   admins,   Colors.orangeAccent),
       _div(),
-      _Stat('Owners',  owners,   Colors.amber.shade300),
+      _Stat('Owners',   owners,   Colors.amber.shade300),
       _div(),
       _Stat('Tourists', tourists, Colors.lightBlueAccent),
     ]),
@@ -347,8 +333,7 @@ class _Stat extends StatelessWidget {
   );
 }
 
-
-// User Card
+// ── User Card ─────────────────────────────────────────────────────────────────
 class _UserCard extends StatelessWidget {
   final User user;
   final VoidCallback onDelete;
@@ -392,7 +377,7 @@ class _UserCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Avatar + active dot ──────────────────────────────
+            // Avatar + active dot
             Stack(children: [
               CircleAvatar(
                 radius: 26,
@@ -425,7 +410,8 @@ class _UserCard extends StatelessWidget {
                         ? Colors.green.shade500
                         : Colors.grey.shade400,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
+                    border:
+                    Border.all(color: Colors.white, width: 2),
                   ),
                 ),
               ),
@@ -433,12 +419,10 @@ class _UserCard extends StatelessWidget {
 
             const SizedBox(width: 12),
 
-            // ── Info ─────────────────────────────────────────────
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name + role badge
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
@@ -480,11 +464,7 @@ class _UserCard extends StatelessWidget {
                   ),
 
                   const SizedBox(height: 6),
-
-                  _InfoRow(
-                    icon: Icons.email_outlined,
-                    text: user.email,
-                  ),
+                  _InfoRow(icon: Icons.email_outlined, text: user.email),
                   const SizedBox(height: 3),
                   _InfoRow(
                     icon: Icons.phone_outlined,
@@ -496,95 +476,88 @@ class _UserCard extends StatelessWidget {
 
                   const SizedBox(height: 10),
 
-                  // Status chip + action
-                  Row(
-                    children: [
-                      // Active / Inactive chip
+                  Row(children: [
+                    // Active/Inactive chip
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? Colors.green.shade50
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                            color: isActive
+                                ? Colors.green.shade300
+                                : Colors.grey.shade300,
+                            width: 1),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(
+                          isActive
+                              ? Icons.check_circle_outline
+                              : Icons.cancel_outlined,
+                          size: 12,
+                          color: isActive
+                              ? Colors.green.shade600
+                              : Colors.grey.shade500,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isActive ? 'Active' : 'Inactive',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isActive
+                                  ? Colors.green.shade700
+                                  : Colors.grey.shade600),
+                        ),
+                      ]),
+                    ),
+
+                    const Spacer(),
+
+                    if (role != 'admin')
+                      SizedBox(
+                        height: 30,
+                        child: TextButton.icon(
+                          onPressed: onDelete,
+                          icon: const Icon(Icons.delete_outline,
+                              size: 14, color: Colors.red),
+                          label: const Text('Delete',
+                              style: TextStyle(
+                                  color: Colors.red,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600)),
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10),
+                            backgroundColor: Colors.red.shade50,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                              side: BorderSide(
+                                  color: Colors.red.shade200, width: 1),
+                            ),
+                          ),
+                        ),
+                      )
+                    else
                       Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 3),
+                            horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: isActive
-                              ? Colors.green.shade50
-                              : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(20),
+                          color: _adminBlue.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                              color: isActive
-                                  ? Colors.green.shade300
-                                  : Colors.grey.shade300,
-                              width: 1),
+                              color: _adminBlue.withValues(alpha: 0.2)),
                         ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              isActive
-                                  ? Icons.check_circle_outline
-                                  : Icons.cancel_outlined,
-                              size: 12,
-                              color: isActive
-                                  ? Colors.green.shade600
-                                  : Colors.grey.shade500,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              isActive ? 'Active' : 'Inactive',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: isActive
-                                      ? Colors.green.shade700
-                                      : Colors.grey.shade600),
-                            ),
-                          ],
-                        ),
+                        child: const Text('Protected',
+                            style: TextStyle(
+                                fontSize: 11,
+                                color: _adminBlue,
+                                fontWeight: FontWeight.w500)),
                       ),
-
-                      const Spacer(),
-
-                      if (role != 'admin')
-                        SizedBox(
-                          height: 30,
-                          child: TextButton.icon(
-                            onPressed: onDelete,
-                            icon: const Icon(Icons.delete_outline,
-                                size: 14, color: Colors.red),
-                            label: const Text('Delete',
-                                style: TextStyle(
-                                    color: Colors.red,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w600)),
-                            style: TextButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10),
-                              backgroundColor: Colors.red.shade50,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                                side: BorderSide(
-                                    color: Colors.red.shade200,
-                                    width: 1),
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: _adminBlue.withValues(alpha: 0.06),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: _adminBlue.withValues(alpha: 0.2)),
-                          ),
-                          child: const Text('Protected',
-                              style: TextStyle(
-                                  fontSize: 11,
-                                  color: _adminBlue,
-                                  fontWeight: FontWeight.w500)),
-                        ),
-                    ],
-                  ),
+                  ]),
                 ],
               ),
             ),
@@ -622,9 +595,7 @@ class _InfoRow extends StatelessWidget {
   ]);
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Empty State
-// ═══════════════════════════════════════════════════════════════════════════
+// ── Empty State ───────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   final String query;
   final String role;
@@ -640,16 +611,13 @@ class _EmptyState extends StatelessWidget {
         query.isNotEmpty
             ? 'No users matching "$query"'
             : 'No ${role == "All" ? "" : "$role "}users yet',
-        style: TextStyle(
-            color: Colors.grey.shade400, fontSize: 15),
+        style: TextStyle(color: Colors.grey.shade400, fontSize: 15),
       ),
     ]),
   );
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Error View
-// ═══════════════════════════════════════════════════════════════════════════
+// ── Error View ────────────────────────────────────────────────────────────────
 class _ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
@@ -665,8 +633,8 @@ class _ErrorView extends StatelessWidget {
         const SizedBox(height: 12),
         Text(message,
             textAlign: TextAlign.center,
-            style: TextStyle(
-                color: Colors.grey.shade500, fontSize: 14)),
+            style:
+            TextStyle(color: Colors.grey.shade500, fontSize: 14)),
         const SizedBox(height: 20),
         ElevatedButton.icon(
           onPressed: onRetry,
