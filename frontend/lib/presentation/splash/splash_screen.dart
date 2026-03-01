@@ -12,39 +12,49 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  // Static flag survives hot reloads — once we navigate away we never re-navigate
+  static bool _hasNavigated = false;
+
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), _checkAuth);
+    if (!_hasNavigated) {
+      Future.delayed(const Duration(seconds: 2), _checkAuth);
+    }
   }
 
   Future<void> _checkAuth() async {
+    if (_hasNavigated || !mounted) return;
+    _hasNavigated = true;
+
+    final sqlite = SqliteService();
+    await sqlite.database;
+
+    final seenOnboarding = await sqlite.get('has_seen_onboarding');
+    debugPrint('has_seen_onboarding → $seenOnboarding (${seenOnboarding.runtimeType})');
+
     if (!mounted) return;
 
-    // Step 1: Check if user has seen onboarding before
-    final seenOnboarding = await SqliteService().get('has_seen_onboarding');
-    debugPrint("Type: ${seenOnboarding.runtimeType}");
-    debugPrint("Value: $seenOnboarding");
-
+    if (seenOnboarding == null) {
+      Navigator.pushReplacementNamed(context, '/onboarding');
+      return;
+    }
 
     final token = await SecureStorageService.getAccessToken();
 
     if (!mounted) return;
-    if (seenOnboarding == null) {
-      // First time ever opening the app — show onboarding
-      Navigator.pushReplacementNamed(context, '/onboarding');
-      return;
-    }
+
     if (token == null || JwtDecoder.isExpired(token)) {
       Navigator.pushReplacementNamed(context, '/login');
       return;
     }
 
-    // Step 3: Valid token — go to correct home screen
     try {
       final decoded = JwtDecoder.decode(token);
       final role = decoded['role'] ??
           decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+
+      if (!mounted) return;
 
       if (role == 'tourist') {
         Navigator.pushReplacementNamed(context, '/touristHome');
@@ -57,7 +67,7 @@ class _SplashScreenState extends State<SplashScreen> {
       }
     } catch (e) {
       debugPrint('JWT decode error: $e');
-      Navigator.pushReplacementNamed(context, '/login');
+      if (mounted) Navigator.pushReplacementNamed(context, '/login');
     }
   }
 
@@ -83,10 +93,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 32),
             const CircularProgressIndicator(),
             const SizedBox(height: 12),
-            const Text(
-              "Loading...",
-              style: TextStyle(fontSize: 14, color: Colors.grey),
-            ),
+            const Text('Loading...', style: TextStyle(fontSize: 14, color: Colors.grey)),
           ],
         ),
       ),

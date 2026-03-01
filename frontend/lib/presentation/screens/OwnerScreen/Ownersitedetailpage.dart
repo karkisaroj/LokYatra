@@ -4,15 +4,15 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 import '../../../data/models/Site.dart';
 
-class SiteDetailPage extends StatefulWidget {
+class OwnerSiteDetailPage extends StatefulWidget {
   final CulturalSite site;
-  const SiteDetailPage({super.key, required this.site});
+  const OwnerSiteDetailPage({super.key, required this.site});
 
   @override
-  State<SiteDetailPage> createState() => _SiteDetailPageState();
+  State<OwnerSiteDetailPage> createState() => _OwnerSiteDetailPageState();
 }
 
-class _SiteDetailPageState extends State<SiteDetailPage> {
+class _OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
   int _currentImageIndex = 0;
   final PageController _pageController = PageController();
 
@@ -52,13 +52,12 @@ class _SiteDetailPageState extends State<SiteDetailPage> {
 
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 320.h,
+                  height: 340.h,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
                       images.isEmpty
-                          ? Container(
-                          color: Colors.grey[300],
+                          ? Container(color: Colors.grey[300],
                           child: Icon(Icons.image_not_supported, size: 60.sp, color: Colors.grey[400]))
                           : PageView.builder(
                         controller: _pageController,
@@ -67,7 +66,7 @@ class _SiteDetailPageState extends State<SiteDetailPage> {
                         itemBuilder: (_, i) => ProxyImage(
                           imageUrl: images[i],
                           width: double.infinity,
-                          height: 320.h,
+                          height: 340.h,
                           borderRadiusValue: 0,
                         ),
                       ),
@@ -81,7 +80,7 @@ class _SiteDetailPageState extends State<SiteDetailPage> {
                               colors: [
                                 Colors.black.withValues(alpha: 0.35),
                                 Colors.transparent,
-                                Colors.black.withValues(alpha: 0.7),
+                                Colors.black.withValues(alpha: 0.75),
                               ],
                               stops: const [0, 0.4, 1],
                             ),
@@ -109,7 +108,7 @@ class _SiteDetailPageState extends State<SiteDetailPage> {
 
                       if (images.length > 1)
                         Positioned(
-                          bottom: 70.h, left: 0, right: 0,
+                          bottom: 80.h, left: 0, right: 0,
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: List.generate(images.length, (i) => AnimatedContainer(
@@ -126,7 +125,7 @@ class _SiteDetailPageState extends State<SiteDetailPage> {
                         ),
 
                       Positioned(
-                        bottom: 16.h, left: 20.w, right: 20.w,
+                        bottom: 20.h, left: 20.w, right: 20.w,
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           if (site.isUNESCO)
                             Container(
@@ -254,9 +253,9 @@ class _SiteDetailPageState extends State<SiteDetailPage> {
                     SizedBox(height: 10.h),
                     _ContentCard(
                       child: Column(children: [
-                        _DetailRow(Icons.calendar_today_outlined, 'Added On',      _formatDate(site.createdAt)),
+                        _DetailRow(Icons.calendar_today_outlined, 'Added On',     _formatDate(site.createdAt)),
                         Divider(height: 20.h, color: Colors.grey.shade100),
-                        _DetailRow(Icons.update_rounded,          'Last Updated',  _formatDate(site.updatedAt)),
+                        _DetailRow(Icons.update_rounded,          'Last Updated', _formatDate(site.updatedAt)),
                         if (site.address != null) ...[
                           Divider(height: 20.h, color: Colors.grey.shade100),
                           _DetailRow(Icons.map_outlined, 'Address', site.address!),

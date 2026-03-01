@@ -6,7 +6,12 @@ import 'package:lokyatra_frontend/data/datasources/User_remote_datasource.dart';
 
 // Screens
 import 'package:lokyatra_frontend/presentation/screens/Onboarding/OnBoarding.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayListingsPage.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerBookingsPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerHome.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/Ownerbalancepage.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/Ownerprofilepage.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerChangePasswordPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristProfilePage.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/touristHome.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/AdminDashboard.dart';
@@ -80,7 +85,11 @@ class MyAppRunner extends StatelessWidget {
               '/onboarding': (context) => const OnboardingScreen(),
               '/TouristHome': (context) => const TouristHome(),
               '/TouristProfilePage': (context) => const TouristProfilePage(),
-
+              '/ownerProfile': (context) => const OwnerProfilePage(),
+              '/ownerBalance': (context) => const OwnerBalancePage(),
+              '/ownerBookings': (context) => const OwnerBookingsPage(),
+              '/ownerListings': (context) => const HomestayListingsPage(),
+              '/change-password': (context) => const OwnerChangePasswordPage(),
             },
             home: const SplashScreen(),
             builder: (context, appChild) {

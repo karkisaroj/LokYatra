@@ -1,14 +1,21 @@
-// lib/presentation/screens/OwnerScreen/OwnerHome.dart
+// lib/presentation/screens/OwnerScreen/Ownerhomepage.dart
 
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayListingsPage.dart';
-import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
-import 'OwnerBookingsPage.dart';
-import 'Ownerhomepage.dart';
-import 'Ownerprofilepage.dart';
+import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
+import 'package:lokyatra_frontend/data/datasources/user_remote_datasource.dart';
+import 'ProfileImageWidget.dart';
+
+const _bg = Color(0xFFFAF7F2);
+const _ink = Color(0xFF1C1C1C);
+const _brown = Color(0xFF5C4033);
+const _slate = Color(0xFF2C3A4A);
+const _muted = Color(0xFF8A8279);
+const _divider = Color(0xFFEDE8E1);
+const _cardBg = Color(0xFFFFFFFF);
+const _tagBg = Color(0xFFEEEBE5);
+const _green = Color(0xFF3D5A4F);
 
 class OwnerHome extends StatefulWidget {
   const OwnerHome({super.key});
@@ -18,135 +25,591 @@ class OwnerHome extends StatefulWidget {
 }
 
 class _OwnerHomeState extends State<OwnerHome> {
-  int _currentTab = 0;
-  late final HomestayBloc _homestayBloc;
-
-  static const _brown = Color(0xFF5C4033);
+  String? _profileImageUrl;
+  String _name = '';
+  String _email = '';
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _homestayBloc = HomestayBloc();
+    _loadProfile();
   }
 
-  @override
-  void dispose() {
-    _homestayBloc.close();
-    super.dispose();
+  Future<void> _loadProfile() async {
+    final sqlite = SqliteService();
+    final name = await sqlite.get('user_name');
+    final email = await sqlite.get('user_email');
+    final image = await sqlite.get('user_profile_image');
+
+    if (mounted) {
+      setState(() {
+        _name = name ?? '';
+        _email = email ?? '';
+        _profileImageUrl = (image != null && image.isNotEmpty) ? image : null;
+      });
+    }
+
+    if (image == null || image.isEmpty) {
+      await _fetchFromServer();
+    } else {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
-  Widget _comingSoon(String label, IconData icon) => Center(
-    child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(icon, size: 64.sp, color: Colors.grey[300]),
-      SizedBox(height: 16.h),
-      Text(label,
-          style: GoogleFonts.playfairDisplay(
-              fontSize: 22.sp, fontWeight: FontWeight.bold)),
-      SizedBox(height: 8.h),
-      Text('Coming Soon',
-          style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey)),
-    ]),
-  );
+  Future<void> _fetchFromServer() async {
+    try {
+      final res = await UserRemoteDatasource().getCurrentUser();
+      if (res.statusCode == 200) {
+        final data = res.data as Map<String, dynamic>;
+        final serverName = data['name'] as String? ?? '';
+        final serverEmail = data['email'] as String? ?? '';
+        final serverImage = data['profileImage'] as String? ?? '';
+
+        final sqlite = SqliteService();
+        await sqlite.put('user_name', serverName);
+        await sqlite.put('user_email', serverEmail);
+        await sqlite.put('user_profile_image', serverImage);
+
+        if (mounted) {
+          setState(() {
+            _name = serverName;
+            _email = serverEmail;
+            _profileImageUrl = serverImage.isNotEmpty ? serverImage : null;
+          });
+        }
+      }
+    } catch (_) {
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _navigateToProfile() {
+    // Navigate to profile page with proper route handling
+    Navigator.pushNamed(context, '/ownerProfile').then((_) {
+      // Refresh profile data when returning from profile page
+      _loadProfile();
+    });
+  }
+
+  void _navigateToBalance() {
+    // Navigate to balance page
+    Navigator.pushNamed(context, '/ownerBalance');
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _homestayBloc,
-      child: Scaffold(
-        body: IndexedStack(
-          index: _currentTab,
-          children: [
-            FocusScope(child: const OwnerHomePage()),
-            FocusScope(child: const HomestayListingsPage()),
-            FocusScope(child: const OwnerBookingsPage()),
-            FocusScope(child: _comingSoon('Balance', Icons.account_balance_wallet_outlined)),
-            FocusScope(child: const OwnerProfilePage()),
-          ],
-        ),
-        bottomNavigationBar: _BottomNav(
-          currentIndex: _currentTab,
-          onTap: (i) => setState(() => _currentTab = i),
-          selectedColor: _brown,
+    if (_loading) {
+      return const Scaffold(
+        backgroundColor: _bg,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: _bg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // ── Header with Profile Picture ────────────────────────────────
+            _HeaderCard(
+              name: _name,
+              email: _email,
+              profileImageUrl: _profileImageUrl,
+              onProfileTap: _navigateToProfile,
+            ),
+
+            SizedBox(height: 20.h),
+
+            // ── Quick Stats ────────────────────────────────────────────────
+            _QuickStatsSection(),
+
+            SizedBox(height: 20.h),
+
+            // ── Balance Overview Card ──────────────────────────────────────
+            _BalanceOverviewCard(onViewDetails: _navigateToBalance),
+
+            SizedBox(height: 20.h),
+
+            // ── Quick Links ────────────────────────────────────────────────
+            _QuickLinksSection(onViewBalance: _navigateToBalance),
+
+            SizedBox(height: 20.h),
+          ]),
         ),
       ),
     );
   }
 }
 
-class _BottomNav extends StatelessWidget {
-  final int currentIndex;
-  final ValueChanged<int> onTap;
-  final Color selectedColor;
-  const _BottomNav({
-    required this.currentIndex,
-    required this.onTap,
-    required this.selectedColor,
-  });
+// ── Header Card with Profile Picture ────────────────────────────────────────
 
-  static const _items = [
-    (Icons.home_rounded,           Icons.home_outlined,                   'Home'),
-    (Icons.holiday_village,        Icons.holiday_village_outlined,        'Listings'),
-    (Icons.calendar_month,         Icons.calendar_month_outlined,         'Bookings'),
-    (Icons.account_balance_wallet, Icons.account_balance_wallet_outlined, 'Balance'),
-    (Icons.person_rounded,         Icons.person_outline_rounded,          'Profile'),
-  ];
+class _HeaderCard extends StatelessWidget {
+  final String name;
+  final String email;
+  final String? profileImageUrl;
+  final VoidCallback onProfileTap;
+
+  const _HeaderCard({
+    required this.name,
+    required this.email,
+    required this.profileImageUrl,
+    required this.onProfileTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [BoxShadow(
-          color: Colors.black.withOpacity(0.07),
-          blurRadius: 16, offset: const Offset(0, -3),
-        )],
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: _divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      child: SafeArea(
-        top: false,
-        child: SizedBox(
-          height: 58.h,
-          child: Row(
-            children: List.generate(_items.length, (i) {
-              final selected = currentIndex == i;
-              final (active, inactive, label) = _items[i];
-              return Expanded(
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => onTap(i),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+      child: Row(
+        children: [
+          // ── Profile Picture (Clickable) ────────────────────────────────
+          GestureDetector(
+            onTap: onProfileTap,
+            child: Container(
+              width: 60.w,
+              height: 60.w,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: _brown, width: 2),
+                image: profileImageUrl != null
+                    ? DecorationImage(
+                  image: NetworkImage(profileImageUrl!),
+                  fit: BoxFit.cover,
+                )
+                    : null,
+                color: profileImageUrl == null ? _brown.withValues(alpha: 0.1) : null,
+              ),
+              child: profileImageUrl == null
+                  ? Icon(
+                Icons.person_rounded,
+                size: 30.sp,
+                color: _brown,
+              )
+                  : null,
+            ),
+          ),
+
+          SizedBox(width: 14.w),
+
+          // ── Name & Email ───────────────────────────────────────────────
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name.isEmpty ? 'Owner' : name,
+                  style: GoogleFonts.playfairDisplay(
+                    fontSize: 18.sp,
+                    fontWeight: FontWeight.bold,
+                    color: _ink,
+                  ),
+                ),
+                SizedBox(height: 4.h),
+                Text(
+                  email.isEmpty ? 'email@example.com' : email,
+                  style: GoogleFonts.dmSans(
+                    fontSize: 12.sp,
+                    color: _muted,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                SizedBox(height: 8.h),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: _tagBg,
+                    borderRadius: BorderRadius.circular(20.r),
+                    border: Border.all(color: _divider),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        child: Icon(selected ? active : inactive,
-                            key: ValueKey(selected),
-                            size: 22.sp,
-                            color: selected ? selectedColor : Colors.grey[400]),
-                      ),
-                      SizedBox(height: 3.h),
-                      Text(label,
-                          style: GoogleFonts.dmSans(
-                            fontSize: 10.sp,
-                            fontWeight: selected
-                                ? FontWeight.w700 : FontWeight.normal,
-                            color: selected ? selectedColor : Colors.grey[400],
-                          )),
-                      SizedBox(height: 3.h),
-                      AnimatedContainer(
-                        duration: const Duration(milliseconds: 250),
-                        height: 2.h,
-                        width: selected ? 18.w : 0,
-                        decoration: BoxDecoration(
-                          color: selectedColor,
-                          borderRadius: BorderRadius.circular(2),
+                      Icon(Icons.home_work_outlined, size: 11.sp, color: _brown),
+                      SizedBox(width: 4.w),
+                      Text(
+                        'Homestay Owner',
+                        style: GoogleFonts.dmSans(
+                          fontSize: 11.sp,
+                          color: _brown,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                     ],
                   ),
                 ),
-              );
-            }),
+              ],
+            ),
           ),
+
+          // ── Edit Profile Arrow ──────────────────────────────────────────
+          GestureDetector(
+            onTap: onProfileTap,
+            child: Container(
+              padding: EdgeInsets.all(8.w),
+              decoration: BoxDecoration(
+                color: _tagBg,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.arrow_forward_rounded, size: 16.sp, color: _brown),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Quick Stats Section ──────────────────────────────────────────────────────
+
+class _QuickStatsSection extends StatelessWidget {
+  const _QuickStatsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Overview',
+          style: GoogleFonts.dmSans(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+            color: _ink,
+          ),
+        ),
+        SizedBox(height: 12.h),
+        Row(
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: Icons.calendar_month_outlined,
+                label: 'Bookings',
+                value: '12',
+                color: _slate,
+              ),
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.home_work_outlined,
+                label: 'Properties',
+                value: '2',
+                color: _brown,
+              ),
+            ),
+            SizedBox(width: 10.w),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.star_rounded,
+                label: 'Rating',
+                value: '4.8',
+                color: _green,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _StatCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(12.w),
+      decoration: BoxDecoration(
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(12.r),
+        border: Border.all(color: _divider),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: EdgeInsets.all(8.w),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8.r),
+            ),
+            child: Icon(icon, size: 16.sp, color: color),
+          ),
+          SizedBox(height: 6.h),
+          Text(
+            value,
+            style: GoogleFonts.dmSans(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+              color: _ink,
+            ),
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            label,
+            style: GoogleFonts.dmSans(
+              fontSize: 10.sp,
+              color: _muted,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Balance Overview Card ────────────────────────────────────────────────────
+
+class _BalanceOverviewCard extends StatelessWidget {
+  final VoidCallback onViewDetails;
+
+  const _BalanceOverviewCard({required this.onViewDetails});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(16.w),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [_slate, Color(0xFF3D5A6F)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16.r),
+        boxShadow: [
+          BoxShadow(
+            color: _slate.withValues(alpha: 0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Available Balance',
+                style: GoogleFonts.dmSans(
+                  fontSize: 13.sp,
+                  color: Colors.white70,
+                ),
+              ),
+              Icon(
+                Icons.account_balance_wallet_rounded,
+                size: 20.sp,
+                color: Colors.white70,
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Text(
+            'Rs. 15,000',
+            style: GoogleFonts.playfairDisplay(
+              fontSize: 32.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'This Month',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 11.sp,
+                      color: Colors.white60,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    'Rs. 15,000',
+                    style: GoogleFonts.dmSans(
+                      fontSize: 14.sp,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              ElevatedButton(
+                onPressed: onViewDetails,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white,
+                  foregroundColor: _slate,
+                  elevation: 0,
+                  padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10.r),
+                  ),
+                ),
+                child: Text(
+                  'View Details',
+                  style: GoogleFonts.dmSans(
+                    fontSize: 12.sp,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Quick Links Section ──────────────────────────────────────────────────────
+
+class _QuickLinksSection extends StatelessWidget {
+  final VoidCallback onViewBalance;
+
+  const _QuickLinksSection({required this.onViewBalance});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: GoogleFonts.dmSans(
+            fontSize: 16.sp,
+            fontWeight: FontWeight.bold,
+            color: _ink,
+          ),
+        ),
+        SizedBox(height: 12.h),
+        _ActionButton(
+          icon: Icons.account_balance_wallet_outlined,
+          title: 'Manage Balance',
+          subtitle: 'View earnings and payment methods',
+          color: _green,
+          onTap: onViewBalance,
+        ),
+        SizedBox(height: 10.h),
+        _ActionButton(
+          icon: Icons.calendar_month_outlined,
+          title: 'View Bookings',
+          subtitle: 'Check pending and confirmed bookings',
+          color: _slate,
+          onTap: () => Navigator.pushNamed(context, '/ownerBookings'),
+        ),
+        SizedBox(height: 10.h),
+        _ActionButton(
+          icon: Icons.home_work_outlined,
+          title: 'Manage Listings',
+          subtitle: 'Edit your homestay details',
+          color: _brown,
+          onTap: () => Navigator.pushNamed(context, '/ownerListings'),
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          color: _cardBg,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: _divider),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: EdgeInsets.all(10.w),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Icon(icon, size: 18.sp, color: color),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 13.sp,
+                      fontWeight: FontWeight.w600,
+                      color: _ink,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  Text(
+                    subtitle,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 11.sp,
+                      color: _muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.arrow_forward_rounded, size: 18.sp, color: _muted),
+          ],
         ),
       ),
     );

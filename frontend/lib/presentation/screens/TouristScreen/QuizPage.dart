@@ -1,5 +1,3 @@
-// lib/presentation/screens/TouristScreen/QuizPage.dart
-
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 import '../../../data/datasources/quiz_remote_datasource.dart';
 
-enum _QuizPhase { loading, error, home, playing, results }
+enum _QuizPhase { loading, offline, error, home, playing, results }
 
 class TouristQuizPage extends StatefulWidget {
   const TouristQuizPage({super.key});
@@ -23,20 +21,17 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
 
   _QuizPhase _phase = _QuizPhase.loading;
 
-  // Home data
   int  _totalPoints   = 0;
   int  _attemptsToday = 0;
   int  _attemptsLeft  = 3;
   List<Map<String, dynamic>> _history = [];
 
-  // Playing
   List<Map<String, dynamic>> _questions = [];
-  int    _current   = 0;
-  int    _timeLeft  = 20;
+  int    _current  = 0;
+  int    _timeLeft = 20;
   Timer? _timer;
   final  Map<int, int> _answers = {};
 
-  // Results
   Map<String, dynamic>? _result;
   String? _error;
 
@@ -52,8 +47,17 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
     super.dispose();
   }
 
+  //  Check connectivity first, then load
+
   Future<void> _loadHistory() async {
     setState(() { _phase = _QuizPhase.loading; _error = null; });
+
+    final isOnline = await SqliteService().isOnline();
+    if (!isOnline) {
+      if (mounted) setState(() => _phase = _QuizPhase.offline);
+      return;
+    }
+
     try {
       final res = await QuizRemoteDatasource().getHistory();
       if (!mounted) return;
@@ -76,6 +80,13 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
   }
 
   Future<void> _startQuiz() async {
+    // Re-check connectivity before starting
+    final isOnline = await SqliteService().isOnline();
+    if (!isOnline) {
+      if (mounted) setState(() => _phase = _QuizPhase.offline);
+      return;
+    }
+
     setState(() { _phase = _QuizPhase.loading; _error = null; });
     try {
       final res = await QuizRemoteDatasource().getQuiz();
@@ -159,7 +170,10 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18.sp, color: _dark),
-          onPressed: () { _timer?.cancel(); Navigator.pop(context, _phase == _QuizPhase.results); },
+          onPressed: () {
+            _timer?.cancel();
+            Navigator.pop(context, _phase == _QuizPhase.results);
+          },
         ),
         title: Text('Nepal Quiz',
             style: GoogleFonts.playfairDisplay(
@@ -172,15 +186,78 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 280),
         child: switch (_phase) {
-          _QuizPhase.loading => const Center(child: CircularProgressIndicator()),
-          _QuizPhase.error   => _buildError(),
-          _QuizPhase.home    => _buildHome(),
-          _QuizPhase.playing => _buildPlaying(),
-          _QuizPhase.results => _buildResults(),
+          _QuizPhase.loading  => const Center(child: CircularProgressIndicator()),
+          _QuizPhase.offline  => _buildOffline(),
+          _QuizPhase.error    => _buildError(),
+          _QuizPhase.home     => _buildHome(),
+          _QuizPhase.playing  => _buildPlaying(),
+          _QuizPhase.results  => _buildResults(),
         },
       ),
     );
   }
+
+  // ── Offline screen ────────────────────────────────────────────────────────
+
+  Widget _buildOffline() => Center(
+    key: const ValueKey('offline'),
+    child: Padding(
+      padding: EdgeInsets.all(32.w),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+          padding: EdgeInsets.all(24.w),
+          decoration: BoxDecoration(
+            color: Colors.orange.shade50,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(Icons.wifi_off_rounded, size: 56.sp, color: Colors.orange[700]),
+        ),
+        SizedBox(height: 24.h),
+        Text('No Internet Connection',
+            style: GoogleFonts.playfairDisplay(
+                fontSize: 22.sp, fontWeight: FontWeight.bold, color: _dark)),
+        SizedBox(height: 12.h),
+        Text(
+          'The quiz requires an internet connection to load questions and save your points to the server.',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey[600], height: 1.5),
+        ),
+        SizedBox(height: 8.h),
+        Container(
+          margin: EdgeInsets.only(top: 8.h),
+          padding: EdgeInsets.all(14.w),
+          decoration: BoxDecoration(
+            color: Colors.amber.shade50,
+            borderRadius: BorderRadius.circular(12.r),
+            border: Border.all(color: Colors.amber.shade200),
+          ),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Icon(Icons.info_outline_rounded, size: 16.sp, color: Colors.amber[700]),
+            SizedBox(width: 8.w),
+            Expanded(child: Text(
+              'Quiz points are saved to your account — internet is needed to record your score.',
+              style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.amber[900], height: 1.4),
+            )),
+          ]),
+        ),
+        SizedBox(height: 28.h),
+        SizedBox(
+          width: double.infinity, height: 48.h,
+          child: ElevatedButton.icon(
+            icon: Icon(Icons.refresh_rounded, size: 20.sp),
+            label: Text('Try Again', style: GoogleFonts.dmSans(
+                fontSize: 15.sp, fontWeight: FontWeight.bold)),
+            onPressed: _loadHistory,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _brown, foregroundColor: Colors.white,
+              elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+            ),
+          ),
+        ),
+      ]),
+    ),
+  );
 
   Widget _buildError() => Center(
     key: const ValueKey('error'),
@@ -222,18 +299,16 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
             borderRadius: BorderRadius.circular(20.r),
           ),
           child: Row(children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Your Points', style: GoogleFonts.dmSans(
-                      fontSize: 13.sp, color: Colors.white70)),
-                  SizedBox(height: 4.h),
-                  Text('$_totalPoints pts',
-                      style: GoogleFonts.playfairDisplay(
-                          fontSize: 32.sp, fontWeight: FontWeight.bold, color: Colors.white)),
-                  SizedBox(height: 4.h),
-                  Text('≈ Rs. ${(_totalPoints / 2).toStringAsFixed(0)} booking discount',
-                      style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.white60)),
-                ])),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Your Points', style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.white70)),
+              SizedBox(height: 4.h),
+              Text('$_totalPoints pts',
+                  style: GoogleFonts.playfairDisplay(
+                      fontSize: 32.sp, fontWeight: FontWeight.bold, color: Colors.white)),
+              SizedBox(height: 4.h),
+              Text('≈ Rs. ${(_totalPoints / 2).toStringAsFixed(0)} booking discount',
+                  style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.white60)),
+            ])),
             Container(
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
@@ -309,13 +384,13 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
               '10 points for every correct answer',
               '3 attempts per day',
               '10 pts = Rs. 5 off at booking (max 20%)',
+              'Internet required — points are saved to your account',
             ]) _HowRow(s),
           ]),
         ),
 
         SizedBox(height: 20.h),
 
-        // Start button
         SizedBox(
           width: double.infinity, height: 52.h,
           child: ElevatedButton.icon(
@@ -333,7 +408,6 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
           ),
         ),
 
-        // History
         if (_history.isNotEmpty) ...[
           SizedBox(height: 24.h),
           Text('Recent Attempts', style: GoogleFonts.dmSans(
@@ -399,7 +473,6 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
     return Column(
         key: ValueKey('playing-$_current'),
         children: [
-          // Progress header
           Container(
             color: Colors.white,
             padding: EdgeInsets.fromLTRB(20.w, 14.h, 20.w, 14.h),
@@ -522,9 +595,9 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
   Widget _buildResults() {
     if (_result == null) return const SizedBox.shrink();
     final score   = _result!['score']       as int? ?? 0;
-    final total   = _result!['total']        as int? ?? 10;
+    final total   = _result!['total']       as int? ?? 10;
     final earned  = _result!['pointsEarned'] as int? ?? 0;
-    final allPts  = _result!['totalPoints']  as int? ?? 0;
+    final allPts  = _result!['totalPoints'] as int? ?? 0;
     final left    = _result!['attemptsLeft'] as int? ?? 0;
     final results = (_result!['results'] as List? ?? [])
         .map((e) => Map<String, dynamic>.from(e as Map)).toList();
@@ -532,20 +605,15 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
 
     final Color hColor;
     final String hMsg;
-    if (pct >= 0.8) {
-      hColor = Colors.green; hMsg = 'Excellent! 🎉';
-    } else if (pct >= 0.5) {
-      hColor = Colors.orange; hMsg = 'Good job! 👍';
-    } else {
-      hColor = Colors.red; hMsg = 'Keep trying! 💪';
-    }
+    if (pct >= 0.8)      { hColor = Colors.green;  hMsg = 'Excellent! 🎉'; }
+    else if (pct >= 0.5) { hColor = Colors.orange; hMsg = 'Good job! 👍'; }
+    else                 { hColor = Colors.red;    hMsg = 'Keep trying! 💪'; }
 
     return SingleChildScrollView(
       key: const ValueKey('results'),
       padding: EdgeInsets.all(20.w),
       child: Column(children: [
 
-        // Score card
         Container(
           width: double.infinity,
           padding: EdgeInsets.all(24.w),
@@ -580,7 +648,7 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
               Icon(Icons.info_outline_rounded, size: 16.sp, color: Colors.amber[700]),
               SizedBox(width: 8.w),
               Expanded(child: Text(
-                '+$earned pts added! Use them at booking for discounts — 10 pts = Rs. 5 off meals or accommodation.',
+                '+$earned pts added! Use them at booking for discounts — 10 pts = Rs. 5 off.',
                 style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.amber[900]),
               )),
             ]),
@@ -588,7 +656,6 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
         ],
 
         SizedBox(height: 16.h),
-
         Text('Answer Review', style: GoogleFonts.dmSans(
             fontSize: 15.sp, fontWeight: FontWeight.bold, color: _dark)),
         SizedBox(height: 10.h),
@@ -605,10 +672,8 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
             margin: EdgeInsets.only(bottom: 10.h),
             padding: EdgeInsets.all(14.w),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(14.r),
-              border: Border.all(
-                  color: ok ? Colors.green.shade200 : Colors.red.shade200),
+              color: Colors.white, borderRadius: BorderRadius.circular(14.r),
+              border: Border.all(color: ok ? Colors.green.shade200 : Colors.red.shade200),
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
@@ -654,15 +719,13 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
               ],
               if (!ok && selIdx == -1) ...[
                 SizedBox(height: 4.h),
-                Text('Skipped', style: GoogleFonts.dmSans(
-                    fontSize: 12.sp, color: Colors.grey[500])),
+                Text('Skipped', style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
               ],
             ]),
           );
         }),
 
         SizedBox(height: 20.h),
-
         Row(children: [
           if (left > 0) ...[
             Expanded(child: ElevatedButton.icon(
@@ -698,8 +761,7 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
     if (raw == null) return '';
     try {
       final d = DateTime.parse(raw.toString()).toLocal();
-      const m = ['Jan','Feb','Mar','Apr','May','Jun',
-        'Jul','Aug','Sep','Oct','Nov','Dec'];
+      const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       return '${m[d.month-1]} ${d.day}, ${d.year}';
     } catch (_) { return ''; }
   }

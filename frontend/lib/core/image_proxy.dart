@@ -1,19 +1,17 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:lokyatra_frontend/core/constants.dart';
 
-/// Converts Cloudinary URL to thumbnail
 String cloudinaryThumb(String url, {int w = 300, int h = 300}) {
   final idx = url.indexOf('/upload/');
   if (idx == -1) return url;
   final before = url.substring(0, idx + '/upload/'.length);
-  final after = url.substring(idx + '/upload/'.length);
+  final after  = url.substring(idx + '/upload/'.length);
   return '${before}c_fill,w_$w,h_$h,q_auto,f_auto/$after';
 }
 
-/// Routes image through backend proxy
-String getProxyImageUrl(String originalUrl) {
-  return '${apiBaseUrl}api/Sites/proxy-image?url=${Uri.encodeComponent(originalUrl)}';
-}
+String getProxyImageUrl(String originalUrl) =>
+    '${apiBaseUrl}api/Sites/proxy-image?url=${Uri.encodeComponent(originalUrl)}';
 
 String? getFirstImageUrl(dynamic imageUrls) {
   if (imageUrls is List && imageUrls.isNotEmpty) {
@@ -23,82 +21,76 @@ String? getFirstImageUrl(dynamic imageUrls) {
   return null;
 }
 
+/// ProxyImage — routes through backend proxy, caches to disk.
+///
+/// IMPORTANT: cacheKey is ALWAYS the raw original imageUrl (not the proxy
+/// wrapper, not the thumb transform).  This means a thumbnail loaded on the
+/// list screen and a full-size image on the detail screen share the same cache
+/// entry — so offline the detail page can reuse what was already cached.
 class ProxyImage extends StatelessWidget {
   final String? imageUrl;
-  final double width;
-  final double height;
-  final double borderRadiusValue;
-  final bool thumb;
+  final double  width;
+  final double  height;
+  final double  borderRadiusValue;
+  final bool    thumb;
 
   const ProxyImage({
     super.key,
     required this.imageUrl,
-    this.width = 60,
-    this.height = 60,
+    this.width             = 60,
+    this.height            = 60,
     this.borderRadiusValue = 8,
-    this.thumb = false,
+    this.thumb             = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    if (imageUrl == null || imageUrl!.isEmpty) {
-      return _placeholder();
-    }
+    if (imageUrl == null || imageUrl!.isEmpty) return _blank();
 
-    // ✅ SAFETY FIX FOR INFINITY / NaN
-    final safeWidth =
-    (width.isInfinite || width.isNaN) ? MediaQuery.of(context).size.width : width;
+    final safeW = (width.isInfinite  || width.isNaN)
+        ? MediaQuery.of(context).size.width
+        : width;
+    final safeH = (height.isInfinite || height.isNaN) ? 200.0 : height;
 
-    final safeHeight =
-    (height.isInfinite || height.isNaN) ? 200.0 : height;
-
-    // ✅ Only convert to int AFTER safety check
-    final urlToLoad = thumb
-        ? cloudinaryThumb(
-      imageUrl!,
-      w: safeWidth.toInt(),
-      h: safeHeight.toInt(),
-    )
+    // What we actually fetch from the network (may be a cloudinary thumb)
+    final fetchUrl = thumb
+        ? cloudinaryThumb(imageUrl!, w: safeW.toInt(), h: safeH.toInt())
         : imageUrl!;
+
+    // What we store/look up in the disk cache — always the ORIGINAL url.
+    // This lets list thumbnails be reused by detail pages when offline.
+    final key = imageUrl!;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadiusValue),
-      child: Image.network(
-        getProxyImageUrl(urlToLoad),
-        width: safeWidth,
-        height: safeHeight,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, progress) {
-          if (progress == null) return child;
-          return _placeholder(width: safeWidth, height: safeHeight, loading: true);
-        },
-        errorBuilder: (_, __, ___) =>
-            _placeholder(width: safeWidth, height: safeHeight, broken: true),
+      child: CachedNetworkImage(
+        imageUrl:    getProxyImageUrl(fetchUrl),
+        cacheKey:    key,
+        width:       safeW,
+        height:      safeH,
+        fit:         BoxFit.cover,
+        placeholder: (_, __) => _loading(safeW, safeH),
+        errorWidget: (_, __, ___) => _broken(safeW, safeH),
       ),
     );
   }
 
-  Widget _placeholder({
-    double? width,
-    double? height,
-    bool loading = false,
-    bool broken = false,
-  }) {
-    return Container(
-      width: width ?? this.width,
-      height: height ?? this.height,
-      decoration: BoxDecoration(
-        color: Colors.grey[200],
-        borderRadius: BorderRadius.circular(borderRadiusValue),
-      ),
-      child: Center(
-        child: loading
-            ? const CircularProgressIndicator(strokeWidth: 2)
-            : Icon(
-          broken ? Icons.broken_image : Icons.image,
-          color: Colors.grey,
-        ),
-      ),
-    );
-  }
+  Widget _blank() => Container(
+    width: width, height: height,
+    decoration: BoxDecoration(
+      color: Colors.grey[200],
+      borderRadius: BorderRadius.circular(borderRadiusValue),
+    ),
+    child: const Center(child: Icon(Icons.image, color: Colors.grey)),
+  );
+
+  Widget _loading(double w, double h) => Container(
+    width: w, height: h, color: Colors.grey[200],
+    child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+  );
+
+  Widget _broken(double w, double h) => Container(
+    width: w, height: h, color: Colors.grey[200],
+    child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
+  );
 }
