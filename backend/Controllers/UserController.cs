@@ -45,7 +45,7 @@ namespace backend.Controllers
             return Ok(new { message = "Password changed successfully" });
         }
 
-        // ── GET api/User/current-user ────────────────────────────────────────
+        // GET api/User/current-user
         [Authorize]
         [HttpGet("current-user")]
         public async Task<ActionResult<UserDto>> GetCurrentUser()
@@ -59,7 +59,7 @@ namespace backend.Controllers
             return Ok(MapToDto(user));
         }
 
-        // ── PATCH api/User/update-profile ────────────────────────────────────
+        //PATCH api/User/update-profile 
         [Authorize]
         [HttpPatch("update-profile")]
         public async Task<ActionResult<UserDto>> UpdateProfile([FromForm] UpdateProfileDto dto)
@@ -89,7 +89,7 @@ namespace backend.Controllers
             return Ok(MapToDto(user));
         }
 
-        // ── GET api/User/getUsers  (admin only) ──────────────────────────────
+        //GET api/User/getUsers  (admin only) 
         [Authorize(Roles = "admin")]
         [HttpGet("getUsers")]
         public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
@@ -98,7 +98,7 @@ namespace backend.Controllers
             return Ok(users.Select(MapToDto));
         }
 
-        // ── DELETE api/User/deleteUser/{userId}  (admin only) ────────────────
+        // ── DELETE api/User/deleteUser/{userId}  (admin only)
         [Authorize(Roles = "admin")]
         [HttpDelete("deleteUser/{userId}")]
         public async Task<ActionResult> DeleteUser(int userId)
@@ -117,7 +117,7 @@ namespace backend.Controllers
                 .Select(h => h.Id)
                 .ToList() ?? [];
 
-            // ── Block if tourist or owner has paid/confirmed bookings ─────────
+            //Block if tourist or owner has paid/confirmed bookings 
             var hasBlockingBookings = await _context.Bookings.AnyAsync(b =>
                 (ownedHomestayIds.Contains(b.HomestayId) || b.TouristId == userId)
                 && (b.PaymentStatus == PaymentStatus.Paid
@@ -135,7 +135,7 @@ namespace backend.Controllers
                 });
             }
 
-            // ── Auto-cancel any remaining pending bookings ────────────────────
+            //Auto-cancel any remaining pending bookings
             var pendingBookings = await _context.Bookings
                 .Where(b =>
                     (ownedHomestayIds.Contains(b.HomestayId) || b.TouristId == userId)
@@ -161,7 +161,7 @@ namespace backend.Controllers
             });
         }
 
-        // ── PATCH api/User/deactivate/{userId}  (admin only) ─────────────────
+        //PATCH api/User/deactivate/{userId}  (admin only)
         [Authorize(Roles = "admin")]
         [HttpPatch("deactivate/{userId}")]
         public async Task<ActionResult> DeactivateUser(int userId)
