@@ -20,8 +20,10 @@ namespace backend.Controllers
             if (string.IsNullOrWhiteSpace(dto.Email))
                 return BadRequest(new { message = "Email is required" });
 
+            var normalizedEmail = dto.Email.ToLower().Trim();
+            
             var user = await db.Users
-                .FirstOrDefaultAsync(u => u.Email.Equals(dto.Email.ToLower(), StringComparison.CurrentCultureIgnoreCase));
+                .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail);
 
             if (user == null)
                 return Ok(new { message = "If that email exists, a reset link has been sent." });
@@ -31,7 +33,6 @@ namespace backend.Controllers
                 .ToListAsync();
             db.PasswordResetTokens.RemoveRange(oldTokens);
 
-            // Generate secure 6-digit OTP token
             var token = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
 
             db.PasswordResetTokens.Add(new PasswordResetToken
@@ -45,7 +46,6 @@ namespace backend.Controllers
 
             await db.SaveChangesAsync();
 
-            // Send email
             try
             {
                 await SendResetEmailAsync(user.Email, user.Name, token);
@@ -115,12 +115,13 @@ namespace backend.Controllers
                 Body = $"""
                     <!DOCTYPE html>
                     <html>
-                    <body style="font-family: Arial, sans-serif; background: #FAF7F2; padding: 40px 0;">
+                    <body style="font-family: Arial, sans-serif; background: #F2F2F2; padding: 40px 0;">
                       <div style="max-width: 480px; margin: 0 auto; background: white;
                                   border-radius: 16px; overflow: hidden;
                                   box-shadow: 0 4px 20px rgba(0,0,0,0.08);">
 
-                        <div style="background: linear-gradient(135deg, #8B5E3C, #CD6E4E);
+                        <!-- Header -->
+                        <div style="background: linear-gradient(135deg, #4A4A4A, #6E6E6E);
                                     padding: 32px; text-align: center;">
                           <h1 style="color: white; margin: 0; font-size: 24px;">Lokyatra</h1>
                           <p style="color: rgba(255,255,255,0.8); margin: 6px 0 0;">
@@ -128,8 +129,9 @@ namespace backend.Controllers
                           </p>
                         </div>
 
+                        <!-- Body -->
                         <div style="padding: 36px 32px;">
-                          <p style="color: #2D1B10; font-size: 16px; margin: 0 0 8px;">
+                          <p style="color: #2D2D2D; font-size: 16px; margin: 0 0 8px;">
                             Hi {name},
                           </p>
                           <p style="color: #666; font-size: 14px; margin: 0 0 28px;">
@@ -137,14 +139,15 @@ namespace backend.Controllers
                             Use the code below — it expires in <strong>15 minutes</strong>.
                           </p>
 
-                          <div style="background: #FAF7F2; border: 2px dashed #8B5E3C;
+                          <!-- Reset Code Box -->
+                          <div style="background: #F9F9F9; border: 2px dashed #4A4A4A;
                                       border-radius: 12px; padding: 24px; text-align: center;
                                       margin: 0 0 28px;">
-                            <p style="color: #8B5E3C; font-size: 13px; margin: 0 0 8px;
+                            <p style="color: #4A4A4A; font-size: 13px; margin: 0 0 8px;
                                       letter-spacing: 1px; text-transform: uppercase;">
                               Your reset code
                             </p>
-                            <h2 style="color: #2D1B10; font-size: 42px; margin: 0;
+                            <h2 style="color: #2D2D2D; font-size: 42px; margin: 0;
                                        letter-spacing: 10px; font-weight: 900;">
                               {token}
                             </h2>
@@ -156,6 +159,7 @@ namespace backend.Controllers
                           </p>
                         </div>
 
+                        <!-- Footer -->
                         <div style="background: #F5F5F5; padding: 16px 32px; text-align: center;">
                           <p style="color: #bbb; font-size: 11px; margin: 0;">
                             © {DateTime.UtcNow.Year} Lokyatra · Nepal Homestay Platform
