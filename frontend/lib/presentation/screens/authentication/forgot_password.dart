@@ -13,7 +13,7 @@ class ForgotPassword extends StatefulWidget {
 }
 
 class _ForgotPasswordState extends State<ForgotPassword> {
-  static const _brown = Color(0xFF8B5E3C);
+  static const _brown = Color(0xFF7E695C);
   static const _dark  = Color(0xFF2D1B10);
   static const _cream = Color(0xFFFAF7F2);
 
@@ -37,7 +37,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     setState(() => _loading = true);
 
     try {
-      final res = await _dio.post('api/Auth/forgot-password', data: {
+      final res = await _dio.post(forgetPassword, data: {
         'email': _emailCtrl.text.trim(),
       });
 

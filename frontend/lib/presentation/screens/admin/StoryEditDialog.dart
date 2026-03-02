@@ -23,8 +23,8 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
   late final _culturalController = TextEditingController(text: (widget.story['culturalSignificance'] ?? '').toString());
 
   // Images
-  List<PlatformFile> _newFiles = [];
-  late List<String> _existingImageUrls = _getExistingImageUrls();
+  final List<PlatformFile> _newFiles = [];
+  late final List<String> _existingImageUrls = _getExistingImageUrls();
 
   /// Gets the existing image URLs from story data using a simple loop
   List<String> _getExistingImageUrls() {

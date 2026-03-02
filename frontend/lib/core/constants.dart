@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 
-const String _serverIp = "192.168.10.100";
+const String _serverIp = "192.168.1.66";
 const int _serverPort = 5257;
 
 String getBaseUrl() {
@@ -35,6 +35,8 @@ const String deleteUserEndpoint = "api/User/deleteUser";
 const String sitesBasePath     = "api/Sites";
 const String storiesBasePath   = "api/Stories";
 const String homestaysBasePath = "api/Homestays";
+const String forgetPassword="api/Auth/forgot-password";
+const String resetPassword="api/Auth/reset-password";
 
 const Map<String, String> headers = {
   "Accept": "application/json",

@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/Helpers/SecureStorageService.dart';
 import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 
@@ -12,7 +13,6 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  // Static flag survives hot reloads — once we navigate away we never re-navigate
   static bool _hasNavigated = false;
 
   @override
@@ -27,15 +27,24 @@ class _SplashScreenState extends State<SplashScreen> {
     if (_hasNavigated || !mounted) return;
     _hasNavigated = true;
 
-    final sqlite = SqliteService();
-    await sqlite.database;
+    bool seenOnboarding = false;
 
-    final seenOnboarding = await sqlite.get('has_seen_onboarding');
-    debugPrint('has_seen_onboarding → $seenOnboarding (${seenOnboarding.runtimeType})');
+    if (kIsWeb) {
+      // sqflite does not work on web — use SharedPreferences instead
+      final prefs = await SharedPreferences.getInstance();
+      seenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+    } else {
+      final sqlite = SqliteService();
+      await sqlite.database;
+      final val = await sqlite.get('has_seen_onboarding');
+      seenOnboarding = val != null;
+    }
+
+    debugPrint('has_seen_onboarding → $seenOnboarding');
 
     if (!mounted) return;
 
-    if (seenOnboarding == null) {
+    if (!seenOnboarding) {
       Navigator.pushReplacementNamed(context, '/onboarding');
       return;
     }
@@ -83,11 +92,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: 24),
             const Text(
               "Explore Nepal's \nCultural Heritage",
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black87),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 32),
