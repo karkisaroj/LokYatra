@@ -4,10 +4,12 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 import '../../../data/models/Site.dart';
+import '../../../data/models/Homestay.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayState.dart';
 import '../../state_management/Bloc/sites/sites_bloc.dart';
 import '../../state_management/Bloc/sites/sites_state.dart';
+import '../../widgets/FavouriteButton.dart';
 import 'TouristHomestayDetailPage.dart';
 import 'TouristSitesDetails.dart';
 
@@ -17,112 +19,63 @@ class CategoryResultsPage extends StatelessWidget {
 
   const CategoryResultsPage({super.key, required this.category, this.type = 'All'});
 
-  static const _dark       = Color(0xFF2D1B10);
-  static const _cream      = Color(0xFFFAF7F2);
-  static const _terracotta = Color(0xFFCD6E4E);
+  static const _dark  = Color(0xFF2D1B10);
+  static const _slate = Color(0xFF3D5A80);
+  static const _bg    = Color(0xFFF4F6F9);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _cream,
+      backgroundColor: _bg,
       body: CustomScrollView(
         slivers: [
-          // ── Header
           SliverAppBar(
-            expandedHeight: 120.h,
             pinned: true,
-            backgroundColor: _dark,
-            elevation: 2,
-            leading: IconButton(
-              icon: Icon(Icons.arrow_back, size: 14.sp, color: _dark),
-              onPressed: () => Navigator.pop(context),
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(Colors.white),
-                shape: WidgetStateProperty.all(const CircleBorder()),
-                padding: WidgetStateProperty.all(EdgeInsets.all(4.w)),
-                minimumSize: WidgetStateProperty.all(Size(32.w, 32.w)),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            leading: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                margin: EdgeInsets.all(8.w),
+                decoration: const BoxDecoration(color: Color(0xFFF0F0F0), shape: BoxShape.circle),
+                child: Icon(Icons.arrow_back_ios_new_rounded, size: 16.sp, color: _dark),
               ),
             ),
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Color(0xFF2D1B10),
-                      Color(0xFF555555),
-                    ],
-                  ),
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(category,
+                    style: GoogleFonts.playfairDisplay(
+                        fontSize: 18.sp, fontWeight: FontWeight.bold, color: _dark)),
+                Text(
+                  type == 'Site' ? 'Cultural Sites' : type == 'Stay' ? 'Homestays' : 'Sites & Stays',
+                  style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500]),
                 ),
-                child: SafeArea(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 12.h),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          _categoryIcon(category),
-                          color: Colors.white.withValues(alpha: 0.7),
-                          size: 24.sp,
-                        ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          category,
-                          style: GoogleFonts.playfairDisplay(
-                            color: Colors.white,
-                            fontSize: 22.sp,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                        Text(
-                          type == 'Site'
-                              ? 'Cultural Sites'
-                              : type == 'Stay'
-                              ? 'Homestays'
-                              : 'Sites & Stays',
-                          style: GoogleFonts.dmSans(
-                            color: Colors.white.withValues(alpha: 0.6),
-                            fontSize: 13.sp,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              ],
+            ),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Divider(height: 1, color: Colors.grey.shade200),
             ),
           ),
 
-          // ── Sites
           if (type == 'All' || type == 'Site')
             BlocBuilder<SitesBloc, SitesState>(
               builder: (context, state) {
                 if (state is! SitesLoaded) return const SliverToBoxAdapter(child: SizedBox.shrink());
-                final results = state.sites.where((s) =>
-                (s.category?? '').toString().toLowerCase() == category.toLowerCase()
-                ).toList();
-                if (results.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                final sites = state.sites
+                    .where((s) => (s.category ?? '').toLowerCase() == category.toLowerCase())
+                    .toList();
+                if (sites.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                      if (index == 0) {
-                        return Padding(
-                          padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 10.h),
-                          child: _SubHeader(
-                              icon: Icons.map_outlined, title: 'Cultural Sites', count: results.length),
-                        );
-                      }
-                      final site = results[index - 1];
+                        (context, i) {
+                      if (i == 0) return _ListHeader(label: 'Cultural Sites', count: sites.length, icon: Icons.map_outlined);
+                      final site = sites[i - 1];
                       return Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 14.h),
                         child: _SiteCard(
                           site: site,
                           onTap: () => Navigator.push(context, MaterialPageRoute(
@@ -134,38 +87,29 @@ class CategoryResultsPage extends StatelessWidget {
                         ),
                       );
                     },
-                    childCount: results.length + 1,
+                    childCount: sites.length + 1,
                   ),
                 );
               },
             ),
 
-          // ── Homestays ─────────────────────────────────────────────
           if (type == 'All' || type == 'Stay')
             BlocBuilder<HomestayBloc, HomestayState>(
               builder: (context, state) {
-                if (state is! TouristAllHomestaysLoaded) {
-                  return const SliverToBoxAdapter(child: SizedBox.shrink());
-                }
-                final results = state.homestays.where((h) {
+                if (state is! TouristAllHomestaysLoaded) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                final stays = state.homestays.where((h) {
                   if (!h.isVisible) return false;
                   return (h.category ?? '').toLowerCase() == category.toLowerCase();
                 }).toList();
-                if (results.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                if (stays.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
 
                 return SliverList(
                   delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                      if (index == 0) {
-                        return Padding(
-                          padding: EdgeInsets.fromLTRB(20.w, 20.h, 20.w, 10.h),
-                          child: _SubHeader(
-                              icon: Icons.hotel_outlined, title: 'Homestays', count: results.length),
-                        );
-                      }
-                      final h = results[index - 1];
+                        (context, i) {
+                      if (i == 0) return _ListHeader(label: 'Homestays', count: stays.length, icon: Icons.hotel_outlined);
+                      final h = stays[i - 1];
                       return Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20.w),
+                        padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 14.h),
                         child: _HomestayCard(
                           homestay: h,
                           onTap: () => Navigator.push(context, MaterialPageRoute(
@@ -174,44 +118,38 @@ class CategoryResultsPage extends StatelessWidget {
                         ),
                       );
                     },
-                    childCount: results.length + 1,
+                    childCount: stays.length + 1,
                   ),
                 );
               },
             ),
 
-          // ── Empty state ───────────────────────────────────────────
           SliverToBoxAdapter(
             child: BlocBuilder<SitesBloc, SitesState>(
               builder: (context, sitesState) => BlocBuilder<HomestayBloc, HomestayState>(
                 builder: (context, stayState) {
                   final noSites = sitesState is SitesLoaded &&
                       sitesState.sites.where((s) =>
-                      (s.category ?? '').toString().toLowerCase() == category.toLowerCase()
-                      ).isEmpty;
+                      (s.category ?? '').toLowerCase() == category.toLowerCase()).isEmpty;
                   final noStays = stayState is! TouristAllHomestaysLoaded ||
                       stayState.homestays.where((h) =>
-                      h.isVisible &&
-                          (h.category ?? '').toLowerCase() == category.toLowerCase()
-                      ).isEmpty;
+                      h.isVisible && (h.category ?? '').toLowerCase() == category.toLowerCase()).isEmpty;
 
-                  if (noSites && noStays) {
-                    return Padding(
-                      padding: EdgeInsets.symmetric(vertical: 60.h, horizontal: 40.w),
-                      child: Column(children: [
-                        Icon(Icons.search_off_rounded, size: 56.sp, color: Colors.grey[300]),
-                        SizedBox(height: 16.h),
-                        Text('No results found',
-                            style: GoogleFonts.playfairDisplay(
-                                fontSize: 20.sp, color: Colors.grey[500])),
-                        SizedBox(height: 8.h),
-                        Text('No $category listings available yet.',
-                            textAlign: TextAlign.center,
-                            style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[400])),
-                      ]),
-                    );
-                  }
-                  return const SizedBox.shrink();
+                  if (!noSites || !noStays) return const SizedBox.shrink();
+
+                  return Padding(
+                    padding: EdgeInsets.symmetric(vertical: 80.h, horizontal: 40.w),
+                    child: Column(children: [
+                      Icon(Icons.search_off_rounded, size: 56.sp, color: Colors.grey[300]),
+                      SizedBox(height: 16.h),
+                      Text('Nothing found',
+                          style: GoogleFonts.playfairDisplay(fontSize: 20.sp, color: Colors.grey[500])),
+                      SizedBox(height: 8.h),
+                      Text('No $category listings available yet.',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[400])),
+                    ]),
+                  );
                 },
               ),
             ),
@@ -222,43 +160,38 @@ class CategoryResultsPage extends StatelessWidget {
       ),
     );
   }
-
-  IconData _categoryIcon(String cat) {
-    switch (cat.toLowerCase()) {
-      case 'temple': return Icons.temple_hindu_outlined;
-      case 'palace': return Icons.account_balance_outlined;
-      case 'stupa':  return Icons.landscape_outlined;
-      case 'museum': return Icons.museum_outlined;
-      case 'homestay': return Icons.home_work_outlined;
-      case 'traditional': return Icons.cottage_outlined;
-      default: return Icons.place_outlined;
-    }
-  }
 }
 
-class _SubHeader extends StatelessWidget {
-  final IconData icon;
-  final String title;
+class _ListHeader extends StatelessWidget {
+  final String label;
   final int count;
-  const _SubHeader({required this.icon, required this.title, required this.count});
+  final IconData icon;
+  const _ListHeader({required this.label, required this.count, required this.icon});
 
   @override
-  Widget build(BuildContext context) => Row(children: [
-    Icon(icon, size: 18.sp, color: const Color(0xFF2D1B10)),
-    SizedBox(width: 8.w),
-    Text(title, style: GoogleFonts.playfairDisplay(
-        fontSize: 18.sp, fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
-    SizedBox(width: 8.w),
-    Container(
-      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-      decoration: BoxDecoration(
-        color: const Color(0xFFCD6E4E).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10.r),
-      ),
-      child: Text('$count', style: GoogleFonts.dmSans(
-          fontSize: 12.sp, color: const Color(0xFFCD6E4E), fontWeight: FontWeight.bold)),
-    ),
-  ]);
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 12.h),
+      child: Row(children: [
+        Icon(icon, size: 18.sp, color: const Color(0xFF2D1B10)),
+        SizedBox(width: 8.w),
+        Text(label,
+            style: GoogleFonts.playfairDisplay(
+                fontSize: 18.sp, fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
+        SizedBox(width: 8.w),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+          decoration: BoxDecoration(
+            color: const Color(0xFF3D5A80).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(10.r),
+          ),
+          child: Text('$count',
+              style: GoogleFonts.dmSans(
+                  fontSize: 12.sp, color: const Color(0xFF3D5A80), fontWeight: FontWeight.bold)),
+        ),
+      ]),
+    );
+  }
 }
 
 class _SiteCard extends StatelessWidget {
@@ -266,122 +199,92 @@ class _SiteCard extends StatelessWidget {
   final VoidCallback onTap;
   const _SiteCard({required this.site, required this.onTap});
 
+  static const _dark  = Color(0xFF2D1B10);
+  static const _slate = Color(0xFF3D5A80);
+
   @override
   Widget build(BuildContext context) {
-    final imageUrl  = getFirstImageUrl(site.imageUrls);
-    final name      = (site.name ?? 'Unknown').toString();
-    final district  = (site.district ?? '').toString();
-    final category  = (site.category ?? '').toString();
-    final isUnesco  = site.isUNESCO == true;
-    final feeNpr    = site.entryFeeNPR;
-    final feeSaarc=site.entryFeeSAARC;
+    final image    = site.imageUrls.isNotEmpty ? site.imageUrls.first : '';
+    final name     = site.name     ?? 'Unknown';
+    final district = site.district ?? '';
+    final category = site.category ?? '';
+    final isUnesco = site.isUNESCO == true;
+    final feeNpr   = site.entryFeeNPR;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: EdgeInsets.only(bottom: 16.h),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18.r),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05),
-              blurRadius: 12, offset: const Offset(0, 4))],
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 3))],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Stack(children: [
             ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(18.r)),
-              child: ProxyImage(imageUrl: imageUrl, width: double.infinity,
-                  height: 175.h, borderRadiusValue: 0, thumb: true),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+              child: ProxyImage(imageUrl: image, width: double.infinity, height: 170.h, borderRadiusValue: 0, thumb: true),
             ),
             if (isUnesco)
               Positioned(
-                top: 12.h, left: 12.w,
+                top: 10.h, left: 10.w,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF4A707A),
-                    borderRadius: BorderRadius.circular(20.r),
+                    color: const Color(0xFF2D6A6A),
+                    borderRadius: BorderRadius.circular(6.r),
                   ),
-                  child: Text('UNESCO', style: GoogleFonts.dmSans(
-                      color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.bold)),
+                  child: Text('UNESCO',
+                      style: GoogleFonts.dmSans(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold)),
                 ),
               ),
-            Positioned(
-              top: 12.h, right: 12.w,
-              child: Container(
-                padding: EdgeInsets.all(7.w),
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: Icon(Icons.favorite_border_rounded, size: 17.sp, color: Colors.grey[600]),
+            if (category.isNotEmpty)
+              Positioned(
+                top: 10.h, right: 10.w,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 9.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(6.r),
+                  ),
+                  child: Text(category,
+                      style: GoogleFonts.dmSans(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w600)),
+                ),
               ),
-            ),
           ]),
           Padding(
             padding: EdgeInsets.all(14.w),
-            // ── FIX: Use IntrinsicHeight + constrained right column ──────
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Left: name, district, rating — takes available space
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(name, maxLines: 2, overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.playfairDisplay(
-                            fontSize: 16.sp, fontWeight: FontWeight.bold,
-                            color: const Color(0xFF2D1B10))),
-                    SizedBox(height: 5.h),
-                    if (district.isNotEmpty)
-                      Row(children: [
-                        Icon(Icons.location_on_outlined, size: 13.sp, color: Colors.grey[500]),
-                        SizedBox(width: 3.w),
-                        Flexible(child: Text(district, overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500]))),
-                      ]),
-                    SizedBox(height: 4.h),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(name, maxLines: 2, overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.playfairDisplay(fontSize: 16.sp, fontWeight: FontWeight.bold, color: _dark)),
+                  SizedBox(height: 5.h),
+                  if (district.isNotEmpty)
                     Row(children: [
-                      Icon(Icons.star_rounded, color: Colors.amber[600], size: 14.sp),
+                      Icon(Icons.location_on_outlined, size: 13.sp, color: Colors.grey[500]),
                       SizedBox(width: 3.w),
-                      Text('4.5', style: GoogleFonts.dmSans(fontSize: 12.sp,
-                          fontWeight: FontWeight.w600, color: const Color(0xFF2D1B10))),
+                      Flexible(child: Text(district, overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500]))),
                     ]),
+                  SizedBox(height: 4.h),
+                  Row(children: [
+                    Icon(Icons.star_rounded, color: Colors.amber[600], size: 13.sp),
+                    SizedBox(width: 3.w),
+                    Text('4.5', style: GoogleFonts.dmSans(fontSize: 12.sp, fontWeight: FontWeight.w600, color: _dark)),
                   ]),
-                ),
+                ]),
+              ),
+              if (feeNpr != null) ...[
                 SizedBox(width: 10.w),
-                // Right: category chip + fee — fixed max width to prevent overflow
-                ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: 100.w),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                    if (category.isNotEmpty)
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFCD6E4E).withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Text(category,
-                            maxLines: 1, overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.dmSans(fontSize: 11.sp,
-                                color: const Color(0xFFCD6E4E), fontWeight: FontWeight.w600)),
-                      ),
-                    if (feeNpr != null) ...[
-                      SizedBox(height: 6.h),
-                      Text('Rs. ${feeNpr.toString()}',
-                          maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[600])),
-                      Text('Entry fee',
-                          style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[400])),
-                    ],
-                    if (feeSaarc != null) ...[
-                      SizedBox(height: 6.h),
-                      Text('Rs. ${feeSaarc.toString()}',
-                          maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[600])),
-                      Text('SAARC Entry fee',
-                          style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[400])),
-                    ],
-                  ]),
-                ),
+                Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  Text('Rs. ${feeNpr.toStringAsFixed(0)}',
+                      style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.w700, color: _dark)),
+                  Text('Entry fee',
+                      style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[400])),
+                ]),
               ],
-            ),
+            ]),
           ),
         ]),
       ),
@@ -390,44 +293,37 @@ class _SiteCard extends StatelessWidget {
 }
 
 class _HomestayCard extends StatelessWidget {
-  final dynamic homestay;
+  final Homestay homestay;
   final VoidCallback onTap;
   const _HomestayCard({required this.homestay, required this.onTap});
 
-  static const _terracotta = Color(0xFFCD6E4E);
+  static const _dark  = Color(0xFF2D1B10);
+  static const _slate = Color(0xFF3D5A80);
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = (homestay.imageUrls?.isNotEmpty == true)
-        ? homestay.imageUrls!.first as String? : null;
-    final nearSite = homestay.nearCulturalSite != null
+    final image    = homestay.imageUrls.isNotEmpty ? homestay.imageUrls.first : null;
+    final location = (homestay.nearCulturalSite?.name ?? '').isNotEmpty
         ? 'Near ${homestay.nearCulturalSite!.name}'
-        : (homestay.location ?? '').toString();
+        : homestay.location;
 
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: EdgeInsets.only(bottom: 16.h),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18.r),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05),
-              blurRadius: 12, offset: const Offset(0, 4))],
+          borderRadius: BorderRadius.circular(16.r),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 3))],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Stack(children: [
             ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(18.r)),
-              child: ProxyImage(imageUrl: imageUrl, width: double.infinity,
-                  height: 175.h, borderRadiusValue: 0, thumb: true),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
+              child: ProxyImage(imageUrl: image, width: double.infinity, height: 170.h, borderRadiusValue: 0, thumb: true),
             ),
             Positioned(
-              top: 12.h, right: 12.w,
-              child: Container(
-                padding: EdgeInsets.all(7.w),
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                child: Icon(Icons.favorite_border_rounded, size: 17.sp, color: Colors.grey[600]),
-              ),
+              top: 10.h, right: 10.w,
+              child: FavouriteButton(homestayId: homestay.id),
             ),
           ]),
           Padding(
@@ -435,44 +331,50 @@ class _HomestayCard extends StatelessWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Expanded(
-                  child: Text((homestay.name ?? '').toString(),
-                      maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.playfairDisplay(fontSize: 16.sp,
-                          fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
+                  child: Text(homestay.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: GoogleFonts.playfairDisplay(fontSize: 16.sp, fontWeight: FontWeight.bold, color: _dark)),
                 ),
                 Row(children: [
                   Icon(Icons.star_rounded, color: Colors.amber[600], size: 14.sp),
                   SizedBox(width: 3.w),
-                  Text('4.7', style: GoogleFonts.dmSans(fontSize: 12.sp,
-                      fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
+                  Text('4.7', style: GoogleFonts.dmSans(fontSize: 12.sp, fontWeight: FontWeight.bold, color: _dark)),
                 ]),
               ]),
               SizedBox(height: 5.h),
-              if (nearSite.isNotEmpty)
+              if (location.isNotEmpty)
                 Row(children: [
                   Icon(Icons.location_on_outlined, size: 13.sp, color: Colors.grey[500]),
                   SizedBox(width: 3.w),
-                  Flexible(child: Text(nearSite, overflow: TextOverflow.ellipsis,
+                  Flexible(child: Text(location, overflow: TextOverflow.ellipsis,
                       style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500]))),
                 ]),
-              SizedBox(height: 10.h),
+              SizedBox(height: 12.h),
               Divider(color: Colors.grey.shade100),
               SizedBox(height: 10.h),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('From', style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[400])),
-                  Text('Rs. ${homestay.pricePerNight?.toStringAsFixed(0) ?? "0"}/night',
-                      style: GoogleFonts.dmSans(fontSize: 15.sp,
-                          color: _terracotta, fontWeight: FontWeight.w700)),
+                  Text('${homestay.numberOfRooms} rooms · ${homestay.maxGuests} guests',
+                      style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500])),
+                  SizedBox(height: 3.h),
+                  RichText(text: TextSpan(children: [
+                    TextSpan(
+                      text: 'Rs. ${homestay.pricePerNight.toStringAsFixed(0)}',
+                      style: GoogleFonts.dmSans(fontSize: 16.sp, fontWeight: FontWeight.w800, color: _dark),
+                    ),
+                    TextSpan(
+                      text: ' / night',
+                      style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500]),
+                    ),
+                  ])),
                 ]),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 7.h),
+                  padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 9.h),
                   decoration: BoxDecoration(
-                    color: _terracotta,
+                    color: _dark,
                     borderRadius: BorderRadius.circular(10.r),
                   ),
-                  child: Text('Book Now', style: GoogleFonts.dmSans(
-                      fontSize: 13.sp, color: Colors.white, fontWeight: FontWeight.w600)),
+                  child: Text('Book Now',
+                      style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.white, fontWeight: FontWeight.w600)),
                 ),
               ]),
             ]),

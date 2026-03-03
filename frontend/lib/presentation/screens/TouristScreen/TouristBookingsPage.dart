@@ -7,6 +7,7 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../state_management/Bloc/booking/booking_bloc.dart';
 import '../../state_management/Bloc/booking/booking_event.dart';
 import '../../state_management/Bloc/booking/booking_state.dart';
+import '../../widgets/ReviewDialog.dart';
 import 'KhaltiPaymentPage.dart';
 
 class TouristBookingsPage extends StatefulWidget {
@@ -478,6 +479,37 @@ class _BookingCard extends StatelessWidget {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r)),
                     padding: EdgeInsets.symmetric(vertical: 14.h),
+                  ),
+                ),
+              ),
+            ],
+            // ── Review button for completed bookings ──────────────────────────
+            if (status == 'Completed') ...[
+              SizedBox(height: 14.h),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  icon: Icon(Icons.rate_review_outlined, size: 16.sp, color: _terracotta),
+                  label: Text('Write / Edit Review',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13.sp, fontWeight: FontWeight.w600, color: _terracotta)),
+                  onPressed: () async {
+                    final homestayId = b['homestayId'] as int?;
+                    if (homestayId == null) return;
+                    final changed = await showReviewDialog(
+                      context,
+                      bookingId: id,
+                      homestayId: homestayId,
+                      targetName: homestayName,
+                    );
+                    if (changed && context.mounted) {
+                      context.read<BookingBloc>().add(const LoadMyBookings());
+                    }
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: _terracotta.withValues(alpha: 0.4)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
+                    padding: EdgeInsets.symmetric(vertical: 12.h),
                   ),
                 ),
               ),

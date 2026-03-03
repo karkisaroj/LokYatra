@@ -6,12 +6,16 @@ import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Story.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/Site.dart';
+import '../../state_management/Bloc/review/review_bloc.dart';
+import '../../state_management/Bloc/review/review_event.dart';
+import '../../state_management/Bloc/review/review_state.dart';
 import '../../state_management/Bloc/stories/story_bloc.dart';
 import '../../state_management/Bloc/stories/story_event.dart';
 import '../../state_management/Bloc/stories/story_state.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
 import '../../state_management/Bloc/homestays/HomestayState.dart';
+import '../../widgets/ReviewSection.dart';
 import 'TouristHomestayDetailPage.dart';
 import 'StoryDetailPage.dart';
 
@@ -56,8 +60,8 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (_) => StoryBloc()..add(LoadStories(siteId: site.id))),
-        BlocProvider(create: (_) => HomestayBloc()
-          ..add(TouristLoadHomestaysNearSite(site.name ?? ''))),
+        BlocProvider(create: (_) => HomestayBloc()..add(TouristLoadHomestaysNearSite(site.name ?? ''))),
+        BlocProvider(create: (_) => ReviewBloc()..add(LoadSiteReviews(site.id))),
       ],
       child: Scaffold(
         backgroundColor: _cream,
@@ -363,16 +367,20 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
       case 0: return _TabText(widget.site.shortDescription ?? 'No description available.');
       case 1: return _TabText(widget.site.historicalSignificance ?? 'No historical context available.');
       case 2: return _buildStoriesTab();
-      case 3: return Container(
-        padding: EdgeInsets.all(20.w),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: Colors.grey.shade100)),
-        child: Center(child: Column(children: [
-          Icon(Icons.rate_review_outlined, size: 40.sp, color: Colors.grey[300]),
-          SizedBox(height: 12.h),
-          Text('Reviews coming soon', style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey[400])),
-        ])),
-      );
+      case 3:
+        return BlocBuilder<ReviewBloc, ReviewState>(
+          builder: (context, state) {
+            if (state is ReviewLoading) {
+              return const Center(child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: CircularProgressIndicator(color: _terracotta)));
+            }
+            return ReviewsSection(
+              siteId: widget.site.id,
+              canReviewSite: true,
+            );
+          },
+        );
       default: return const SizedBox.shrink();
     }
   }

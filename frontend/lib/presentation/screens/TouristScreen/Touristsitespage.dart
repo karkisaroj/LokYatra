@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristSitesDetails.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_state.dart';
@@ -16,8 +18,6 @@ class TouristSitesPage extends StatefulWidget {
 
 class _TouristSitesPageState extends State<TouristSitesPage> {
   static const _dark  = Color(0xFF2D1B10);
-  static const _teal  = Color(0xFF2D6A6A);
-  static const _brown = Color(0xFF8B5E3C);
 
   String _search = '';
 
@@ -81,10 +81,18 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                 }
                 if (state is SitesLoaded) {
                   final filtered = state.sites.where((s) {
-                    final name = (s.name?? '').toString().toLowerCase();
+                    final name = (s.name ?? '').toString().toLowerCase();
                     return _search.isEmpty ||
                         name.contains(_search.toLowerCase());
                   }).toList();
+
+                  if (filtered.isEmpty) {
+                    return Center(
+                      child: Text('No sites found',
+                          style: GoogleFonts.dmSans(
+                              color: Colors.grey[500], fontSize: 14.sp)),
+                    );
+                  }
 
                   return ListView.builder(
                     padding: EdgeInsets.symmetric(horizontal: 20.w),
@@ -92,114 +100,142 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                     itemBuilder: (context, i) {
                       final site = filtered[i];
                       final imageUrl = getFirstImageUrl(site.imageUrls);
-                      final name     = (site.name?? '').toString();
+                      final name     = (site.name ?? '').toString();
                       final category = (site.category ?? '').toString();
+                      final district = (site.district ?? '').toString();
                       final isUnesco = category.toLowerCase().contains('unesco') ||
                           site.isUNESCO == true;
 
-                      return Container(
-                        margin: EdgeInsets.only(bottom: 16.h),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(16.r),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.06),
-                                blurRadius: 12,
-                                offset: const Offset(0, 4))
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Stack(
-                              children: [
-                                ClipRRect(
-                                  borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(16.r)),
-                                  child: ProxyImage(
-                                    imageUrl: imageUrl,
-                                    width: double.infinity,
-                                    height: 160.h,
-                                    borderRadiusValue: 0,
-                                    thumb: true,
-                                  ),
-                                ),
-                                Positioned(
-                                  top: 12.h,
-                                  right: 12.w,
-                                  child: Container(
-                                    padding: EdgeInsets.all(8.w),
-                                    decoration: const BoxDecoration(
-                                        color: Colors.white,
-                                        shape: BoxShape.circle),
-                                    child: Icon(Icons.favorite_border_rounded,
-                                        size: 18.sp, color: Colors.grey[600]),
-                                  ),
-                                ),
-                              ],
+                      return GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BlocProvider.value(
+                              value: context.read<HomestayBloc>(),
+                              child: TouristSiteDetailPage(site: site),
                             ),
-                            Padding(
-                              padding: EdgeInsets.all(14.w),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                        ),
+                        child: Container(
+                          margin: EdgeInsets.only(bottom: 16.h),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16.r),
+                            boxShadow: [
+                              BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.06),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4))
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Stack(
                                 children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(name,
-                                            style: GoogleFonts.playfairDisplay(
-                                                fontSize: 16.sp,
-                                                fontWeight: FontWeight.bold)),
-                                        SizedBox(height: 6.h),
-                                        Row(
-                                          children: [
-                                            Icon(Icons.star_rounded,
-                                                color: Colors.amber[600],
-                                                size: 15.sp),
-                                            SizedBox(width: 4.w),
-                                            Text('4.5',
-                                                style: GoogleFonts.dmSans(
-                                                    fontSize: 13.sp,
-                                                    fontWeight: FontWeight.w600)),
-                                          ],
-                                        ),
-                                      ],
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(16.r)),
+                                    child: ProxyImage(
+                                      imageUrl: imageUrl,
+                                      width: double.infinity,
+                                      height: 160.h,
+                                      borderRadiusValue: 0,
+                                      thumb: true,
                                     ),
                                   ),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      if (isUnesco)
-                                        Container(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 10.w, vertical: 4.h),
-                                          decoration: BoxDecoration(
-                                            color: _teal,
-                                            borderRadius: BorderRadius.circular(20.r),
-                                          ),
-                                          child: Text('UNESCO',
-                                              style: GoogleFonts.dmSans(
-                                                  fontSize: 11.sp,
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.w700)),
+                                  if (isUnesco)
+                                    Positioned(
+                                      top: 10.h,
+                                      left: 10.w,
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 8.w, vertical: 4.h),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF2D6A6A),
+                                          borderRadius:
+                                          BorderRadius.circular(6.r),
                                         ),
-                                      SizedBox(height: 6.h),
-                                      Text('Rs. ${site.entryFeeNPR ?? '0'}',
-                                          style: GoogleFonts.dmSans(
-                                              fontSize: 13.sp,
-                                              color: Colors.grey[600])),
-                                      Text('SAARC. ${site.entryFeeSAARC ?? '0'}',
-                                          style: GoogleFonts.dmSans(
-                                              fontSize: 13.sp,
-                                              color: Colors.grey[600])),
-                                    ],
-                                  ),
+                                        child: Text('UNESCO',
+                                            style: GoogleFonts.dmSans(
+                                                fontSize: 10.sp,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w700)),
+                                      ),
+                                    ),
+                                  if (category.isNotEmpty)
+                                    Positioned(
+                                      top: 10.h,
+                                      right: 10.w,
+                                      child: Container(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 8.w, vertical: 4.h),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(alpha: 0.55),
+                                          borderRadius:
+                                          BorderRadius.circular(6.r),
+                                        ),
+                                        child: Text(category,
+                                            style: GoogleFonts.dmSans(
+                                                fontSize: 10.sp,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w600)),
+                                      ),
+                                    ),
                                 ],
                               ),
-                            ),
-                          ],
+                              Padding(
+                                padding: EdgeInsets.all(14.w),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                        children: [
+                                          Text(name,
+                                              style: GoogleFonts.playfairDisplay(
+                                                  fontSize: 16.sp,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: _dark)),
+                                          SizedBox(height: 5.h),
+                                          if (district.isNotEmpty)
+                                            Row(children: [
+                                              Icon(Icons.location_on_outlined,
+                                                  size: 13.sp,
+                                                  color: Colors.grey[500]),
+                                              SizedBox(width: 3.w),
+                                              Text(district,
+                                                  style: GoogleFonts.dmSans(
+                                                      fontSize: 12.sp,
+                                                      color: Colors.grey[600])),
+                                            ]),
+                                        ],
+                                      ),
+                                    ),
+                                    Column(
+                                      crossAxisAlignment:
+                                      CrossAxisAlignment.end,
+                                      children: [
+                                        Text(
+                                            'Rs. ${site.entryFeeNPR ?? '0'}',
+                                            style: GoogleFonts.dmSans(
+                                                fontSize: 13.sp,
+                                                fontWeight: FontWeight.w700,
+                                                color: const Color(0xFFCD6E4E))),
+                                        Text(
+                                            'SAARC Rs. ${site.entryFeeSAARC ?? '0'}',
+                                            style: GoogleFonts.dmSans(
+                                                fontSize: 11.sp,
+                                                color: Colors.grey[500])),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
@@ -214,3 +250,6 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
     );
   }
 }
+
+String getFirstImageUrl(List<String> urls) =>
+    urls.isNotEmpty ? urls.first : '';

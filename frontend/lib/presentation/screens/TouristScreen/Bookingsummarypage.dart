@@ -455,24 +455,26 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
                     borderRadius: BorderRadius.circular(14.r)),
               ),
               child: _loading
-                  ? const CircularProgressIndicator(
-                  color: Colors.white, strokeWidth: 2)
-                  : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Icon(
-                  _khaltiSelected
-                      ? Icons.account_balance_wallet_outlined
-                      : Icons.check_rounded,
-                  size: 18.sp,
-                ),
-                SizedBox(width: 8.w),
-                Text(
-                  _khaltiSelected
-                      ? 'Request Booking (Pay via Khalti)'
-                      : 'Confirm Booking',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 15.sp, fontWeight: FontWeight.w700),
-                ),
-              ]),
+                  ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                  : FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Icon(
+                    _khaltiSelected
+                        ? Icons.account_balance_wallet_outlined
+                        : Icons.check_rounded,
+                    size: 18.sp,
+                  ),
+                  SizedBox(width: 8.w),
+                  Text(
+                    _khaltiSelected
+                        ? 'Request Booking (Pay via Khalti)'
+                        : 'Confirm Booking',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 15.sp, fontWeight: FontWeight.w700),
+                  ),
+                ]),
+              ),
             ),
           ),
 
@@ -558,12 +560,12 @@ class _MealOption extends StatelessWidget {
     padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
     decoration: BoxDecoration(
       color: checked
-          ? const Color(0xFF8B5E3C).withOpacity(0.05)
+          ? const Color(0xFF8B5E3C).withValues(alpha: 0.05)
           : Colors.grey.shade50,
       borderRadius: BorderRadius.circular(10.r),
       border: Border.all(
         color: checked
-            ? const Color(0xFF8B5E3C).withOpacity(0.3)
+            ? const Color(0xFF8B5E3C).withValues(alpha: 0.3)
             : Colors.grey.shade200,
       ),
     ),
