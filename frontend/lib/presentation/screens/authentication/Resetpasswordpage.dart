@@ -47,9 +47,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     setState(() => _loading = true);
 
     try {
-      print('BaseURL: ${_dio.options.baseUrl}');
-      print('Endpoint: $forgetPassword');
-      print('Full URL: ${_dio.options.baseUrl}$forgetPassword');
       final res = await _dio.post(resetPassword, data: {
         'email':       widget.email,
         'token':       _tokenCtrl.text.trim(),

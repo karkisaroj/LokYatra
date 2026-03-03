@@ -22,10 +22,10 @@ class _RegisterState extends State<Register> {
   bool _showPassword = false;
   bool _showConfirmPassword = false;
 
-  static const _brown      = Color(0xFF8B5E3C);
+  static const _brown      = Color(0xFF22150A);
   static const _dark       = Color(0xFF2D1B10);
   static const _cream      = Color(0xFFFAF7F2);
-  static const _terracotta = Color(0xFFCD6E4E);
+  static const grey = Color(0xFF6C6969);
 
   final _nameController     = TextEditingController();
   final _emailController    = TextEditingController();
@@ -167,7 +167,7 @@ class _RegisterState extends State<Register> {
                     fontSize: 44, fontWeight: FontWeight.w800, height: 1.05, letterSpacing: -0.5)),
                 const SizedBox(height: 16),
                 Container(width: 40, height: 4,
-                    decoration: BoxDecoration(color: _terracotta, borderRadius: BorderRadius.circular(2))),
+                    decoration: BoxDecoration(color: grey, borderRadius: BorderRadius.circular(2))),
                 const SizedBox(height: 20),
                 const Text('Explore Nepal\'s heritage, stay with\nlocal families, and earn rewards.',
                     style: TextStyle(color: Colors.white70, fontSize: 16, height: 1.6)),
@@ -257,7 +257,7 @@ class _RegisterState extends State<Register> {
                     const Text('Already have an account? ', style: TextStyle(color: Colors.grey)),
                     GestureDetector(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage())),
-                      child: const Text('Sign In', style: TextStyle(color: _terracotta, fontWeight: FontWeight.bold)),
+                      child: const Text('Sign In', style: TextStyle(color: grey, fontWeight: FontWeight.bold)),
                     ),
                   ])),
                 ])),
@@ -310,7 +310,7 @@ class _RegisterState extends State<Register> {
             Center(child: GestureDetector(
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginPage())),
               child: const Text('Already have an account? Sign In',
-                  style: TextStyle(color: _terracotta, fontWeight: FontWeight.w600)),
+                  style: TextStyle(color: grey, fontWeight: FontWeight.w600)),
             )),
             const SizedBox(height: 32),
           ])),
@@ -408,18 +408,18 @@ class _RegisterState extends State<Register> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
-          color: selected ? _terracotta.withValues(alpha: 0.08) : Colors.grey[100],
+          color: selected ? grey.withValues(alpha: 0.08) : Colors.grey[100],
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: selected ? _terracotta : Colors.grey.shade300, width: selected ? 2 : 1),
+          border: Border.all(color: selected ? grey : Colors.grey.shade300, width: selected ? 2 : 1),
         ),
         child: Row(children: [
-          Icon(icon, color: selected ? _terracotta : Colors.grey, size: 20),
+          Icon(icon, color: selected ? grey : Colors.grey, size: 20),
           const SizedBox(width: 8),
           Expanded(child: Text(label, style: TextStyle(
             fontSize: 13, fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-            color: selected ? _terracotta : Colors.grey[700],
+            color: selected ? grey : Colors.grey[700],
           ))),
-          if (selected) const Icon(Icons.check_circle_rounded, color: _terracotta, size: 16),
+          if (selected) const Icon(Icons.check_circle_rounded, color: grey, size: 16),
         ]),
       ),
     );
@@ -430,7 +430,7 @@ class _RegisterState extends State<Register> {
       child: Checkbox(
         value: _agreeToTerms,
         onChanged: (v) => setState(() => _agreeToTerms = v!),
-        activeColor: _terracotta,
+        activeColor: grey,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
       ),
     ),
@@ -450,7 +450,7 @@ class _RegisterState extends State<Register> {
     child: ElevatedButton(
       onPressed: isLoading ? null : _submit,
       style: ElevatedButton.styleFrom(
-        backgroundColor: _terracotta,
+        backgroundColor: grey,
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

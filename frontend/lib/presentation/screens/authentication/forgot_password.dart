@@ -14,7 +14,7 @@ class ForgotPassword extends StatefulWidget {
 
 class _ForgotPasswordState extends State<ForgotPassword> {
   static const _brown = Color(0xFF7E695C);
-  static const _dark  = Color(0xFF2D1B10);
+  static const _dark  = Color(0xFF686767);
   static const _cream = Color(0xFFFAF7F2);
 
   final _emailCtrl = TextEditingController();
@@ -88,15 +88,14 @@ class _ForgotPasswordState extends State<ForgotPassword> {
             key: _formKey,
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-              SizedBox(height: 40.h),
-
+              SizedBox(height: 5.h),
               Container(
-                width: 60.w, height: 60.h,
+                width: 60.w, height: 70.h,
                 decoration: BoxDecoration(
                   color: _cream,
                   shape: BoxShape.circle,
                 ),
-                child: Icon(Icons.lock_reset_rounded, color: _brown, size: 30.sp),
+                child: Icon(Icons.lock_reset, color: _brown, size: 30.sp),
               ),
 
               SizedBox(height: 24.h),
@@ -176,7 +175,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                 child: ElevatedButton(
                   onPressed: _loading ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _brown,
+                    backgroundColor: _dark,
                     foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
@@ -199,7 +198,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                       style: GoogleFonts.dmSans(
                           fontSize: 14.sp,
                           color: Colors.grey[500],
-                          decoration: TextDecoration.underline)),
+                          decoration: TextDecoration.none)),
                 ),
               ),
             ]),

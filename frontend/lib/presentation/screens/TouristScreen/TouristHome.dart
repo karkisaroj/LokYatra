@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -35,7 +37,7 @@ class TouristHome extends StatefulWidget {
 
 class _TouristHomeState extends State<TouristHome> {
   int _currentIndex = 0;
-  static const _terracotta = Color(0xFFCD6E4E);
+  static const dark = Color(0xFF1E1C1C);
 
   late final BookingBloc _bookingBloc;
 
@@ -67,7 +69,7 @@ class _TouristHomeState extends State<TouristHome> {
     ];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF7F2),
+      backgroundColor: const Color(0xFFFFFFFF),
       body: IndexedStack(index: _currentIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
@@ -81,7 +83,7 @@ class _TouristHomeState extends State<TouristHome> {
           }
         },
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: _terracotta,
+        selectedItemColor: dark,
         unselectedItemColor: Colors.grey[400],
         backgroundColor: Colors.white,
         selectedLabelStyle: GoogleFonts.dmSans(fontSize: 11.sp, fontWeight: FontWeight.bold),
@@ -275,7 +277,7 @@ class _HomeTabState extends State<_HomeTab> {
                       onPressed: () {},
                       child: Text('See All',
                           style: GoogleFonts.dmSans(fontSize: 13.sp,
-                              color: const Color(0xFFCD6E4E), fontWeight: FontWeight.bold)),
+                              color: Colors.black54, fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
@@ -295,7 +297,7 @@ class _HomeTabState extends State<_HomeTab> {
                         padding: EdgeInsets.symmetric(horizontal: 20.w),
                         scrollDirection: Axis.horizontal,
                         itemCount: state.sites.take(5).length,
-                        separatorBuilder: (_, __) => SizedBox(width: 16.w),
+                        separatorBuilder: (_, _) => SizedBox(width: 16.w),
                         itemBuilder: (context, index) {
                           final site = state.sites[index];
                           return _HorizontalSiteCard(
@@ -331,7 +333,7 @@ class _HomeTabState extends State<_HomeTab> {
                     onPressed: () {},
                     child: Text('See All',
                         style: GoogleFonts.dmSans(fontSize: 13.sp,
-                            color: const Color(0xFFCD6E4E), fontWeight: FontWeight.bold)),
+                            color: Colors.black54, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -625,7 +627,7 @@ class _HomestayCard extends StatelessWidget {
                     TextSpan(
                         text: 'Rs. ${homestay.pricePerNight.toStringAsFixed(0)}',
                         style: GoogleFonts.dmSans(fontSize: 18.sp,
-                            color: _terracotta, fontWeight: FontWeight.w800)),
+                            color: Colors.black87, fontWeight: FontWeight.w800)),
                     TextSpan(text: ' / night',
                         style: GoogleFonts.dmSans(
                             fontSize: 12.sp, color: Colors.grey[500])),
