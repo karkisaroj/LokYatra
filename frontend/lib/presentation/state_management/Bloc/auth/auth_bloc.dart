@@ -31,11 +31,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       RegisterButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final response =
-      await _dio.post(registerEndpoint, data: event.user.toJson());
+      final response = await _dio.post(registerEndpoint, data: event.user.toJson());
       if (response.statusCode == 200 || response.statusCode == 201) {
-        final registeredUser =
-        RegisterUser.fromJson(response.data as Map<String, dynamic>);
+        final registeredUser = RegisterUser.fromJson(response.data as Map<String, dynamic>);
         emit(RegisterSuccess(registeredUser));
       } else {
         emit(AuthError('Server error: ${response.statusCode}'));
@@ -51,7 +49,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       LoginButtonClicked event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      //Login
       final loginRes = await _dio.post(
         loginEndpoint,
         data: {'email': event.email, 'password': event.password},
@@ -64,11 +61,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       final accessToken = loginRes.data['accessToken'] as String;
       final refreshToken = loginRes.data['refreshToken'] as String;
-
-      // Save tokens securely
       await SecureStorageService.saveTokens(accessToken, refreshToken);
 
-      //  Fetch profile using fresh token
       try {
         final profileRes = await _dio.get(
           'api/User/current-user',
@@ -77,25 +71,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             'Accept': 'application/json',
           }),
         );
-
         if (profileRes.statusCode == 200) {
           final d = profileRes.data as Map<String, dynamic>;
-          final imageUrl = d['profileImage'] as String? ?? '';
-
-          // Save profile info in SQLite (non-sensitive)
           await SqliteService().put("user_name", d['name'] ?? '');
           await SqliteService().put("user_email", d['email'] ?? '');
           await SqliteService().put("user_phone", d['phoneNumber'] ?? '');
-          await SqliteService().put("user_image", imageUrl);
+          await SqliteService().put("user_image", d['profileImage'] as String? ?? '');
         }
       } catch (e) {
-        // Fallback: decode token to at least get name/email
         final decoded = JwtDecoder.decode(accessToken);
         await SqliteService().put("user_name", decoded['name'] ?? '');
         await SqliteService().put("user_email", event.email);
       }
 
-      // Step 4: Emit success
       final role = JwtDecoder.decode(accessToken)['role'] as String?;
       if (role == 'admin') {
         emit(AdminLoginSuccess(accessToken));
@@ -115,18 +103,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _onLogout(
       LogoutButtonClicked event, Emitter<AuthState> emit) async {
-    emit(AuthLoading());
     try {
       final accessToken = await SecureStorageService.getAccessToken();
       await _dio.post(
         logoutEndpoint,
         options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
       );
-    } catch (_) {
-      // server call failing is fine — clear locally anyway
-    } finally {
+    } catch (_) {}
+    finally {
       await SecureStorageService.deleteTokens();
-      // Clear cached profile info from SQLite
       await SqliteService().clearAllCache();
       emit(LogoutSuccess());
     }
@@ -135,9 +120,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   String _parseDioError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout) return 'Connection timeout';
     if (e.type == DioExceptionType.receiveTimeout) return 'Receive timeout';
-    if (e.type == DioExceptionType.connectionError) {
-      return 'Cannot reach server. Check your network.';
-    }
+    if (e.type == DioExceptionType.connectionError) return 'Cannot reach server. Check your network.';
     if (e.response != null) {
       final data = e.response?.data;
       if (data is String && data.isNotEmpty) return data;

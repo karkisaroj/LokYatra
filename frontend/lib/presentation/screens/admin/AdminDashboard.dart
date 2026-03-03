@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Bookings.dart';
-import 'package:lokyatra_frontend/presentation/screens/admin/Adminhomestaydetailpage.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Payments.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/AdminAddQuizzes.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/Reports.dart';
@@ -11,7 +11,8 @@ import 'package:lokyatra_frontend/presentation/screens/admin/Stories.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/UserManagementPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/dashboard.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/AdminPageWrapper.dart';
-
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_state.dart';
 import 'Adminhomestays.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -26,17 +27,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
   final ValueNotifier<String?> subtitleNotifier = ValueNotifier(null);
 
   late final List<PageConfig> _pages = [
-    PageConfig(
-      icon: const Icon(Icons.dashboard),
-      title: "Dashboard",
-      subtitle: "Welcome to LokYatra Admin Panel",
-      child: const Dashboard(),
-    ),
-    PageConfig(
-      icon: const Icon(Icons.people),
-      title: "Users",
-      child: UserManagementPage(subtitleNotifier: subtitleNotifier),
-    ),
+    PageConfig(icon: const Icon(Icons.dashboard), title: "Dashboard", subtitle: "Welcome to LokYatra Admin Panel", child: const Dashboard()),
+    PageConfig(icon: const Icon(Icons.people), title: "Users", child: UserManagementPage(subtitleNotifier: subtitleNotifier)),
     PageConfig(icon: const Icon(Icons.map_outlined), title: "Sites", child: const AdminSites()),
     PageConfig(icon: const Icon(Icons.menu_book_outlined), title: "Stories", child: const Stories()),
     PageConfig(icon: const Icon(Icons.house), title: "Homestays", child: Homestays(subtitleNotifier: subtitleNotifier)),
@@ -50,18 +42,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   void _onItemTapped(int index) {
     subtitleNotifier.value = null;
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
 
   @override
   Widget build(BuildContext context) {
-    return AdminPageWrapper(
-      selectedIndex: _selectedIndex,
-      onItemTapped: _onItemTapped,
-      pages: _pages,
-      subtitleNotifier: subtitleNotifier,
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is LogoutSuccess) {
+          Navigator.of(context, rootNavigator: true)
+              .pushNamedAndRemoveUntil('/login', (route) => false);
+        }
+      },
+      child: AdminPageWrapper(
+        selectedIndex: _selectedIndex,
+        onItemTapped: _onItemTapped,
+        pages: _pages,
+        subtitleNotifier: subtitleNotifier,
+      ),
     );
   }
 }

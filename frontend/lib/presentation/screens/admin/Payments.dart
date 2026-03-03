@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../state_management/Bloc/Booking/booking_bloc.dart';
 import '../../state_management/Bloc/Booking/booking_event.dart';
@@ -15,11 +14,10 @@ class Payments extends StatefulWidget {
 class _PaymentsState extends State<Payments> {
   static const _slate      = Color(0xFF3D5A80);
   static const _terracotta = Color(0xFFCD6E4E);
-  static const _dark       = Color(0xFF1A2B3C);
   static const _bg         = Color(0xFFF4F6F9);
 
-  String _filter = 'All';   // All | Khalti | Cash
-  String _status = 'All';   // All | Completed | Pending | ...
+  String _filter = 'All'; // All | Khalti | Cash
+  String _status = 'All'; // All | Completed | Pending | ...
   String _search = '';
 
   Map<String, dynamic> _inner(Map<String, dynamic> b) =>
@@ -56,13 +54,15 @@ class _PaymentsState extends State<Payments> {
 
   List<Map<String, dynamic>> _filtered(List<Map<String, dynamic>> all) {
     return all.where((b) {
-      final pay    = _payMethod(b).toLowerCase();
-      final stat   = _status_(b);
+      final pay     = _payMethod(b).toLowerCase();
+      final stat    = _status_(b);
       final tourist = (b['touristName'] ?? '').toString().toLowerCase();
       final home    = (b['homestayName'] ?? '').toString().toLowerCase();
       final matchPay    = _filter == 'All' || pay.contains(_filter.toLowerCase());
       final matchStatus = _status == 'All' || stat == _status;
-      final matchSearch = _search.isEmpty || tourist.contains(_search.toLowerCase()) || home.contains(_search.toLowerCase());
+      final matchSearch = _search.isEmpty ||
+          tourist.contains(_search.toLowerCase()) ||
+          home.contains(_search.toLowerCase());
       return matchPay && matchStatus && matchSearch;
     }).toList()
       ..sort((a, b) => _createdAt(b).compareTo(_createdAt(a)));
@@ -76,78 +76,83 @@ class _PaymentsState extends State<Payments> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final all = state is AllBookingsLoaded ? state.bookings : <Map<String, dynamic>>[];
+        final all      = state is AllBookingsLoaded ? state.bookings : <Map<String, dynamic>>[];
         final filtered = _filtered(all);
 
-        // Aggregate stats
-        final totalRevenue  = all.fold<double>(0, (s, b) => s + _price(b));
-        final khaltiPay     = all.where((b) => _payMethod(b).toLowerCase() == 'khalti');
-        final cashPay       = all.where((b) => _payMethod(b).toLowerCase() != 'khalti');
-        final khaltiRev     = khaltiPay.fold<double>(0, (s, b) => s + _price(b));
-        final cashRev       = cashPay.fold<double>(0, (s, b) => s + _price(b));
-        final completedRev  = all.where((b) => _status_(b) == 'Completed').fold<double>(0, (s, b) => s + _price(b));
+        final totalRevenue = all.fold<double>(0, (s, b) => s + _price(b));
+        final khaltiRev    = all.where((b) => _payMethod(b).toLowerCase() == 'khalti')
+            .fold<double>(0, (s, b) => s + _price(b));
+        final cashRev      = all.where((b) => _payMethod(b).toLowerCase() != 'khalti')
+            .fold<double>(0, (s, b) => s + _price(b));
+        final completedRev = all.where((b) => _status_(b) == 'Completed')
+            .fold<double>(0, (s, b) => s + _price(b));
 
         return Container(
           color: _bg,
           child: Column(children: [
-            // ── Stats strip ──────────────────────────────────────────────────
+            // ── Stats strip ────────────────────────────────────────────────
             Container(
               color: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: LayoutBuilder(builder: (_, cons) {
-                // Use Wrap so stats never overflow on narrow screens
+                final half = (cons.maxWidth - 10) / 2;
                 return Wrap(
-                  spacing: 10.w,
-                  runSpacing: 10.h,
+                  spacing: 10,
+                  runSpacing: 10,
                   children: [
-                    _StatTile(label: 'Total Revenue',  value: _fmt(totalRevenue), color: _slate,      icon: Icons.payments_rounded,          width: cons.maxWidth),
-                    _StatTile(label: 'Khalti',         value: _fmt(khaltiRev),    color: Colors.purple[600]!, icon: Icons.credit_card_rounded, width: (cons.maxWidth - 10.w) / 2),
-                    _StatTile(label: 'Cash / Arrival', value: _fmt(cashRev),      color: Colors.green[700]!,  icon: Icons.money_rounded,       width: (cons.maxWidth - 10.w) / 2),
-                    _StatTile(label: 'Collected',      value: _fmt(completedRev), color: _terracotta,  icon: Icons.check_circle_rounded,       width: (cons.maxWidth - 10.w) / 2),
-                    _StatTile(label: 'Transactions',   value: '${all.length}',    color: Colors.teal[700]!,   icon: Icons.receipt_long_rounded, width: (cons.maxWidth - 10.w) / 2),
+                    _StatTile(label: 'Total Revenue',  value: _fmt(totalRevenue), color: _slate,             icon: Icons.payments_rounded,        width: cons.maxWidth),
+                    _StatTile(label: 'Khalti',         value: _fmt(khaltiRev),    color: Colors.purple[600]!, icon: Icons.credit_card_rounded,     width: half),
+                    _StatTile(label: 'Cash / Arrival', value: _fmt(cashRev),      color: Colors.green[700]!,  icon: Icons.money_rounded,           width: half),
+                    _StatTile(label: 'Collected',      value: _fmt(completedRev), color: _terracotta,         icon: Icons.check_circle_rounded,    width: half),
+                    _StatTile(label: 'Transactions',   value: '${all.length}',    color: Colors.teal[700]!,   icon: Icons.receipt_long_rounded,    width: half),
                   ],
                 );
               }),
             ),
 
-            // ── Filters ──────────────────────────────────────────────────────
+            // ── Filters ────────────────────────────────────────────────────
             Container(
               color: Colors.white,
-              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 10.h),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
               child: Column(children: [
                 // Search
                 SizedBox(
-                  height: 42.h,
+                  height: 42,
                   child: TextField(
                     onChanged: (v) => setState(() => _search = v),
-                    style: GoogleFonts.dmSans(fontSize: 13.sp),
+                    style: GoogleFonts.dmSans(fontSize: 13),
                     decoration: InputDecoration(
                       hintText: 'Search tourist or homestay…',
-                      hintStyle: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[400]),
-                      prefixIcon: Icon(Icons.search, size: 18.sp, color: Colors.grey[400]),
+                      hintStyle: GoogleFonts.dmSans(fontSize: 12, color: Colors.grey[400]),
+                      prefixIcon: Icon(Icons.search, size: 18, color: Colors.grey[400]),
                       filled: true, fillColor: _bg,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(10.r), borderSide: BorderSide.none),
-                      contentPadding: EdgeInsets.symmetric(vertical: 10.h),
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10),
                     ),
                   ),
                 ),
-                SizedBox(height: 8.h),
-                // Payment method chips
+                const SizedBox(height: 8),
+                // Chips
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(children: [
-                    _FilterChip(label: 'All Methods', selected: _filter == 'All', onTap: () => setState(() => _filter = 'All')),
-                    SizedBox(width: 8.w),
+                    _FilterChip(label: 'All Methods', selected: _filter == 'All',    onTap: () => setState(() => _filter = 'All')),
+                    const SizedBox(width: 8),
                     _FilterChip(label: 'Khalti', selected: _filter == 'Khalti', color: Colors.purple[600]!, onTap: () => setState(() => _filter = 'Khalti')),
-                    SizedBox(width: 8.w),
-                    _FilterChip(label: 'Cash', selected: _filter == 'Cash', color: Colors.green[700]!, onTap: () => setState(() => _filter = 'Cash')),
-                    SizedBox(width: 16.w),
-                    Container(width: 1, height: 22.h, color: Colors.grey.shade200),
-                    SizedBox(width: 16.w),
+                    const SizedBox(width: 8),
+                    _FilterChip(label: 'Cash',   selected: _filter == 'Cash',   color: Colors.green[700]!,  onTap: () => setState(() => _filter = 'Cash')),
+                    const SizedBox(width: 16),
+                    Container(width: 1, height: 22, color: Colors.grey.shade200),
+                    const SizedBox(width: 16),
                     ...['All','Pending','Confirmed','Completed','Cancelled'].map((s) => Padding(
-                      padding: EdgeInsets.only(right: 8.w),
-                      child: _FilterChip(label: s == 'All' ? 'All Status' : s, selected: _status == s,
-                          color: _statusColor(s), onTap: () => setState(() => _status = s)),
+                      padding: const EdgeInsets.only(right: 8),
+                      child: _FilterChip(
+                        label: s == 'All' ? 'All Status' : s,
+                        selected: _status == s,
+                        color: _statusColor(s),
+                        onTap: () => setState(() => _status = s),
+                      ),
                     )),
                   ]),
                 ),
@@ -155,33 +160,33 @@ class _PaymentsState extends State<Payments> {
             ),
             const Divider(height: 1),
 
-            // Result count
+            // Result count + refresh
             Padding(
-              padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 4.h),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Row(children: [
                 Text('${filtered.length} payment${filtered.length != 1 ? 's' : ''}',
-                    style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
+                    style: GoogleFonts.dmSans(fontSize: 12, color: Colors.grey[500])),
                 const Spacer(),
                 GestureDetector(
                   onTap: () => context.read<BookingBloc>().add(const LoadAllBookings()),
-                  child: Icon(Icons.refresh_rounded, size: 18.sp, color: _slate),
+                  child: Icon(Icons.refresh_rounded, size: 18, color: _slate),
                 ),
               ]),
             ),
 
-            // ── List ─────────────────────────────────────────────────────────
+            // ── List ───────────────────────────────────────────────────────
             Expanded(
               child: filtered.isEmpty
                   ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(Icons.receipt_long_outlined, size: 52.sp, color: Colors.grey[300]),
-                SizedBox(height: 12.h),
-                Text('No payments found', style: GoogleFonts.dmSans(fontSize: 15.sp, color: Colors.grey[500])),
+                Icon(Icons.receipt_long_outlined, size: 52, color: Colors.grey[300]),
+                const SizedBox(height: 12),
+                Text('No payments found', style: GoogleFonts.dmSans(fontSize: 15, color: Colors.grey[500])),
               ]))
                   : RefreshIndicator(
                 color: _slate,
                 onRefresh: () async => context.read<BookingBloc>().add(const LoadAllBookings()),
                 child: ListView.builder(
-                  padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 32.h),
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
                   itemCount: filtered.length,
                   itemBuilder: (_, i) => _PaymentCard(
                     data: filtered[i],
@@ -212,11 +217,11 @@ class _PaymentsState extends State<Payments> {
     'Confirmed' => Colors.green[600]!,
     'Completed' => Colors.blue[600]!,
     'Cancelled' => Colors.grey[600]!,
-    _           => const Color(0xFF3D5A80),
+    _           => _slate,
   };
 }
 
-// ── Payment card ──────────────────────────────────────────────────────────────
+// ── Payment card — plain pixel values ─────────────────────────────────────────
 
 class _PaymentCard extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -228,7 +233,6 @@ class _PaymentCard extends StatelessWidget {
   final String Function(Map<String, dynamic>) createdAt;
 
   static const _dark  = Color(0xFF1A2B3C);
-  static const _slate = Color(0xFF3D5A80);
 
   const _PaymentCard({
     required this.data, required this.inner, required this.payMethod,
@@ -247,7 +251,7 @@ class _PaymentCard extends StatelessWidget {
     final homestay = (data['homestayName'] ?? 'Homestay').toString();
     final id       = b['id'] ?? 0;
 
-    final isKhalti = method.toLowerCase() == 'khalti';
+    final isKhalti    = method.toLowerCase() == 'khalti';
     final methodColor = isKhalti ? Colors.purple[600]! : Colors.green[700]!;
 
     final (statusColor, statusBg) = switch (stat) {
@@ -259,66 +263,66 @@ class _PaymentCard extends StatelessWidget {
     };
 
     return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
+      margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Colors.grey.shade100),
         boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 3))],
       ),
       child: Padding(
-        padding: EdgeInsets.all(14.w),
+        padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           // Header row
           Row(children: [
-            Icon(Icons.tag_rounded, size: 12.sp, color: Colors.grey[400]),
-            SizedBox(width: 3.w),
-            Text('#$id', style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500])),
-            SizedBox(width: 8.w),
-            Text(date, style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[400])),
+            Icon(Icons.tag_rounded, size: 12, color: Colors.grey[400]),
+            const SizedBox(width: 3),
+            Text('#$id',  style: GoogleFonts.dmSans(fontSize: 11, color: Colors.grey[500])),
+            const SizedBox(width: 8),
+            Text(date,    style: GoogleFonts.dmSans(fontSize: 11, color: Colors.grey[400])),
             const Spacer(),
             Container(
-              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-              decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(20.r)),
-              child: Text(stat, style: GoogleFonts.dmSans(fontSize: 10.sp, fontWeight: FontWeight.bold, color: statusColor)),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: statusBg, borderRadius: BorderRadius.circular(20)),
+              child: Text(stat, style: GoogleFonts.dmSans(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor)),
             ),
           ]),
-          SizedBox(height: 10.h),
+          const SizedBox(height: 10),
           Divider(height: 1, color: Colors.grey.shade100),
-          SizedBox(height: 10.h),
+          const SizedBox(height: 10),
 
-          // Tourist + Homestay row
+          // Tourist + Homestay
           Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(tourist, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.w700, color: _dark)),
-              SizedBox(height: 2.h),
+                  style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w700, color: _dark)),
+              const SizedBox(height: 2),
               Row(children: [
-                Icon(Icons.home_outlined, size: 12.sp, color: Colors.grey[400]),
-                SizedBox(width: 3.w),
+                Icon(Icons.home_outlined, size: 12, color: Colors.grey[400]),
+                const SizedBox(width: 3),
                 Expanded(child: Text(homestay, maxLines: 1, overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500]))),
+                    style: GoogleFonts.dmSans(fontSize: 11, color: Colors.grey[500]))),
               ]),
             ])),
-            SizedBox(width: 12.w),
+            const SizedBox(width: 12),
             Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              // Payment method badge
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: methodColor.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20.r),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: methodColor.withValues(alpha: 0.25)),
                 ),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  Icon(isKhalti ? Icons.credit_card_rounded : Icons.money_rounded, size: 12.sp, color: methodColor),
-                  SizedBox(width: 4.w),
-                  Text(isKhalti ? 'Khalti' : 'Cash', style: GoogleFonts.dmSans(fontSize: 11.sp, fontWeight: FontWeight.bold, color: methodColor)),
+                  Icon(isKhalti ? Icons.credit_card_rounded : Icons.money_rounded, size: 12, color: methodColor),
+                  const SizedBox(width: 4),
+                  Text(isKhalti ? 'Khalti' : 'Cash',
+                      style: GoogleFonts.dmSans(fontSize: 11, fontWeight: FontWeight.bold, color: methodColor)),
                 ]),
               ),
-              SizedBox(height: 5.h),
+              const SizedBox(height: 5),
               Text('Rs. ${amt.toStringAsFixed(0)}',
-                  style: GoogleFonts.dmSans(fontSize: 16.sp, fontWeight: FontWeight.w800, color: const Color(0xFFCD6E4E))),
+                  style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.w800, color: const Color(0xFFCD6E4E))),
             ]),
           ]),
         ]),
@@ -327,7 +331,7 @@ class _PaymentCard extends StatelessWidget {
   }
 }
 
-// ── Stat tile ─────────────────────────────────────────────────────────────────
+// ── Stat tile — plain pixel values ────────────────────────────────────────────
 
 class _StatTile extends StatelessWidget {
   final String label, value;
@@ -340,29 +344,32 @@ class _StatTile extends StatelessWidget {
   Widget build(BuildContext context) => SizedBox(
     width: width,
     child: Container(
-      padding: EdgeInsets.all(12.w),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(12.r),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Row(children: [
-        Container(padding: EdgeInsets.all(7.w),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8.r)),
-            child: Icon(icon, size: 18.sp, color: color)),
-        SizedBox(width: 10.w),
+        Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
+          child: Icon(icon, size: 18, color: color),
+        ),
+        const SizedBox(width: 10),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(label, style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis),
-          SizedBox(height: 2.h),
+          Text(label, style: GoogleFonts.dmSans(fontSize: 10, color: Colors.grey[500]),
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 2),
           FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft,
-              child: Text(value, style: GoogleFonts.dmSans(fontSize: 15.sp, fontWeight: FontWeight.w800, color: const Color(0xFF1A2B3C)))),
+              child: Text(value, style: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.w800, color: const Color(0xFF1A2B3C)))),
         ])),
       ]),
     ),
   );
 }
 
-// ── Filter chip ───────────────────────────────────────────────────────────────
+// ── Filter chip — plain pixel values ──────────────────────────────────────────
 
 class _FilterChip extends StatelessWidget {
   final String label;
@@ -376,14 +383,17 @@ class _FilterChip extends StatelessWidget {
     onTap: onTap,
     child: AnimatedContainer(
       duration: const Duration(milliseconds: 180),
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
         color: selected ? color : Colors.grey.shade100,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: selected ? color : Colors.grey.shade300),
       ),
-      child: Text(label, style: GoogleFonts.dmSans(fontSize: 11.sp, fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-          color: selected ? Colors.white : Colors.grey[600])),
+      child: Text(label, style: GoogleFonts.dmSans(
+        fontSize: 11,
+        fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+        color: selected ? Colors.white : Colors.grey[600],
+      )),
     ),
   );
 }

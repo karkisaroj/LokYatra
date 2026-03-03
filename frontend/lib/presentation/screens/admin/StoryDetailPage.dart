@@ -1,103 +1,155 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/image_proxy.dart';
 
-class StoryDetailPage extends StatelessWidget {
+class StoryDetailPage extends StatefulWidget {
   final Map<String, dynamic> story;
   const StoryDetailPage({super.key, required this.story});
 
+  @override
+  State<StoryDetailPage> createState() => _StoryDetailPageState();
+}
+
+class _StoryDetailPageState extends State<StoryDetailPage> {
+  int _currentPage = 0;
+  final PageController _pageCtrl = PageController();
+
   static const _dark   = Color(0xFF1A1A2E);
   static const _accent = Color(0xFF3D5A80);
-  static const _bg     = Color(0xFFF8F8F8);
 
-  String _formatDate(dynamic date) {
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
+
+  String _fmt(dynamic date) {
     if (date == null) return '—';
     final str = date.toString().trim();
     if (str.isEmpty) return '—';
-    DateTime? parsed = DateTime.tryParse(str);
-    if (parsed == null) {
-      final cleaned = str.replaceAll(RegExp(r'\+\d{2}:\d{2}$'), '').replaceAll(RegExp(r'Z$'), '').trim();
-      parsed = DateTime.tryParse(cleaned);
+    DateTime? d = DateTime.tryParse(str);
+    if (d == null) {
+      d = DateTime.tryParse(str.replaceAll(RegExp(r'[Z\+].*$'), '').trim());
     }
-    if (parsed == null) return str;
-    final local = parsed.toLocal();
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    final h = local.hour.toString().padLeft(2, '0');
-    final m = local.minute.toString().padLeft(2, '0');
-    return '${local.day} ${months[local.month - 1]} ${local.year}  $h:$m';
+    if (d == null) return str;
+    final l = d.toLocal();
+    const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return '${l.day} ${m[l.month-1]} ${l.year}  ${l.hour.toString().padLeft(2,'0')}:${l.minute.toString().padLeft(2,'0')}';
   }
 
   @override
   Widget build(BuildContext context) {
     final isWeb = kIsWeb || MediaQuery.of(context).size.width > 800;
-    final List<String> imageUrls = [];
-    if (story['imageUrls'] is List) {
-      for (final u in story['imageUrls']) {
-        if (u != null && u.toString().isNotEmpty) imageUrls.add(u.toString());
+    final List<String> imgs = [];
+    if (widget.story['imageUrls'] is List) {
+      for (final u in widget.story['imageUrls']) {
+        if (u != null && u.toString().isNotEmpty) imgs.add(u.toString());
       }
     }
-
-    final title      = (story['title']?? '').toString();
-    final storyType  = (story['storyType']?? '').toString();
-    final readTime   = story['estimatedReadTimeMinutes']  ?? 0;
-    final content    = (story['fullContent']?? '').toString();
-    final historical = (story['historicalContext'] ?? '').toString();
-    final cultural   = (story['culturalSignificance']?? '').toString();
-    final createdAt  = _formatDate(story['createdAt']?? story['CreatedAt']);
-    final updatedAt  = _formatDate(story['updatedAt']?? story['UpdatedAt']);
+    final title     = (widget.story['title'] ?? '').toString();
+    final type      = (widget.story['storyType'] ?? '').toString();
+    final readTime  = widget.story['estimatedReadTimeMinutes'] ?? 0;
+    final content   = (widget.story['fullContent'] ?? '').toString();
+    final hist      = (widget.story['historicalContext'] ?? '').toString();
+    final cultural  = (widget.story['culturalSignificance'] ?? '').toString();
+    final created   = _fmt(widget.story['createdAt'] ?? widget.story['CreatedAt']);
+    final updated   = _fmt(widget.story['updatedAt'] ?? widget.story['UpdatedAt']);
 
     return Scaffold(
-      backgroundColor: isWeb ? const Color(0xFFF4F6F9) : _bg,
+      backgroundColor: isWeb ? const Color(0xFFF4F6F9) : const Color(0xFFF8F8F8),
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, size: isWeb ? 18 : 18.sp, color: _dark),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: _dark),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Story Detail', style: GoogleFonts.playfairDisplay(fontSize: isWeb ? 18 : 18.sp, fontWeight: FontWeight.bold, color: _dark)),
-        bottom: PreferredSize(preferredSize: const Size.fromHeight(1), child: Divider(height: 1, color: Colors.grey.shade200)),
+        title: Text('Story Detail',
+            style: GoogleFonts.playfairDisplay(fontSize: 18, fontWeight: FontWeight.bold, color: _dark)),
+        bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Divider(height: 1, color: Colors.grey.shade200)),
       ),
-      body: isWeb ? _webLayout(context, imageUrls, title, storyType, readTime, content, historical, cultural, createdAt, updatedAt)
-          : _mobileLayout(imageUrls, title, storyType, readTime, content, historical, cultural, createdAt, updatedAt),
+      body: isWeb
+          ? _web(imgs, title, type, readTime, content, hist, cultural, created, updated)
+          : _mobile(imgs, title, type, readTime, content, hist, cultural, created, updated),
     );
   }
 
-  Widget _webLayout(BuildContext context, List<String> imageUrls, String title, String storyType, dynamic readTime, String content, String historical, String cultural, String createdAt, String updatedAt) {
+  Widget _web(List<String> imgs, String title, String type, dynamic readTime,
+      String content, String hist, String cultural, String created, String updated) {
     return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
       SizedBox(
-        width: 560,
+        width: 480,
         child: Container(
           color: _dark,
           child: Column(children: [
-            if (imageUrls.isNotEmpty)
-              Expanded(child: PageView.builder(
-                itemCount: imageUrls.length,
-                itemBuilder: (_, i) => ProxyImage(imageUrl: imageUrls[i], width: double.infinity, height: double.infinity, borderRadiusValue: 0),
-              ))
-            else
-              Expanded(child: Container(color: const Color(0xFF2A2A42), child: Center(child: Icon(Icons.menu_book_outlined, size: 14, color: Colors.white24)))),
+            Expanded(
+              child: imgs.isEmpty
+                  ? Container(color: const Color(0xFF2A2A42),
+                  child: const Center(child: Icon(Icons.menu_book_outlined, size: 64, color: Colors.white24)))
+                  : Stack(fit: StackFit.expand, children: [
+                PageView.builder(
+                  controller: _pageCtrl,
+                  itemCount: imgs.length,
+                  physics: const BouncingScrollPhysics(),
+                  onPageChanged: (i) => setState(() => _currentPage = i),
+                  itemBuilder: (_, i) => CachedNetworkImage(
+                    imageUrl: getProxyImageUrl(imgs[i]),
+                    cacheKey: 'full_${imgs[i]}',
+                    fit: BoxFit.contain,
+                    filterQuality: FilterQuality.high,
+                    color: const Color(0xFF2A2A42),
+                    colorBlendMode: BlendMode.dstOver,
+                    placeholder: (_, __) => Container(color: const Color(0xFF2A2A42),
+                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white24))),
+                    errorWidget: (_, __, ___) => Container(color: const Color(0xFF2A2A42),
+                        child: const Center(child: Icon(Icons.broken_image, color: Colors.white24, size: 40))),
+                  ),
+                ),
+                if (imgs.length > 1) ...[
+                  Positioned(left: 8, top: 0, bottom: 0, child: Center(child: _Arr(
+                    icon: Icons.chevron_left_rounded,
+                    onTap: _currentPage > 0 ? () => _pageCtrl.previousPage(
+                        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut) : null,
+                  ))),
+                  Positioned(right: 8, top: 0, bottom: 0, child: Center(child: _Arr(
+                    icon: Icons.chevron_right_rounded,
+                    onTap: _currentPage < imgs.length - 1 ? () => _pageCtrl.nextPage(
+                        duration: const Duration(milliseconds: 300), curve: Curves.easeInOut) : null,
+                  ))),
+                  Positioned(top: 12, right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
+                      child: Text('${_currentPage + 1}/${imgs.length}',
+                          style: GoogleFonts.dmSans(color: Colors.white, fontSize: 11)),
+                    ),
+                  ),
+                ],
+              ]),
+            ),
             Padding(
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(20),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                if (storyType.isNotEmpty) _Pill(icon: Icons.auto_stories_outlined, label: storyType, color: _accent),
+                if (type.isNotEmpty) _Pill(icon: Icons.auto_stories_outlined, label: type, color: _accent),
                 const SizedBox(height: 12),
-                Text(title, style: GoogleFonts.playfairDisplay(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.white, height: 1.15)),
-                const SizedBox(height: 12),
+                Text(title, style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white, height: 1.2)),
+                const SizedBox(height: 10),
                 Row(children: [
-                  Icon(Icons.timer_outlined, size: 14, color: Colors.white54),
+                  const Icon(Icons.timer_outlined, size: 14, color: Colors.white54),
                   const SizedBox(width: 5),
                   Text('$readTime min read', style: GoogleFonts.dmSans(fontSize: 13, color: Colors.white54)),
                 ]),
                 const SizedBox(height: 10),
                 const Divider(color: Colors.white12),
                 const SizedBox(height: 10),
-                _WebMetaRow(label: 'Created', value: createdAt),
-                const SizedBox(height: 8),
-                _WebMetaRow(label: 'Updated', value: updatedAt),
-                const SizedBox(height: 24),
+                _MRow(label: 'Created', value: created),
+                const SizedBox(height: 6),
+                _MRow(label: 'Updated', value: updated),
+                const SizedBox(height: 16),
               ]),
             ),
           ]),
@@ -107,144 +159,187 @@ class StoryDetailPage extends StatelessWidget {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(40),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            _WebSection(icon: Icons.menu_book_outlined, title: 'Full Story', child: Text(content,
-                style: GoogleFonts.dmSans(fontSize: 15, height: 1.75, color: Colors.grey[700]))),
-            if (historical.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              _WebSection(icon: Icons.history_edu_outlined, title: 'Historical Context', child: Text(historical,
-                  style: GoogleFonts.dmSans(fontSize: 14, height: 1.65, color: Colors.grey[700]))),
+            _Sec(icon: Icons.menu_book_outlined, title: 'Full Story',
+                child: Text(content, style: GoogleFonts.dmSans(fontSize: 15, height: 1.75, color: Colors.grey[700]))),
+            if (hist.isNotEmpty) ...[
+              const SizedBox(height: 28),
+              _Sec(icon: Icons.history_edu_outlined, title: 'Historical Context',
+                  child: Text(hist, style: GoogleFonts.dmSans(fontSize: 14, height: 1.65, color: Colors.grey[700]))),
             ],
             if (cultural.isNotEmpty) ...[
-              const SizedBox(height: 24),
-              _WebSection(icon: Icons.language_outlined, title: 'Cultural Significance', child: Text(cultural,
-                  style: GoogleFonts.dmSans(fontSize: 14, height: 1.65, color: Colors.grey[700]))),
+              const SizedBox(height: 28),
+              _Sec(icon: Icons.language_outlined, title: 'Cultural Significance',
+                  child: Text(cultural, style: GoogleFonts.dmSans(fontSize: 14, height: 1.65, color: Colors.grey[700]))),
             ],
-            if (imageUrls.length > 1) ...[
-              const SizedBox(height: 24),
-              _WebSection(icon: Icons.photo_library_outlined, title: 'Gallery',
+            if (imgs.length > 1) ...[
+              const SizedBox(height: 28),
+              _Sec(icon: Icons.photo_library_outlined, title: 'Gallery',
                 child: SizedBox(height: 100, child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  itemCount: imageUrls.length,
+                  itemCount: imgs.length,
                   separatorBuilder: (_, __) => const SizedBox(width: 8),
-                  itemBuilder: (_, i) => ClipRRect(borderRadius: BorderRadius.circular(8),
-                      child: ProxyImage(imageUrl: imageUrls[i], width: 150, height: 100, borderRadiusValue: 0, thumb: true)),
+                  itemBuilder: (_, i) => GestureDetector(
+                    onTap: () {
+                      _pageCtrl.animateToPage(i, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                      setState(() => _currentPage = i);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: _currentPage == i ? _accent : Colors.transparent, width: 2.5),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(6),
+                        child: CachedNetworkImage(
+                          imageUrl: getProxyImageUrl(cloudinaryThumb(imgs[i], w: 300, h: 200)),
+                          cacheKey: 'thumb_${imgs[i]}',
+                          width: 150, height: 100,
+                          fit: BoxFit.cover, filterQuality: FilterQuality.medium,
+                        ),
+                      ),
+                    ),
+                  ),
                 )),
               ),
             ],
+            const SizedBox(height: 40),
           ]),
         ),
       ),
     ]);
   }
 
-  Widget _mobileLayout(List<String> imageUrls, String title, String storyType, dynamic readTime, String content, String historical, String cultural, String createdAt, String updatedAt) {
+  Widget _mobile(List<String> imgs, String title, String type, dynamic readTime,
+      String content, String hist, String cultural, String created, String updated) {
     return ListView(
-      padding: EdgeInsets.all(16.w),
+      padding: const EdgeInsets.all(16),
       children: [
-        if (imageUrls.isNotEmpty)
-          ClipRRect(borderRadius: BorderRadius.circular(14.r),
-              child: ProxyImage(imageUrl: imageUrls.first, width: double.infinity, height: 220.h, borderRadiusValue: 0)),
-        SizedBox(height: 16.h),
+        if (imgs.isNotEmpty)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: CachedNetworkImage(
+              imageUrl: getProxyImageUrl(imgs.first),
+              cacheKey: 'full_${imgs.first}',
+              width: double.infinity, height: 220,
+              fit: BoxFit.contain,
+              filterQuality: FilterQuality.high,
+              color: Colors.grey[200],
+              colorBlendMode: BlendMode.dstOver,
+              placeholder: (_, __) => Container(height: 220, color: Colors.grey[200],
+                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
+              errorWidget: (_, __, ___) => Container(height: 220, color: Colors.grey[200],
+                  child: const Icon(Icons.broken_image, color: Colors.grey)),
+            ),
+          ),
+        const SizedBox(height: 16),
         Container(
-          width: double.infinity,
-          padding: EdgeInsets.all(16.w),
-          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14.r), border: Border.all(color: Colors.grey.shade200)),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.grey.shade200)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(title, style: GoogleFonts.playfairDisplay(fontSize: 22.sp, fontWeight: FontWeight.bold, color: _dark)),
-            SizedBox(height: 10.h),
-            Wrap(spacing: 8.w, runSpacing: 6.h, children: [
-              if (storyType.isNotEmpty) _Pill(icon: Icons.auto_stories_outlined, label: storyType, color: _accent),
+            Text(title, style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.bold, color: _dark)),
+            const SizedBox(height: 10),
+            Wrap(spacing: 8, runSpacing: 6, children: [
+              if (type.isNotEmpty) _Pill(icon: Icons.auto_stories_outlined, label: type, color: _accent),
               _Pill(icon: Icons.timer_outlined, label: '$readTime min read', color: Colors.grey[600]!),
             ]),
-            SizedBox(height: 14.h),
+            const SizedBox(height: 14),
             Divider(color: Colors.grey.shade100),
-            SizedBox(height: 10.h),
-            Row(children: [
-              Expanded(child: _MetaRow(icon: Icons.calendar_today_outlined, label: 'Created', value: createdAt)),
-              SizedBox(width: 12.w),
-              Expanded(child: _MetaRow(icon: Icons.edit_calendar_outlined, label: 'Updated', value: updatedAt)),
-            ]),
+            const SizedBox(height: 10),
+            _MRow(label: 'Created', value: created),
+            const SizedBox(height: 4),
+            _MRow(label: 'Updated', value: updated),
           ]),
         ),
-        SizedBox(height: 12.h),
-        _MobileSection(icon: Icons.menu_book_outlined, title: 'Full Story',
-            child: Text(content, style: GoogleFonts.dmSans(fontSize: 14.sp, height: 1.7, color: Colors.grey[800]))),
-        if (historical.isNotEmpty) ...[
-          SizedBox(height: 12.h),
-          _MobileSection(icon: Icons.history_edu_outlined, title: 'Historical Context',
-              child: Text(historical, style: GoogleFonts.dmSans(fontSize: 13.sp, height: 1.6, color: Colors.grey[700]))),
+        const SizedBox(height: 12),
+        _MSec(icon: Icons.menu_book_outlined, title: 'Full Story',
+            child: Text(content, style: GoogleFonts.dmSans(fontSize: 14, height: 1.7, color: Colors.grey[800]))),
+        if (hist.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          _MSec(icon: Icons.history_edu_outlined, title: 'Historical Context',
+              child: Text(hist, style: GoogleFonts.dmSans(fontSize: 13, height: 1.6, color: Colors.grey[700]))),
         ],
         if (cultural.isNotEmpty) ...[
-          SizedBox(height: 12.h),
-          _MobileSection(icon: Icons.language_outlined, title: 'Cultural Significance',
-              child: Text(cultural, style: GoogleFonts.dmSans(fontSize: 13.sp, height: 1.6, color: Colors.grey[700]))),
+          const SizedBox(height: 12),
+          _MSec(icon: Icons.language_outlined, title: 'Cultural Significance',
+              child: Text(cultural, style: GoogleFonts.dmSans(fontSize: 13, height: 1.6, color: Colors.grey[700]))),
         ],
-        if (imageUrls.length > 1) ...[
-          SizedBox(height: 12.h),
-          _MobileSection(icon: Icons.photo_library_outlined, title: 'Gallery',
-            child: SizedBox(height: 100.h, child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: imageUrls.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemBuilder: (_, i) => ClipRRect(borderRadius: BorderRadius.circular(8),
-                  child: ProxyImage(imageUrl: imageUrls[i], width: 150.w, height: 100.h, borderRadiusValue: 0, thumb: true)),
-            )),
-          ),
-        ],
-        SizedBox(height: 32.h),
+        const SizedBox(height: 32),
       ],
     );
   }
 }
 
-class _WebSection extends StatelessWidget {
+class _Arr extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+  const _Arr({required this.icon, this.onTap});
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: AnimatedOpacity(
+      opacity: onTap != null ? 1.0 : 0.25,
+      duration: const Duration(milliseconds: 200),
+      child: Container(
+        width: 34, height: 34,
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.45), shape: BoxShape.circle),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
+    ),
+  );
+}
+
+class _Sec extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget child;
-  const _WebSection({required this.icon, required this.title, required this.child});
+  const _Sec({required this.icon, required this.title, required this.child});
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Row(children: [
-      Container(padding: const EdgeInsets.all(6), decoration: BoxDecoration(color: const Color(0xFF3D5A80).withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
+      Container(padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(color: const Color(0xFF3D5A80).withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
           child: Icon(icon, size: 16, color: const Color(0xFF3D5A80))),
       const SizedBox(width: 10),
       Text(title, style: GoogleFonts.dmSans(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
       const SizedBox(width: 12),
       Expanded(child: Divider(color: Colors.grey.shade300)),
     ]),
-    const SizedBox(height: 16),
+    const SizedBox(height: 14),
     child,
   ]);
 }
 
-class _MobileSection extends StatelessWidget {
+class _MSec extends StatelessWidget {
   final IconData icon;
   final String title;
   final Widget child;
-  const _MobileSection({required this.icon, required this.title, required this.child});
+  const _MSec({required this.icon, required this.title, required this.child});
   @override
   Widget build(BuildContext context) => Container(
-    width: double.infinity,
-    padding: EdgeInsets.all(16.w),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14.r), border: Border.all(color: Colors.grey.shade200)),
+    width: double.infinity, padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade200)),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
-        Container(padding: EdgeInsets.all(6.w), decoration: BoxDecoration(color: const Color(0xFF3D5A80).withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6.r)),
-            child: Icon(icon, size: 16.sp, color: const Color(0xFF3D5A80))),
-        SizedBox(width: 8.w),
-        Text(title, style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
-        SizedBox(width: 8.w),
+        Container(padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(color: const Color(0xFF3D5A80).withValues(alpha: 0.08), borderRadius: BorderRadius.circular(6)),
+            child: Icon(icon, size: 16, color: const Color(0xFF3D5A80))),
+        const SizedBox(width: 8),
+        Text(title, style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF1A1A2E))),
+        const SizedBox(width: 8),
         Expanded(child: Divider(color: Colors.grey.shade200)),
       ]),
-      SizedBox(height: 12.h),
+      const SizedBox(height: 12),
       child,
     ]),
   );
 }
 
-class _WebMetaRow extends StatelessWidget {
+class _MRow extends StatelessWidget {
   final String label, value;
-  const _WebMetaRow({required this.label, required this.value});
+  const _MRow({required this.label, required this.value});
   @override
   Widget build(BuildContext context) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Text('$label: ', style: GoogleFonts.dmSans(fontSize: 11, color: Colors.white38, fontWeight: FontWeight.w600)),
@@ -259,27 +354,13 @@ class _Pill extends StatelessWidget {
   const _Pill({required this.icon, required this.label, required this.color});
   @override
   Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
-    decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10.r), border: Border.all(color: color.withValues(alpha: 0.2))),
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+    decoration: BoxDecoration(color: color.withValues(alpha: 0.08), borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.2))),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 13.sp, color: color),
-      SizedBox(width: 5.w),
-      Text(label, style: GoogleFonts.dmSans(fontSize: 12.sp, fontWeight: FontWeight.w600, color: color)),
+      Icon(icon, size: 13, color: color),
+      const SizedBox(width: 5),
+      Text(label, style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w600, color: color)),
     ]),
   );
-}
-
-class _MetaRow extends StatelessWidget {
-  final IconData icon;
-  final String label, value;
-  const _MetaRow({required this.icon, required this.label, required this.value});
-  @override
-  Widget build(BuildContext context) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Icon(icon, size: 13.sp, color: Colors.grey[400]),
-    SizedBox(width: 5.w),
-    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[400])),
-      Text(value, style: GoogleFonts.dmSans(fontSize: 12.sp, fontWeight: FontWeight.w600, color: Colors.grey[700])),
-    ])),
-  ]);
 }

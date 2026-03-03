@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -70,22 +71,16 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
   }
 
   void _showConfirm({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String body,
-    required String confirmLabel,
-    required Color confirmColor,
+    required IconData icon, required Color iconColor,
+    required String title, required String body,
+    required String confirmLabel, required Color confirmColor,
     required VoidCallback onConfirm,
   }) {
-    showDialog(
-      context: context,
-      builder: (_) => _Dialog(
-        icon: icon, iconColor: iconColor, title: title,
-        body: body, confirmLabel: confirmLabel,
-        confirmColor: confirmColor, onConfirm: onConfirm,
-      ),
-    );
+    showDialog(context: context, builder: (_) => _Dialog(
+      icon: icon, iconColor: iconColor, title: title,
+      body: body, confirmLabel: confirmLabel,
+      confirmColor: confirmColor, onConfirm: onConfirm,
+    ));
   }
 
   @override
@@ -93,8 +88,6 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
     final isWide = MediaQuery.of(context).size.width > 700;
     return isWide ? _wide() : _narrow();
   }
-
-  // ── Mobile ──────────────────────────────────────────────────────────────────
 
   Widget _narrow() {
     return Scaffold(
@@ -106,14 +99,12 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
           backgroundColor: _dark,
           leading: _BackBtn(),
           actions: _mobileActions(),
-          flexibleSpace: FlexibleSpaceBar(background: _hero(height: 260.h)),
+          flexibleSpace: FlexibleSpaceBar(background: _mobileHero()),
         ),
         SliverToBoxAdapter(child: _mobileBody()),
       ]),
     );
   }
-
-  // ── Web ─────────────────────────────────────────────────────────────────────
 
   Widget _wide() {
     final h = widget.homestay;
@@ -131,87 +122,131 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
           child: Divider(height: 1, color: Colors.grey.shade200),
         ),
       ),
-      body: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Left panel — fixed 360px, never stretches
-        SizedBox(width: 360, child: _hero(isWide: true)),
-        // Right panel — capped content width
-        Expanded(
-          child: SingleChildScrollView(
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 700),
-                child: _webBody(),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final imageWidth = constraints.maxWidth * 0.48;
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              SizedBox(
+                width: imageWidth,
+                child: _wideHero(),
               ),
-            ),
-          ),
-        ),
-      ]),
-    );
-  }
-
-  // ── Hero images ─────────────────────────────────────────────────────────────
-
-  Widget _hero({double? height, bool isWide = false}) {
-    final h = widget.homestay;
-    if (h.imageUrls.isEmpty) {
-      return Container(
-        height: height,
-        color: Colors.grey[300],
-        child: Icon(Icons.home_outlined, size: 48, color: Colors.grey[400]),
-      );
-    }
-
-    return SizedBox(
-      height: isWide ? double.infinity : height,
-      child: Stack(children: [
-        PageView.builder(
-          controller: _pageCtrl,
-          itemCount: h.imageUrls.length,
-          onPageChanged: (i) => setState(() => _imageIndex = i),
-          itemBuilder: (_, i) => ProxyImage(
-            imageUrl: h.imageUrls[i],
-            width: double.infinity,
-            height: isWide ? double.infinity : 350,
-            borderRadiusValue: 0,
-          ),
-        ),
-        if (!_isVisible)
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withValues(alpha: 0.45),
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 700),
+                      child: _webBody(),
+                    ),
                   ),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.pause_circle_rounded, color: Colors.white, size: 16),
-                    const SizedBox(width: 6),
-                    Text('Hidden from tourists',
-                        style: GoogleFonts.dmSans(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
-                  ]),
                 ),
               ),
-            ),
-          ),
-        if (h.imageUrls.length > 1)
-          Positioned(
-            bottom: 10, right: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
-              child: Text('${_imageIndex + 1} / ${h.imageUrls.length}',
-                  style: GoogleFonts.dmSans(color: Colors.white, fontSize: 11)),
-            ),
-          ),
-      ]),
+            ],
+          );
+        },
+      ),
     );
   }
 
-  // ── Web app bar actions — fixed pixel values ────────────────────────────────
+  Widget _mobileHero() {
+    final h = widget.homestay;
+    if (h.imageUrls.isEmpty) {
+      return Container(color: Colors.grey[300],
+          child: Icon(Icons.home_outlined, size: 48, color: Colors.grey[400]));
+    }
+    return Stack(fit: StackFit.expand, children: [
+      PageView.builder(
+        controller: _pageCtrl,
+        itemCount: h.imageUrls.length,
+        onPageChanged: (i) => setState(() => _imageIndex = i),
+        itemBuilder: (_, i) => CachedNetworkImage(
+          imageUrl: getProxyImageUrl(h.imageUrls[i]),
+          cacheKey: 'full_${h.imageUrls[i]}',
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.high,
+          placeholder: (_, __) => Container(color: Colors.grey[200],
+              child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
+          errorWidget: (_, __, ___) => Container(color: Colors.grey[200],
+              child: const Icon(Icons.broken_image, color: Colors.grey)),
+        ),
+      ),
+      if (!_isVisible) _pausedOverlay(),
+      if (h.imageUrls.length > 1) _counter(h.imageUrls.length),
+    ]);
+  }
+
+  Widget _wideHero() {
+    final h = widget.homestay;
+    if (h.imageUrls.isEmpty) {
+      return Container(color: Colors.grey[300],
+          child: Icon(Icons.home_outlined, size: 48, color: Colors.grey[400]));
+    }
+    return Stack(fit: StackFit.expand, children: [
+      PageView.builder(
+        controller: _pageCtrl,
+        itemCount: h.imageUrls.length,
+        physics: const BouncingScrollPhysics(),
+        onPageChanged: (i) => setState(() => _imageIndex = i),
+        itemBuilder: (_, i) => CachedNetworkImage(
+          imageUrl: getProxyImageUrl(h.imageUrls[i]),
+          cacheKey: 'full_${h.imageUrls[i]}',
+          fit: BoxFit.cover,
+          filterQuality: FilterQuality.high,
+          placeholder: (_, __) => Container(color: Colors.grey[200],
+              child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
+          errorWidget: (_, __, ___) => Container(color: Colors.grey[200],
+              child: const Icon(Icons.broken_image, color: Colors.grey)),
+        ),
+      ),
+      if (!_isVisible) _pausedOverlay(),
+      if (h.imageUrls.length > 1) ...[
+        _counter(h.imageUrls.length),
+        Positioned(left: 8, top: 0, bottom: 0, child: Center(child: _Arrow(
+          icon: Icons.chevron_left_rounded,
+          onTap: _imageIndex > 0 ? () => _pageCtrl.previousPage(
+              duration: const Duration(milliseconds: 300), curve: Curves.easeInOut) : null,
+        ))),
+        Positioned(right: 8, top: 0, bottom: 0, child: Center(child: _Arrow(
+          icon: Icons.chevron_right_rounded,
+          onTap: _imageIndex < h.imageUrls.length - 1 ? () => _pageCtrl.nextPage(
+              duration: const Duration(milliseconds: 300), curve: Curves.easeInOut) : null,
+        ))),
+      ],
+    ]);
+  }
+
+  Widget _pausedOverlay() => Positioned.fill(
+    child: Container(
+      color: Colors.black.withValues(alpha: 0.45),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.4)),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.pause_circle_rounded, color: Colors.white, size: 16),
+            const SizedBox(width: 6),
+            Text('Hidden from tourists',
+                style: GoogleFonts.dmSans(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12)),
+          ]),
+        ),
+      ),
+    ),
+  );
+
+  Widget _counter(int total) => Positioned(
+    bottom: 10, right: 12,
+    child: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(20)),
+      child: Text('${_imageIndex + 1} / $total',
+          style: GoogleFonts.dmSans(color: Colors.white, fontSize: 11)),
+    ),
+  );
 
   List<Widget> _webActions() => [
     GestureDetector(
@@ -244,8 +279,6 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
     ),
   ];
 
-  // ── Mobile app bar actions — keeps screenutil ───────────────────────────────
-
   List<Widget> _mobileActions() => [
     GestureDetector(
       onTap: _onToggle,
@@ -277,18 +310,14 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
     ),
   ];
 
-  // ── Web body — fixed pixel values throughout ────────────────────────────────
-
   Widget _webBody() {
     final h = widget.homestay;
     return Padding(
       padding: const EdgeInsets.all(32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(
-            child: Text(h.name,
-                style: GoogleFonts.playfairDisplay(fontSize: 26, fontWeight: FontWeight.bold, color: _dark)),
-          ),
+          Expanded(child: Text(h.name,
+              style: GoogleFonts.playfairDisplay(fontSize: 26, fontWeight: FontWeight.bold, color: _dark))),
           if (h.category != null && h.category!.isNotEmpty) ...[
             const SizedBox(width: 12),
             Container(
@@ -323,11 +352,11 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
         Row(children: [
           Expanded(child: _StatCard(label: 'Price/Night', value: 'Rs. ${h.pricePerNight.toStringAsFixed(0)}', icon: Icons.payments_outlined)),
           const SizedBox(width: 10),
-          Expanded(child: _StatCard(label: 'Rooms',       value: '${h.numberOfRooms}',  icon: Icons.bed_outlined)),
+          Expanded(child: _StatCard(label: 'Rooms', value: '${h.numberOfRooms}', icon: Icons.bed_outlined)),
           const SizedBox(width: 10),
-          Expanded(child: _StatCard(label: 'Guests',      value: '${h.maxGuests}',       icon: Icons.people_outline)),
+          Expanded(child: _StatCard(label: 'Guests', value: '${h.maxGuests}', icon: Icons.people_outline)),
           const SizedBox(width: 10),
-          Expanded(child: _StatCard(label: 'Baths',       value: '${h.bathrooms}',       icon: Icons.bathtub_outlined)),
+          Expanded(child: _StatCard(label: 'Baths', value: '${h.bathrooms}', icon: Icons.bathtub_outlined)),
         ]),
         const SizedBox(height: 24),
         const Divider(),
@@ -383,6 +412,32 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
             )).toList(),
           )),
         ],
+        if (h.imageUrls.length > 1) ...[
+          const SizedBox(height: 18),
+          _Section(title: 'All Photos (${h.imageUrls.length})',
+            child: SizedBox(
+              height: 80,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: h.imageUrls.length,
+                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                itemBuilder: (_, i) => GestureDetector(
+                  onTap: () => _pageCtrl.animateToPage(i,
+                      duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: getProxyImageUrl(cloudinaryThumb(h.imageUrls[i], w: 180, h: 180)),
+                      cacheKey: 'thumb_${h.imageUrls[i]}',
+                      width: 110, height: 80,
+                      fit: BoxFit.cover, filterQuality: FilterQuality.medium,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
         const SizedBox(height: 18),
         const Divider(),
         const SizedBox(height: 10),
@@ -395,18 +450,14 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
     );
   }
 
-  // ── Mobile body — keeps screenutil ─────────────────────────────────────────
-
   Widget _mobileBody() {
     final h = widget.homestay;
     return Padding(
       padding: EdgeInsets.all(18.w),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(
-            child: Text(h.name,
-                style: GoogleFonts.playfairDisplay(fontSize: 22.sp, fontWeight: FontWeight.bold, color: _dark)),
-          ),
+          Expanded(child: Text(h.name,
+              style: GoogleFonts.playfairDisplay(fontSize: 22.sp, fontWeight: FontWeight.bold, color: _dark))),
           if (h.category != null && h.category!.isNotEmpty) ...[
             SizedBox(width: 8.w),
             Container(
@@ -441,11 +492,11 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
         Row(children: [
           Expanded(child: _StatCard(label: 'Price/Night', value: 'Rs. ${h.pricePerNight.toStringAsFixed(0)}', icon: Icons.payments_outlined)),
           const SizedBox(width: 8),
-          Expanded(child: _StatCard(label: 'Rooms',  value: '${h.numberOfRooms}', icon: Icons.bed_outlined)),
+          Expanded(child: _StatCard(label: 'Rooms', value: '${h.numberOfRooms}', icon: Icons.bed_outlined)),
           const SizedBox(width: 8),
-          Expanded(child: _StatCard(label: 'Guests', value: '${h.maxGuests}',     icon: Icons.people_outline)),
+          Expanded(child: _StatCard(label: 'Guests', value: '${h.maxGuests}', icon: Icons.people_outline)),
           const SizedBox(width: 8),
-          Expanded(child: _StatCard(label: 'Baths',  value: '${h.bathrooms}',     icon: Icons.bathtub_outlined)),
+          Expanded(child: _StatCard(label: 'Baths', value: '${h.bathrooms}', icon: Icons.bathtub_outlined)),
         ]),
         SizedBox(height: 18.h),
         const Divider(),
@@ -501,7 +552,7 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
             )).toList(),
           )),
         ],
-        if (!widget.homestay.imageUrls.isEmpty && widget.homestay.imageUrls.length > 1) ...[
+        if (h.imageUrls.length > 1) ...[
           SizedBox(height: 16.h),
           _Section(title: 'All Photos (${h.imageUrls.length})',
             child: SizedBox(
@@ -515,8 +566,12 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
                       duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
-                    child: ProxyImage(imageUrl: h.imageUrls[i], width: 110.w, height: 80.h,
-                        borderRadiusValue: 0, thumb: true),
+                    child: CachedNetworkImage(
+                      imageUrl: getProxyImageUrl(cloudinaryThumb(h.imageUrls[i], w: 180, h: 180)),
+                      cacheKey: 'thumb_${h.imageUrls[i]}',
+                      width: 110.w, height: 80.h,
+                      fit: BoxFit.cover, filterQuality: FilterQuality.medium,
+                    ),
                   ),
                 ),
               ),
@@ -545,32 +600,44 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
   }
 }
 
-// ── Back button ───────────────────────────────────────────────────────────────
-
-class _BackBtn extends StatelessWidget {
-  final bool dark;
-  const _BackBtn({this.dark = false});
-
+class _Arrow extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+  const _Arrow({required this.icon, this.onTap});
   @override
   Widget build(BuildContext context) => GestureDetector(
-    onTap: () => Navigator.pop(context),
-    child: Container(
-      margin: EdgeInsets.all(8.w),
-      decoration: BoxDecoration(color: dark ? Colors.transparent : Colors.white, shape: BoxShape.circle),
-      child: Icon(Icons.arrow_back_ios_new_rounded, size: 18.sp, color: const Color(0xFF1A1A2E)),
+    onTap: onTap,
+    child: AnimatedOpacity(
+      opacity: onTap != null ? 1.0 : 0.3,
+      duration: const Duration(milliseconds: 200),
+      child: Container(
+        width: 34, height: 34,
+        decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
+        child: Icon(icon, color: Colors.white, size: 20),
+      ),
     ),
   );
 }
 
-// ── Stat card ─────────────────────────────────────────────────────────────────
+class _BackBtn extends StatelessWidget {
+  final bool dark;
+  const _BackBtn({this.dark = false});
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: () => Navigator.pop(context),
+    child: Container(
+      margin: const EdgeInsets.all(8),
+      decoration: BoxDecoration(color: dark ? Colors.transparent : Colors.white, shape: BoxShape.circle),
+      child: const Icon(Icons.arrow_back_ios_new_rounded, size: 18, color: Color(0xFF1A1A2E)),
+    ),
+  );
+}
 
 class _StatCard extends StatelessWidget {
   final String label, value;
   final IconData icon;
   static const _slate = Color(0xFF3D5A80);
-
   const _StatCard({required this.label, required this.value, required this.icon});
-
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
@@ -590,23 +657,17 @@ class _StatCard extends StatelessWidget {
   );
 }
 
-//  Section
-
 class _Section extends StatelessWidget {
   final String title;
   final Widget child;
   const _Section({required this.title, required this.child});
-
   @override
   Widget build(BuildContext context) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-    Text(title,
-        style: GoogleFonts.playfairDisplay(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A2E))),
+    Text(title, style: GoogleFonts.playfairDisplay(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A2E))),
     const SizedBox(height: 8),
     child,
   ]);
 }
-
-//  Confirm dialog
 
 class _Dialog extends StatelessWidget {
   final IconData icon;
@@ -614,13 +675,8 @@ class _Dialog extends StatelessWidget {
   final String title, body, confirmLabel;
   final Color confirmColor;
   final VoidCallback onConfirm;
-
-  const _Dialog({
-    required this.icon, required this.iconColor, required this.title,
-    required this.body, required this.confirmLabel,
-    required this.confirmColor, required this.onConfirm,
-  });
-
+  const _Dialog({required this.icon, required this.iconColor, required this.title,
+    required this.body, required this.confirmLabel, required this.confirmColor, required this.onConfirm});
   @override
   Widget build(BuildContext context) => AlertDialog(
     backgroundColor: Colors.white,
