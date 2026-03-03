@@ -19,7 +19,6 @@ namespace backend.Controllers
             return int.TryParse(claim, out int userId) ? userId : null;
         }
 
-
         [AllowAnonymous]
         [HttpGet]
         public async Task<IActionResult> GetAllHomestays()
@@ -28,15 +27,31 @@ namespace backend.Controllers
 
             var query = db.Homestays
                 .Include(h => h.NearCulturalSite)
-                .Include(h => h.Owner)          
+                .Include(h => h.Owner)
                 .AsQueryable();
 
             if (!isAdmin)
                 query = query.Where(h => h.IsVisible == true);
 
-            var list = await query
-                .OrderByDescending(h => h.CreatedAt)
-                .Select(h => new
+            var homestays = await query.OrderByDescending(h => h.CreatedAt).ToListAsync();
+
+            var ids = homestays.Select(h => h.Id).ToList();
+            var reviewStats = await db.Reviews
+                .Where(r => r.HomestayId != null && ids.Contains(r.HomestayId!.Value))
+                .GroupBy(r => r.HomestayId!.Value)
+                .Select(g => new
+                {
+                    HomestayId = g.Key,
+                    AverageRating = Math.Round(g.Average(r => (double)r.Rating), 1),
+                    ReviewCount = g.Count(),
+                })
+                .ToListAsync();
+
+            var statsMap = reviewStats.ToDictionary(s => s.HomestayId);
+
+            var result = homestays.Select(h => {
+                statsMap.TryGetValue(h.Id, out var stats);
+                return new
                 {
                     id = h.Id,
                     name = h.Name,
@@ -49,7 +64,6 @@ namespace backend.Controllers
                         id = h.NearCulturalSite.Id,
                         name = h.NearCulturalSite.Name
                     },
-                    // ── owner block ── null when user was deleted ──────────────
                     owner = h.Owner == null ? null : new
                     {
                         userId = h.Owner.UserId,
@@ -70,11 +84,13 @@ namespace backend.Controllers
                     imageUrls = h.ImageUrls,
                     isVisible = h.IsVisible,
                     createdAt = h.CreatedAt,
-                    updatedAt = h.UpdatedAt
-                })
-                .ToListAsync();
+                    updatedAt = h.UpdatedAt,
+                    averageRating = stats?.AverageRating ?? 0.0,
+                    reviewCount = stats?.ReviewCount ?? 0,
+                };
+            });
 
-            return Ok(list);
+            return Ok(result);
         }
 
 
