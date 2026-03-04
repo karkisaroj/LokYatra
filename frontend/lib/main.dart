@@ -1,10 +1,6 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:lokyatra_frontend/data/datasources/User_remote_datasource.dart';
-
-// Screens
 import 'package:lokyatra_frontend/presentation/screens/Onboarding/OnBoarding.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayListingsPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerBookingsPage.dart';
@@ -20,19 +16,18 @@ import 'package:lokyatra_frontend/presentation/screens/authentication/register.d
 import 'package:lokyatra_frontend/presentation/splash/splash_screen.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/Booking/booking_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/Booking/booking_event.dart';
-
-// Blocs
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_state.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayEvent.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/notification/notification_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/stories/story_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/user/user_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/user/user_event.dart';
-
 import 'core/services/sqlite_service.dart';
+
 
 final GlobalKey<NavigatorState> _navKey = GlobalKey<NavigatorState>();
 
@@ -71,6 +66,7 @@ class MyAppRunner extends StatelessWidget {
             BlocProvider<HomestayBloc>(create: (_) => HomestayBloc()),
             BlocProvider<BookingBloc>(create: (_) => BookingBloc()),
             BlocProvider<UserBloc>(create: (_) => UserBloc()),
+            BlocProvider<NotificationBloc>(create: (_) => NotificationBloc()),
           ],
           child: MaterialApp(
             navigatorKey: _navKey,

@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/core/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Site.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
@@ -39,7 +38,9 @@ class _SiteAddPageState extends State<SiteAddPage> {
   @override
   void dispose() {
     for (final c in [_name, _category, _district, _address, _short,
-      _historical, _cultural, _feeNpr, _feeSaarc, _openTime, _closeTime, _bestTime]) c.dispose();
+      _historical, _cultural, _feeNpr, _feeSaarc, _openTime, _closeTime, _bestTime]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -251,7 +252,9 @@ class _SiteEditPageState extends State<SiteEditPage> {
   @override
   void dispose() {
     for (final c in [_name, _category, _district, _address, _short,
-      _historical, _cultural, _feeNpr, _feeSaarc, _openTime, _closeTime, _bestTime]) c.dispose();
+      _historical, _cultural, _feeNpr, _feeSaarc, _openTime, _closeTime, _bestTime]) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -577,7 +580,7 @@ class _ExistingImageTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(10),
       child: SizedBox.expand(
         child: Image.network(url, fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(color: Colors.grey[200], child: const Icon(Icons.broken_image))),
+            errorBuilder: (_, _, _) => Container(color: Colors.grey[200], child: const Icon(Icons.broken_image))),
       ),
     ),
     if (label != null)

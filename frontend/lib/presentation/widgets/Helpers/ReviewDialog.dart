@@ -1,9 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../data/datasources/review_remote_datasource.dart';
-import '../../data/models/Review.dart';
+import '../../../data/datasources/review_remote_datasource.dart';
+import '../../../data/models/Review.dart';
 
 class ReviewDialog extends StatefulWidget {
   final int? bookingId;

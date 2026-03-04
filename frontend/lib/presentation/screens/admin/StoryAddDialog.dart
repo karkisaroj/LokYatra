@@ -7,7 +7,6 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/stories/sto
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/stories/story_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/stories/story_state.dart';
 
-// Story type options for the dropdown
 const _storyTypes = [
   'Legend',
   'Myth',
@@ -30,7 +29,6 @@ class StoryAddDialog extends StatefulWidget {
 }
 
 class _StoryAddDialogState extends State<StoryAddDialog> {
-  static const _dark    = Color(0xFF1A1A2E);
   static const _accent  = Color(0xFF3D5A80);
   static const _border  = Color(0xFFDDDDDD);
   static const _bg      = Color(0xFFF8F8F8);
@@ -122,10 +120,8 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // ── Header ──────────────────────────────────────────
                 _Header(onClose: () => Navigator.pop(context, false)),
 
-                // ── Scrollable form ──────────────────────────────────
                 Flexible(
                   child: SingleChildScrollView(
                     padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 8.h),
@@ -172,11 +168,10 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
 
                           SizedBox(height: 10.h),
 
-                          // Story type dropdown
                           _label('Story Type *'),
                           SizedBox(height: 4.h),
                           DropdownButtonFormField<String>(
-                            value: _selectedType,
+                            initialValue: _selectedType,
                             isExpanded: true,
                             decoration: _inputDecoration('Select story type'),
                             items: _storyTypes
@@ -195,7 +190,6 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
 
                           SizedBox(height: 18.h),
 
-                          // Story content section
                           _SectionLabel('Story Content'),
                           SizedBox(height: 10.h),
                           _TextArea(
@@ -208,7 +202,6 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
 
                           SizedBox(height: 18.h),
 
-                          // Cultural context section
                           _SectionLabel('Cultural Context'),
                           SizedBox(height: 10.h),
                           _TextArea(
@@ -227,7 +220,6 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
 
                           SizedBox(height: 18.h),
 
-                          // Image upload section
                           _SectionLabel('Story Images'),
                           SizedBox(height: 10.h),
                           _ImageUploadArea(
@@ -243,7 +235,6 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
                   ),
                 ),
 
-                // ── Actions ─────────────────────────────────────────
                 Container(
                   padding:
                   EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
@@ -323,7 +314,6 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
           color: Colors.grey[700]));
 }
 
-// ── Reusable sub-widgets ─────────────────────────────────────────────────────
 
 class _Header extends StatelessWidget {
   final VoidCallback onClose;
@@ -515,7 +505,6 @@ class _ImageUploadArea extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Upload button
         GestureDetector(
           onTap: onPick,
           child: Container(
@@ -543,7 +532,6 @@ class _ImageUploadArea extends StatelessWidget {
           ),
         ),
 
-        // Selected files chips
         if (files.isNotEmpty) ...[
           SizedBox(height: 8.h),
           Wrap(

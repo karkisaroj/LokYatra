@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 import 'package:lokyatra_frontend/data/models/register.dart';
-import 'package:lokyatra_frontend/data/models/user.dart';
 
 abstract class AuthEvent extends Equatable{
   @override

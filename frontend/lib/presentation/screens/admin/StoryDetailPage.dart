@@ -2,7 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 
 class StoryDetailPage extends StatefulWidget {
   final Map<String, dynamic> story;
@@ -30,9 +30,7 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
     final str = date.toString().trim();
     if (str.isEmpty) return '—';
     DateTime? d = DateTime.tryParse(str);
-    if (d == null) {
-      d = DateTime.tryParse(str.replaceAll(RegExp(r'[Z\+].*$'), '').trim());
-    }
+    d ??= DateTime.tryParse(str.replaceAll(RegExp(r'[Z\+].*$'), '').trim());
     if (d == null) return str;
     final l = d.toLocal();
     const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -103,9 +101,9 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                     filterQuality: FilterQuality.high,
                     color: const Color(0xFF2A2A42),
                     colorBlendMode: BlendMode.dstOver,
-                    placeholder: (_, __) => Container(color: const Color(0xFF2A2A42),
+                    placeholder: (_, _) => Container(color: const Color(0xFF2A2A42),
                         child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white24))),
-                    errorWidget: (_, __, ___) => Container(color: const Color(0xFF2A2A42),
+                    errorWidget: (_, _, _) => Container(color: const Color(0xFF2A2A42),
                         child: const Center(child: Icon(Icons.broken_image, color: Colors.white24, size: 40))),
                   ),
                 ),
@@ -177,7 +175,7 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                 child: SizedBox(height: 100, child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: imgs.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (_, i) => GestureDetector(
                     onTap: () {
                       _pageCtrl.animateToPage(i, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
@@ -226,9 +224,9 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
               filterQuality: FilterQuality.high,
               color: Colors.grey[200],
               colorBlendMode: BlendMode.dstOver,
-              placeholder: (_, __) => Container(height: 220, color: Colors.grey[200],
+              placeholder: (_, _) => Container(height: 220, color: Colors.grey[200],
                   child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
-              errorWidget: (_, __, ___) => Container(height: 220, color: Colors.grey[200],
+              errorWidget: (_, _, _) => Container(height: 220, color: Colors.grey[200],
                   child: const Icon(Icons.broken_image, color: Colors.grey)),
             ),
           ),

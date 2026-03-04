@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Story.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../data/models/Site.dart';
@@ -15,7 +15,7 @@ import '../../state_management/Bloc/stories/story_state.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
 import '../../state_management/Bloc/homestays/HomestayState.dart';
-import '../../widgets/ReviewSection.dart';
+import '../../widgets/Helpers/ReviewSection.dart';
 import 'TouristHomestayDetailPage.dart';
 import 'StoryDetailPage.dart';
 
@@ -32,7 +32,6 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
   static const _darkTeal   = Color(0xFF4A707A);
   static const _dark       = Color(0xFF2D1B10);
   static const _cream      = Color(0xFFFAF7F2);
-  static const _warmGrey   = Color(0xFF8B8B8B);
 
   int _currentImageIndex = 0;
   int _selectedTabIndex  = 0;

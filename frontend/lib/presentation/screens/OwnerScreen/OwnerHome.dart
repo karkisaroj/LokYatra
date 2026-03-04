@@ -1,11 +1,13 @@
-// lib/presentation/screens/OwnerScreen/Ownerhomepage.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 import 'package:lokyatra_frontend/data/datasources/user_remote_datasource.dart';
-import 'ProfileImageWidget.dart';
+import 'package:lokyatra_frontend/presentation/screens/NotificationsPage.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/notification/notification_bloc.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/notification/notification_event.dart';
 
 const _bg = Color(0xFFFAF7F2);
 const _ink = Color(0xFF1C1C1C);
@@ -34,6 +36,11 @@ class _OwnerHomeState extends State<OwnerHome> {
   void initState() {
     super.initState();
     _loadProfile();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<NotificationBloc>().add(const StartNotificationPolling());
+      }
+    });
   }
 
   Future<void> _loadProfile() async {
@@ -86,15 +93,12 @@ class _OwnerHomeState extends State<OwnerHome> {
   }
 
   void _navigateToProfile() {
-    // Navigate to profile page with proper route handling
     Navigator.pushNamed(context, '/ownerProfile').then((_) {
-      // Refresh profile data when returning from profile page
       _loadProfile();
     });
   }
 
   void _navigateToBalance() {
-    // Navigate to balance page
     Navigator.pushNamed(context, '/ownerBalance');
   }
 
@@ -110,34 +114,49 @@ class _OwnerHomeState extends State<OwnerHome> {
     return Scaffold(
       backgroundColor: _bg,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            // ── Header with Profile Picture ────────────────────────────────
-            _HeaderCard(
-              name: _name,
-              email: _email,
-              profileImageUrl: _profileImageUrl,
-              onProfileTap: _navigateToProfile,
-            ),
+        child: RefreshIndicator(
+          color: _brown,
+          onRefresh: () async{
+            context.read<NotificationBloc>().add(const LoadNotifications());
+            await _loadProfile();
+          },
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 20.h),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('My Dashboard',
+                      style: GoogleFonts.playfairDisplay(
+                          fontSize: 22.sp, fontWeight: FontWeight.bold, color: _ink)),
+                  BellButton(),
+                ],
+              ),
+              SizedBox(height: 16.h),
+              _HeaderCard(
+                name: _name,
+                email: _email,
+                profileImageUrl: _profileImageUrl,
+                onProfileTap: _navigateToProfile,
+              ),
 
-            SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
 
-            // ── Quick Stats ────────────────────────────────────────────────
-            _QuickStatsSection(),
+              _QuickStatsSection(),
 
-            SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
 
-            // ── Balance Overview Card ──────────────────────────────────────
-            _BalanceOverviewCard(onViewDetails: _navigateToBalance),
+              // ── Balance Overview Card ──────────────────────────────────────
+              _BalanceOverviewCard(onViewDetails: _navigateToBalance),
 
-            SizedBox(height: 20.h),
+              SizedBox(height: 20.h),
 
-            // ── Quick Links ────────────────────────────────────────────────
-            _QuickLinksSection(onViewBalance: _navigateToBalance),
+              // ── Quick Links ────────────────────────────────────────────────
+              _QuickLinksSection(onViewBalance: _navigateToBalance),
 
-            SizedBox(height: 20.h),
-          ]),
+              SizedBox(height: 20.h),
+            ]),
+          ),
         ),
       ),
     );

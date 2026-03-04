@@ -43,7 +43,7 @@ class PaymentOptionTile extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 14.h),
           decoration: BoxDecoration(
-            color: selected ? accent.withOpacity(0.06) : Colors.grey.shade50,
+            color: selected ? accent.withValues(alpha: 0.06) : Colors.grey.shade50,
             borderRadius: BorderRadius.circular(12.r),
             border: Border.all(
               color: selected ? accent : Colors.grey.shade200,
@@ -55,7 +55,7 @@ class PaymentOptionTile extends StatelessWidget {
             Container(
               width: 40.w, height: 40.h,
               decoration: BoxDecoration(
-                color: selected ? accent.withOpacity(0.12) : Colors.grey.shade100,
+                color: selected ? accent.withValues(alpha: 0.12) : Colors.grey.shade100,
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 20.sp,
@@ -91,10 +91,10 @@ class PaymentOptionTile extends StatelessWidget {
             child: Container(
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
               decoration: BoxDecoration(
-                color: (badgeColor ?? accent).withOpacity(0.12),
+                color: (badgeColor ?? accent).withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(20.r),
                 border: Border.all(
-                    color: (badgeColor ?? accent).withOpacity(0.3)),
+                    color: (badgeColor ?? accent).withValues(alpha: 0.3)),
               ),
               child: Text(badge!,
                   style: GoogleFonts.dmSans(

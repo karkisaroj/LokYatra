@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import 'package:lokyatra_frontend/data/datasources/Stories_remote_datasource.dart';
 import 'package:lokyatra_frontend/data/models/Story.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/stories/story_bloc.dart';
@@ -23,7 +23,6 @@ class Stories extends StatefulWidget {
 }
 
 class _StoriesState extends State<Stories> {
-  static const _dark   = Color(0xFF1A1A2E);
   static const _accent = Color(0xFF3D5A80);
   static const _bg     = Color(0xFFF4F6F9);
 
@@ -46,12 +45,14 @@ class _StoriesState extends State<Stories> {
     if (_selectedSiteId == null) { _snack('Select a cultural site first'); return; }
     final result = await showDialog<bool>(context: context, barrierDismissible: false,
         builder: (_) => StoryAddDialog(siteId: _selectedSiteId!));
+    if(!mounted)return;
     if (result == true) context.read<StoryBloc>().add(LoadStories(siteId: _selectedSiteId));
   }
 
   Future<void> _editStory(Story story) async {
     final result = await showDialog<bool>(context: context, barrierDismissible: false,
         builder: (_) => StoryEditDialog(story: story.toJson()));
+    if(!mounted)return;
     if (result == true) context.read<StoryBloc>().add(LoadStories(siteId: _selectedSiteId));
   }
 
@@ -61,6 +62,7 @@ class _StoriesState extends State<Stories> {
     try {
       final res = await StoriesRemoteDatasource().deleteStory(id);
       if (res.statusCode == 200 || res.statusCode == 204) {
+        if(!mounted)return;
         context.read<StoryBloc>().add(LoadStories(siteId: _selectedSiteId));
         _snack('Story deleted', success: true);
       } else {
@@ -173,20 +175,24 @@ class _StoriesState extends State<Stories> {
   Widget _storyList(bool isWeb) {
     return BlocBuilder<StoryBloc, StoryState>(builder: (context, state) {
       if (state is StoryLoading) return const Center(child: CircularProgressIndicator());
-      if (state is StoryError) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+      if (state is StoryError) {
+        return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Icon(Icons.error_outline, size: 40, color: Colors.grey[400]),
         const SizedBox(height: 8),
         Text(state.message, style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey)),
       ]));
+      }
       if (state is StoriesLoaded) {
         final filtered = state.stories.where((s) => _search.isEmpty || s.title.toLowerCase().contains(_search.toLowerCase())).toList();
-        if (filtered.isEmpty) return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        if (filtered.isEmpty) {
+          return Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
           Icon(Icons.menu_book_outlined, size: 48, color: Colors.grey[300]),
           const SizedBox(height: 12),
           Text('No stories found', style: GoogleFonts.playfairDisplay(fontSize: 18, color: Colors.grey[500])),
           const SizedBox(height: 6),
           Text('Add a story to get started', style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[400])),
         ]));
+        }
         return isWeb
             ? _webTable(filtered)
             : _mobileList(filtered);
@@ -217,7 +223,7 @@ class _StoriesState extends State<Stories> {
           ),
           Expanded(child: ListView.separated(
             itemCount: stories.length,
-            separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade100),
+            separatorBuilder: (_, _) => Divider(height: 1, color: Colors.grey.shade100),
             itemBuilder: (_, i) {
               final s = stories[i];
               return Container(
@@ -249,7 +255,7 @@ class _StoriesState extends State<Stories> {
     return ListView.separated(
       padding: EdgeInsets.all(16.w),
       itemCount: stories.length,
-      separatorBuilder: (_, __) => SizedBox(height: 8.h),
+      separatorBuilder: (_, _) => SizedBox(height: 8.h),
       itemBuilder: (_, i) {
         final s = stories[i];
         return Container(

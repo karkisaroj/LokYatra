@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import '../../../data/models/Site.dart';
 
 class OwnerSiteDetailPage extends StatefulWidget {

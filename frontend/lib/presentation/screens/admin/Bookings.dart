@@ -48,8 +48,6 @@ class _BodyState extends State<_Body> {
   double _priceOf(Map<String, dynamic> b) =>
       ((_inner(b)['totalPrice'] ?? 0) as num).toDouble();
 
-  String _createdAt(Map<String, dynamic> b) =>
-      (_inner(b)['createdAt'] ?? '').toString();
 
   List<Map<String, dynamic>> _filtered(List<Map<String, dynamic>> all) {
     var list = all;
@@ -305,7 +303,7 @@ class _BodyState extends State<_Body> {
               onRefresh: () async => context.read<BookingBloc>().add(const LoadAllBookings()),
               child: ListView.separated(
                 itemCount: data.length,
-                separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade100),
+                separatorBuilder: (_, _) => Divider(height: 1, color: Colors.grey.shade100),
                 itemBuilder: (_, i) => _webRow(data[i]),
               ),
             ),

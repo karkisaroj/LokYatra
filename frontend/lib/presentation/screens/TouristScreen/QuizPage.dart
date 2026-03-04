@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
+import 'package:lokyatra_frontend/presentation/screens/TouristScreen/QuizHistoryPage.dart';
 import '../../../data/datasources/quiz_remote_datasource.dart';
 
 enum _QuizPhase { loading, offline, error, home, playing, results }
@@ -47,7 +48,6 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
     super.dispose();
   }
 
-  //  Check connectivity first, then load
 
   Future<void> _loadHistory() async {
     setState(() { _phase = _QuizPhase.loading; _error = null; });
@@ -168,13 +168,6 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18.sp, color: _dark),
-          onPressed: () {
-            _timer?.cancel();
-            Navigator.pop(context, _phase == _QuizPhase.results);
-          },
-        ),
         title: Text('Nepal Quiz',
             style: GoogleFonts.playfairDisplay(
                 fontSize: 20.sp, fontWeight: FontWeight.bold, color: _dark)),
@@ -744,7 +737,10 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
           Expanded(child: OutlinedButton.icon(
             icon: Icon(Icons.home_outlined, size: 18.sp),
             label: Text('Done', style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
-            onPressed: () { _timer?.cancel(); Navigator.pop(context, true); },
+            onPressed: () {
+              _timer?.cancel();
+              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=>QuizHistoryPage()),(route)=>false);
+              },
             style: OutlinedButton.styleFrom(
               foregroundColor: _brown, side: BorderSide(color: _brown),
               padding: EdgeInsets.symmetric(vertical: 14.h),

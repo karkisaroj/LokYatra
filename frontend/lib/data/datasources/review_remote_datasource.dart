@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:lokyatra_frontend/core/constants.dart';
+import 'package:lokyatra_frontend/core/services/constants.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
 
 class ReviewRemoteDatasource {
@@ -15,7 +15,13 @@ class ReviewRemoteDatasource {
     if (token == null) throw Exception('Not authenticated');
     return Options(headers: {'Authorization': 'Bearer $token'});
   }
-
+  Future<Response> getMyReviews() async {
+    final token = await SecureStorageService.getAccessToken();
+    return _dio.get(
+      '/api/Review/my-reviews',
+      options: Options(headers: {'Authorization': 'Bearer $token'}),
+    );
+  }
   Future<Response> getHomestayReviews(int homestayId) async {
     return _dio.get('api/Review/homestay/$homestayId');
   }

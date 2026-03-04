@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:lokyatra_frontend/core/constants.dart';
+import 'package:lokyatra_frontend/core/services/constants.dart';
 
 String cloudinaryThumb(String url, {int w = 300, int h = 300}) {
   final idx = url.indexOf('/upload/');
@@ -69,8 +69,8 @@ class ProxyImage extends StatelessWidget {
         width:       safeW,
         height:      safeH,
         fit:         BoxFit.cover,
-        placeholder: (_, __) => _loading(safeW, safeH),
-        errorWidget: (_, __, ___) => _broken(safeW, safeH),
+        placeholder: (_, _) => _loading(safeW, safeH),
+        errorWidget: (_, _, _) => _broken(safeW, safeH),
       ),
     );
   }

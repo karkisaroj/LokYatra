@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
@@ -165,9 +165,9 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
           cacheKey: 'full_${h.imageUrls[i]}',
           fit: BoxFit.cover,
           filterQuality: FilterQuality.high,
-          placeholder: (_, __) => Container(color: Colors.grey[200],
+          placeholder: (_, _) => Container(color: Colors.grey[200],
               child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
-          errorWidget: (_, __, ___) => Container(color: Colors.grey[200],
+          errorWidget: (_, _, _) => Container(color: Colors.grey[200],
               child: const Icon(Icons.broken_image, color: Colors.grey)),
         ),
       ),
@@ -193,9 +193,9 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
           cacheKey: 'full_${h.imageUrls[i]}',
           fit: BoxFit.cover,
           filterQuality: FilterQuality.high,
-          placeholder: (_, __) => Container(color: Colors.grey[200],
+          placeholder: (_, _) => Container(color: Colors.grey[200],
               child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
-          errorWidget: (_, __, ___) => Container(color: Colors.grey[200],
+          errorWidget: (_, _, _) => Container(color: Colors.grey[200],
               child: const Icon(Icons.broken_image, color: Colors.grey)),
         ),
       ),
@@ -420,7 +420,7 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: h.imageUrls.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (_, i) => GestureDetector(
                   onTap: () => _pageCtrl.animateToPage(i,
                       duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
@@ -560,7 +560,7 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: h.imageUrls.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
                 itemBuilder: (_, i) => GestureDetector(
                   onTap: () => _pageCtrl.animateToPage(i,
                       duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),

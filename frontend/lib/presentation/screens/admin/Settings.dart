@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../state_management/Bloc/auth/auth_bloc.dart';
 import '../../state_management/Bloc/auth/auth_event.dart';
+import '../shared/TermsAndConditionsPage.dart';
 
 class Settings extends StatelessWidget {
   const Settings({super.key});
@@ -10,7 +11,6 @@ class Settings extends StatelessWidget {
   static const _bg         = Color(0xFFF4F6F9);
   static const _slate      = Color(0xFF3D5A80);
   static const _terracotta = Color(0xFFCD6E4E);
-  static const _dark       = Color(0xFF1A2B3C);
 
   @override
   Widget build(BuildContext context) {
@@ -44,9 +44,13 @@ class Settings extends StatelessWidget {
                 ),
                 _Divider(),
                 _ActionTile(
-                  icon: Icons.description_outlined, iconColor: Colors.indigo[600]!,
-                  title: 'Terms of Service', subtitle: 'Read the terms and conditions',
-                  onTap: () {},
+                  icon: Icons.gavel_rounded,
+                  iconColor: const Color(0xFF2D1B10),
+                  title: 'Terms & Conditions',
+                  subtitle: 'View the full terms of service',
+                  onTap: () => Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => const TermsAndConditionsPage(isRegistration: false),
+                  )),
                 ),
                 _Divider(),
                 _ActionTile(
@@ -111,7 +115,7 @@ class _LogoutTile extends StatelessWidget {
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true ) return;
     context.read<AuthBloc>().add(LogoutButtonClicked());
     Navigator.of(context, rootNavigator: true)
         .pushNamedAndRemoveUntil('/login', (route) => false);

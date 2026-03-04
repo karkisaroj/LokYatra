@@ -77,13 +77,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
       if (res.statusCode == 200) {
         await SqliteService().put('user_name',  _nameCtrl.text.trim());
         await SqliteService().put('user_phone', _phoneCtrl.text.trim());
-
+        if(!mounted)return;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text('Profile updated!', style: GoogleFonts.dmSans()),
           backgroundColor: Colors.green[700],
           behavior: SnackBarBehavior.floating,
         ));
-
+      if(!mounted)return;
         Navigator.pop(context, true);
       } else {
         final msg = (res.data as Map?)?['message'] ?? 'Update failed';
@@ -194,7 +194,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 SizedBox(height: 28.h),
 
                 // Email (read-only)
-                _Label('Email Address'),
+                label('Email Address'),
                 SizedBox(height: 6.h),
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
@@ -228,7 +228,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 SizedBox(height: 18.h),
 
                 // Name
-                _Label('Full Name'),
+                label('Full Name'),
                 SizedBox(height: 6.h),
                 TextFormField(
                   controller: _nameCtrl,
@@ -244,7 +244,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 SizedBox(height: 18.h),
 
                 // Phone
-                _Label('Phone Number'),
+                label('Phone Number'),
                 SizedBox(height: 6.h),
                 TextFormField(
                   controller: _phoneCtrl,
@@ -308,7 +308,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _Label(String text) => Text(text,
+  Widget label(String text) => Text(text,
       style: GoogleFonts.dmSans(
           fontSize: 13.sp, fontWeight: FontWeight.w600, color: _dark));
 

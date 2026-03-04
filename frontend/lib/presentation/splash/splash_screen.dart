@@ -13,34 +13,24 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  static bool _hasNavigated = false;
 
   @override
   void initState() {
     super.initState();
-    if (!_hasNavigated) {
-      Future.delayed(const Duration(seconds: 2), _checkAuth);
-    }
+    Future.delayed(const Duration(seconds: 2), _checkAuth);
   }
 
   Future<void> _checkAuth() async {
-    if (_hasNavigated || !mounted) return;
-    _hasNavigated = true;
+    if (!mounted) return;
 
     bool seenOnboarding = false;
-
     if (kIsWeb) {
-      // sqflite does not work on web — use SharedPreferences instead
       final prefs = await SharedPreferences.getInstance();
       seenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
     } else {
-      final sqlite = SqliteService();
-      await sqlite.database;
-      final val = await sqlite.get('has_seen_onboarding');
+      final val = await SqliteService().get('has_seen_onboarding');
       seenOnboarding = val != null;
     }
-
-    debugPrint('has_seen_onboarding → $seenOnboarding');
 
     if (!mounted) return;
 
@@ -65,14 +55,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
       if (!mounted) return;
 
-      if (role == 'tourist') {
-        Navigator.pushReplacementNamed(context, '/touristHome');
-      } else if (role == 'owner') {
-        Navigator.pushReplacementNamed(context, '/ownerHome');
-      } else if (role == 'admin') {
-        Navigator.pushReplacementNamed(context, '/adminDashboard');
-      } else {
-        Navigator.pushReplacementNamed(context, '/login');
+      switch (role) {
+        case 'tourist': Navigator.pushReplacementNamed(context, '/touristHome'); break;
+        case 'owner':   Navigator.pushReplacementNamed(context, '/ownerHome');   break;
+        case 'admin':   Navigator.pushReplacementNamed(context, '/adminDashboard'); break;
+        default:        Navigator.pushReplacementNamed(context, '/login');
       }
     } catch (e) {
       debugPrint('JWT decode error: $e');

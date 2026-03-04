@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
 import '../../state_management/Bloc/homestays/HomestayState.dart';
-import 'TouristHomestayDetailPage.dart'; // Fixed import
+import 'TouristHomestayDetailPage.dart';
 
 class TouristStayPage extends StatefulWidget {
   const TouristStayPage({super.key});
@@ -16,7 +16,6 @@ class TouristStayPage extends StatefulWidget {
 }
 
 class _TouristStayPageState extends State<TouristStayPage> {
-  static const _terracotta = Color(0xFFCD6E4E);
   static const _dark  = Color(0xFF2D1B10);
 
   String _search = '';
@@ -53,7 +52,7 @@ class _TouristStayPageState extends State<TouristStayPage> {
                           borderRadius: BorderRadius.circular(12.r),
                           boxShadow: [
                             BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 8,
                                 offset: const Offset(0, 2))
                           ],
@@ -82,7 +81,7 @@ class _TouristStayPageState extends State<TouristStayPage> {
                         borderRadius: BorderRadius.circular(12.r),
                         boxShadow: [
                           BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
+                              color: Colors.black.withValues(alpha: 0.05),
                               blurRadius: 8,
                               offset: const Offset(0, 2))
                         ],
@@ -177,7 +176,7 @@ class _StayCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 12,
                 offset: const Offset(0, 4))
           ],

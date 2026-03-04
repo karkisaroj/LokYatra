@@ -67,7 +67,7 @@ class FormHelpers {
             labelText: '$label *',
             border: const OutlineInputBorder(),
             suffixIcon: IconButton(
-              icon: Icon(visible ? Icons.visibility : Icons.visibility_off),
+              icon: Icon(Icons.visibility_off),
               onPressed: () => setState(() => visible = !visible),
             ),
           ),

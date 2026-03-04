@@ -9,7 +9,11 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_e
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/booking_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/booking_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/booking_state.dart';
+import '../../../data/datasources/quiz_remote_datasource.dart';
+import '../../state_management/Bloc/notification/notification_bloc.dart';
+import '../NotificationsPage.dart';
 import '../OwnerScreen/ProfileImageWidget.dart';
+import 'MyReviewsPage.dart';
 import 'Savedhomestayspage.dart';
 import 'TouristBookingsPage.dart';
 import 'QuizHistoryPage.dart';
@@ -70,28 +74,44 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
     try {
       final res = await UserRemoteDatasource().getCurrentUser();
       if (res.statusCode == 200) {
-        final data       = res.data as Map<String, dynamic>;
-        final serverName  = data['name']         as String? ?? '';
-        final serverEmail = data['email']        as String? ?? '';
-        final serverPhone = data['phoneNumber']  as String? ?? '';
+        final data        = res.data as Map<String, dynamic>;
+        final serverName  = data['name']        as String? ?? '';
+        final serverEmail = data['email']       as String? ?? '';
+        final serverPhone = data['phoneNumber'] as String? ?? '';
         final serverImage = data['profileImage'] as String? ?? '';
-        final serverPts   = data['quizPoints']   as int?    ?? 0;
 
-        await SqliteService().put('user_name',        serverName);
-        await SqliteService().put('user_email',       serverEmail);
-        await SqliteService().put('user_phone',       serverPhone);
-        await SqliteService().put('user_image',       serverImage);
-        await SqliteService().put('user_quiz_points', serverPts.toString());
+        await SqliteService().put('user_name',  serverName);
+        await SqliteService().put('user_email', serverEmail);
+        await SqliteService().put('user_phone', serverPhone);
+        await SqliteService().put('user_image', serverImage);
 
         if (mounted) {
           setState(() {
-            _name        = serverName;
-            _email       = serverEmail;
-            _phone       = serverPhone;
-            _quizPoints  = serverPts;
+            _name  = serverName;
+            _email = serverEmail;
+            _phone = serverPhone;
             _profileImageUrl = serverImage.isNotEmpty ? serverImage : null;
           });
         }
+      }
+
+      final quizRes = await QuizRemoteDatasource().getHistory();
+      if (quizRes.statusCode == 200 && mounted) {
+        final d       = quizRes.data as Map<String, dynamic>;
+        final history = (d['history'] as List? ?? []);
+
+        // Sum from history as reliable fallback
+        final sumFromHistory = history.fold<int>(
+          0, (sum, h) => sum + ((h as Map)['pointsEarned'] as int? ?? 0),
+        );
+        final apiTotal  = d['totalPoints'] as int? ?? 0;
+        final apiUsable = d['usablePoints'] as int?
+            ?? d['remainingPoints'] as int?;
+
+        final usable = apiUsable ?? (apiTotal > 0 ? apiTotal : sumFromHistory);
+
+        await SqliteService().put('user_quiz_points', usable.toString());
+        if (mounted) setState(() => _quizPoints = usable);
       }
     } catch (e) {
       debugPrint('fetchProfile error: $e');
@@ -330,6 +350,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                 blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Column(children: [
+
             _ActivityTile(
               icon: Icons.calendar_month_outlined,
               iconColor: _terracotta,
@@ -358,14 +379,9 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
               icon: Icons.rate_review_outlined,
               iconColor: Colors.amber[700]!,
               label: 'My Reviews',
-              sublabel: 'Coming soon',
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Reviews coming soon!',
-                      style: GoogleFonts.dmSans()),
-                  behavior: SnackBarBehavior.floating,
-                ),
-              ),
+              sublabel: 'Reviews you\'ve written',
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const MyReviewsPage())),
             ),
             _divider(),
             _ActivityTile(
@@ -422,14 +438,13 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
           icon: Icons.notifications_outlined,
           iconColor: Colors.purple[600]!,
           label: 'Notifications',
-          sublabel: 'Coming soon',
-          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Notifications coming soon!',
-                  style: GoogleFonts.dmSans()),
-              behavior: SnackBarBehavior.floating,
+          sublabel: 'View your notifications',
+          onTap: () => Navigator.push(context, MaterialPageRoute(
+            builder: (_) => BlocProvider.value(
+              value: context.read<NotificationBloc>(),
+              child: const NotificationsPage(),
             ),
-          ),
+          )),
         ),
         _divider(),
         _ActivityTile(

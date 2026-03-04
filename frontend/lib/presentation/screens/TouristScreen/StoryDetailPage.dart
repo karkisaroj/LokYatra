@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Story.dart';
 
 class StoryDetailPage extends StatelessWidget {
@@ -162,7 +162,7 @@ class StoryDetailPage extends StatelessWidget {
                       child: ListView.separated(
                         scrollDirection: Axis.horizontal,
                         itemCount: story.imageUrls.length,
-                        separatorBuilder: (_, __) => SizedBox(width: 10.w),
+                        separatorBuilder: (_, _) => SizedBox(width: 10.w),
                         itemBuilder: (_, i) => ClipRRect(
                           borderRadius: BorderRadius.circular(12.r),
                           child: ProxyImage(
@@ -205,7 +205,7 @@ class _InfoSection extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16.r),
         border: Border.all(color: Colors.grey.shade100),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8, offset: const Offset(0, 3))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

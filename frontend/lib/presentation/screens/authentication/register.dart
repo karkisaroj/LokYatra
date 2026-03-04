@@ -6,6 +6,7 @@ import 'package:lokyatra_frontend/presentation/screens/authentication/loginPage.
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_state.dart';
 import '../../state_management/Bloc/auth/auth_event.dart';
+import '../shared/TermsAndConditionsPage.dart';
 
 enum UserRole { tourist, owner }
 
@@ -91,8 +92,7 @@ class _RegisterState extends State<Register> {
       ),
     );
   }
-
-  // ── MOBILE ───────────────────────────────────────────────────────────────
+//mobile layout below one
   Widget _mobileLayout(BuildContext context, bool isLoading) {
     return Scaffold(
       backgroundColor: Colors.white,
@@ -131,7 +131,7 @@ class _RegisterState extends State<Register> {
     );
   }
 
-  // ── WEB ──────────────────────────────────────────────────────────────────
+  // web layout is below one
   Widget _webLayout(BuildContext context, bool isLoading) {
     final size   = MediaQuery.of(context).size;
     final isWide = size.width > 1100;
@@ -141,23 +141,21 @@ class _RegisterState extends State<Register> {
 
   Widget _webWide(BuildContext context, bool isLoading) {
     return Row(children: [
-      // LEFT — brand panel (narrower — 40%)
       Expanded(
-        flex: 40,
+        flex: 60,
         child: Container(
           color: _dark,
           child: Stack(children: [
             Positioned.fill(child: Image.asset('assets/images/Homestay.png', fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox())),
+                errorBuilder: (_, _, _) => const SizedBox())),
             Positioned.fill(child: Container(color: _dark.withValues(alpha: 0.80))),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 48),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                // Logo
                 Row(children: [
                   Container(width: 38, height: 38,
                       decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
-                      child: const Icon(Icons.temple_hindu_rounded, color: _brown, size: 22)),
+                      child:Image.asset("assets/images/lokyatra_logo.png", color: _brown)),
                   const SizedBox(width: 12),
                   const Text('LokYatra', style: TextStyle(color: Colors.white, fontSize: 20,
                       fontWeight: FontWeight.bold)),
@@ -424,8 +422,7 @@ class _RegisterState extends State<Register> {
       ),
     );
   }
-
-  Widget _termsCheckbox() => Row(children: [
+  Widget _termsCheckbox() => Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
     SizedBox(width: 24, height: 24,
       child: Checkbox(
         value: _agreeToTerms,
@@ -435,14 +432,42 @@ class _RegisterState extends State<Register> {
       ),
     ),
     const SizedBox(width: 10),
-    Expanded(child: Wrap(children: [
-      const Text('I agree to the ', style: TextStyle(fontSize: 13, color: Colors.grey)),
-      GestureDetector(
-        onTap: () {},
-        child: const Text('Terms & Conditions', style: TextStyle(fontSize: 13, color: _brown,
-            fontWeight: FontWeight.w600, decoration: TextDecoration.underline)),
+    Expanded(
+      child: RichText(
+        text: TextSpan(
+          style: const TextStyle(fontSize: 13, color: Colors.grey),
+          children: [
+            const TextSpan(text: 'I agree to the '),
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: InkWell(
+                onTap: () async {
+                  final accepted = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TermsAndConditionsPage(
+                          isRegistration: true),
+                    ),
+                  );
+                  if (accepted == true && mounted) {
+                    setState(() => _agreeToTerms = true);
+                  }
+                },
+                child: const Text(
+                  'Terms & Conditions',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: _brown,
+                    fontWeight: FontWeight.w600,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    ])),
+    ),
   ]);
 
   Widget _submitButton(bool isLoading) => SizedBox(

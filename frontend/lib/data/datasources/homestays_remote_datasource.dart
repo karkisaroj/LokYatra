@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:lokyatra_frontend/core/constants.dart';
+import 'package:lokyatra_frontend/core/services/constants.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
 
 class HomestaysRemoteDatasource {

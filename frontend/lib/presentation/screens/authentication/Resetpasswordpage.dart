@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/core/constants.dart';
+import 'package:lokyatra_frontend/core/services/constants.dart';
 import 'loginPage.dart';
 
 class ResetPasswordPage extends StatefulWidget {

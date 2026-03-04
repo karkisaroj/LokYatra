@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_state.dart';
@@ -18,7 +18,6 @@ class AdminSites extends StatefulWidget {
 class _AdminSitesState extends State<AdminSites> {
   static const _slate      = Color(0xFF3D5A80);
   static const _terracotta = Color(0xFFCD6E4E);
-  static const _bg         = Color(0xFFF4F6F9);
 
   final _searchController = TextEditingController();
   String _searchQuery = '';
@@ -86,7 +85,7 @@ class _AdminSitesState extends State<AdminSites> {
         ],
       ),
     );
-    if (confirmed != true) return;
+    if (confirmed != true || !mounted) return;
     context.read<SitesBloc>().add(DeleteSite(id));
   }
 
@@ -237,7 +236,7 @@ class _AdminSitesState extends State<AdminSites> {
         Expanded(
           child: ListView.separated(
             itemCount: sites.length,
-            separatorBuilder: (_, __) => Divider(height: 1, color: Colors.grey.shade100),
+            separatorBuilder: (_, _) => Divider(height: 1, color: Colors.grey.shade100),
             itemBuilder: (context, i) {
               final site     = sites[i];
               final imageUrl = getFirstImageUrl(site.imageUrls);
@@ -289,7 +288,7 @@ class _AdminSitesState extends State<AdminSites> {
   Widget _buildMobileList(List<CulturalSite> sites) {
     return ListView.separated(
       itemCount: sites.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 8),
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final site     = sites[index];
         final imageUrl = getFirstImageUrl(site.imageUrls);

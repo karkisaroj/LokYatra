@@ -42,7 +42,6 @@ class SqliteService {
     debugPrint('SQLite database created');
   }
 
-  // ── Connectivity ──────────────────────────────────────────────────────────
 
   Future<bool> isOnline() async {
     try {
@@ -52,8 +51,6 @@ class SqliteService {
       return true;
     }
   }
-
-  // ── Generic key-value ─────────────────────────────────────────────────────
 
   Future<void> put(String key, dynamic value) async {
     try {

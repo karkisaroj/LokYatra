@@ -102,7 +102,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
               Container(
                 padding: EdgeInsets.all(14.w),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(Icons.support_agent_rounded,
@@ -165,7 +165,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
                 borderRadius: BorderRadius.circular(14.r),
                 border: Border.all(
                   color: isOpen
-                      ? _brown.withOpacity(0.4)
+                      ? _brown.withValues(alpha: 0.4)
                       : Colors.grey.shade200,
                 ),
               ),
@@ -181,7 +181,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
                     width: 32.w, height: 32.h,
                     decoration: BoxDecoration(
                       color: isOpen
-                          ? _brown.withOpacity(0.1)
+                          ? _brown.withValues(alpha: 0.1)
                           : Colors.grey.shade100,
                       shape: BoxShape.circle,
                     ),
@@ -311,7 +311,7 @@ class _ContactCard extends StatelessWidget {
         Container(
           width: 38.w, height: 38.h,
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10.r),
           ),
           child: Icon(icon, size: 18.sp, color: color),

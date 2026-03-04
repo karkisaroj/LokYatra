@@ -46,8 +46,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('has_seen_onboarding', true);
     } else {
-      await SqliteService().put('has_seen_onboarding', true);
+      await SqliteService().put('has_seen_onboarding', 'true');
     }
+    if(!mounted) return;
+    Navigator.pushReplacementNamed(context, '/login');
   }
 
   Future<void> _goToLogin() async {
@@ -77,7 +79,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     return isWeb ? _webLayout() : _mobileLayout();
   }
 
-  // ── MOBILE ───────────────────────────────────────────────────────────────
   Widget _mobileLayout() {
     final size = MediaQuery.of(context).size;
     return Scaffold(
@@ -163,7 +164,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // ── WEB ──────────────────────────────────────────────────────────────────
   Widget _webLayout() {
     final size   = MediaQuery.of(context).size;
     final isWide = size.width > 1100;
@@ -174,10 +174,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
   }
 
-  // Wide web (≥1100px) — split: left image panel, right content panel
   Widget _webWide(Size size) {
     return Row(children: [
-      // ── LEFT — fullscreen image slideshow ─────────────────────────────
       Expanded(
         flex: 55,
         child: Stack(children: [
@@ -187,12 +185,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             onPageChanged: (i) => setState(() => _currentPage = i),
             itemBuilder: (_, index) => Stack(fit: StackFit.expand, children: [
               Image.asset(pages[index].image, fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => Container(color: _cream)),
-              // Dark overlay for readability
+                  errorBuilder: (_, _, _) => Container(color: _cream)),
               Container(color: Colors.black.withValues(alpha: 0.35)),
             ]),
           ),
-          // Branding overlay on image
           Positioned(
             top: 40, left: 48,
             child: Row(children: [
@@ -204,7 +200,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   fontWeight: FontWeight.bold, letterSpacing: 0.5)),
             ]),
           ),
-          // Caption on image
           Positioned(
             bottom: 60, left: 48, right: 48,
             child: AnimatedSwitcher(
@@ -230,7 +225,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ]),
             ),
           ),
-          // Prev / Next arrows on image
           Positioned(
             bottom: 40, right: 48,
             child: Row(children: [
@@ -248,7 +242,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ]),
       ),
 
-      // ── RIGHT — content panel ──────────────────────────────────────────
       Expanded(
         flex: 45,
         child: Container(
@@ -260,7 +253,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ]);
   }
 
-  // Narrow web (700–1100px) — stacked layout, full width
   Widget _webNarrow(Size size) {
     return SingleChildScrollView(
       child: Column(children: [
@@ -275,12 +267,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               onPageChanged: (i) => setState(() => _currentPage = i),
               itemBuilder: (_, index) => Stack(fit: StackFit.expand, children: [
                 Image.asset(pages[index].image, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(color: _cream)),
+                    errorBuilder: (_, _, _) => Container(color: _cream)),
                 Container(color: Colors.black.withValues(alpha: 0.3)),
               ]),
             ),
           ),
-          // Logo top-left
           Positioned(
             top: 32, left: 32,
             child: Row(children: [
@@ -355,7 +346,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         ),
         const SizedBox(height: 40),
 
-        // Feature chips
         _FeatureChips(pageIndex: _currentPage),
         const SizedBox(height: 48),
 
@@ -381,12 +371,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: _next,
-              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Text(isLast ? 'Get Started — It\'s Free' : 'Continue',
-                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
-                const SizedBox(width: 8),
-                Icon(isLast ? Icons.rocket_launch_rounded : Icons.arrow_forward_rounded, size: 18),
-              ]),
+              child: Text(isLast ? 'Get Started — It\'s Free' : 'Continue',
+                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
             ),
           ),
         ]),

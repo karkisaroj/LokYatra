@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lokyatra_frontend/presentation/screens/TouristScreen/QuizPage.dart';
 import '../../../data/datasources/quiz_remote_datasource.dart';
 
 class QuizHistoryPage extends StatefulWidget {
@@ -69,7 +70,7 @@ class _QuizHistoryPageState extends State<QuizHistoryPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18.sp, color: _dark),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () =>Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=>TouristQuizPage()), (route)=>false),
         ),
         title: Text('Points & Quiz History',
             style: GoogleFonts.playfairDisplay(
@@ -90,7 +91,6 @@ class _QuizHistoryPageState extends State<QuizHistoryPage> {
           child: Column(crossAxisAlignment: CrossAxisAlignment.start,
               children: [
 
-                // Total points banner
                 Container(
                   width: double.infinity,
                   padding: EdgeInsets.all(24.w),
@@ -119,7 +119,7 @@ class _QuizHistoryPageState extends State<QuizHistoryPage> {
                             padding: EdgeInsets.symmetric(
                                 horizontal: 12.w, vertical: 5.h),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
+                              color: Colors.white.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(20.r),
                             ),
                             child: Text(
@@ -132,7 +132,7 @@ class _QuizHistoryPageState extends State<QuizHistoryPage> {
                     Container(
                       padding: EdgeInsets.all(16.w),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
+                        color: Colors.white.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
                       child: Icon(Icons.emoji_events_rounded,
@@ -243,20 +243,20 @@ class _QuizHistoryPageState extends State<QuizHistoryPage> {
 
                     return Container(
                       margin: EdgeInsets.only(bottom: 10.h),
-                      padding: EdgeInsets.all(16.w),
+                      padding: EdgeInsets.all(12.w),
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(14.r),
                         border: Border.all(color: Colors.grey.shade200),
                         boxShadow: [BoxShadow(
-                            color: Colors.black.withOpacity(0.03),
+                            color: Colors.black.withValues(alpha: 0.03),
                             blurRadius: 8, offset: const Offset(0, 2))],
                       ),
                       child: Row(children: [
                         Container(
                           width: 50.w, height: 50.h,
                           decoration: BoxDecoration(
-                            color: chipColor.withOpacity(0.1),
+                            color: chipColor.withValues(alpha: 0.1),
                             shape: BoxShape.circle,
                           ),
                           child: Center(child: Text(
@@ -281,7 +281,7 @@ class _QuizHistoryPageState extends State<QuizHistoryPage> {
                                   padding: EdgeInsets.symmetric(
                                       horizontal: 8.w, vertical: 2.h),
                                   decoration: BoxDecoration(
-                                    color: chipColor.withOpacity(0.1),
+                                    color: chipColor.withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(20.r),
                                   ),
                                   child: Text(grade,

@@ -93,14 +93,12 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
     }
   }
 
-  // ── Load single site — cache then network ─────────────────────────────────
 
   Future<void> _onLoadSiteById(LoadSiteById event, Emitter<SitesState> emit) async {
     emit(SiteDetailLoading());
 
     final isOnline = await _sqlite.isOnline();
 
-    // Try to find in SQLite cache first
     if (!isOnline) {
       final fromCache = await _siteFromCache(event.id);
       if (fromCache != null) {
@@ -112,7 +110,6 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
       return;
     }
 
-    // Online: fetch fresh
     try {
       final resp = await _remote.getSite(event.id);
       if (resp.statusCode == 200 && resp.data != null) {
@@ -121,7 +118,7 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
         final site = CulturalSite.fromJson(raw as Map<String, dynamic>);
 
         // Update this site in SQLite cache
-        await _upsertSiteInCache(raw as Map<String, dynamic>);
+        await _upsertSiteInCache(raw);
 
         emit(SiteDetailLoaded(site));
       } else {

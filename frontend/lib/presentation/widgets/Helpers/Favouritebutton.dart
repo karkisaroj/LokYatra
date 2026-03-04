@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import '../../../data/datasources/saved_remote_datasource.dart';
+import '../../../../data/datasources/saved_remote_datasource.dart';
 
 class FavouriteButton extends StatefulWidget {
   final int homestayId;
@@ -116,10 +116,10 @@ class _FavouriteButtonState extends State<FavouriteButton>
         width: 36.w,
         height: 36.h,
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
           shape: BoxShape.circle,
           boxShadow: [BoxShadow(
-              color: Colors.black.withOpacity(0.08), blurRadius: 6)],
+              color: Colors.black.withValues(alpha: 0.08), blurRadius: 6)],
         ),
         child: Center(child: icon),
       ),

@@ -125,7 +125,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
             SizedBox(height: 28.h),
 
-            _Label('Current Password'),
+            label('Current Password'),
             SizedBox(height: 6.h),
             TextFormField(
               controller: _currentCtrl,
@@ -146,7 +146,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
             SizedBox(height: 20.h),
 
-            _Label('New Password'),
+            label('New Password'),
             SizedBox(height: 6.h),
             TextFormField(
               controller: _newCtrl,
@@ -169,7 +169,7 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
             SizedBox(height: 20.h),
 
-            _Label('Confirm New Password'),
+            label('Confirm New Password'),
             SizedBox(height: 6.h),
             TextFormField(
               controller: _confirmCtrl,
@@ -205,8 +205,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                         fontSize: 11.sp, fontWeight: FontWeight.w600,
                         color: Colors.grey[600])),
                 SizedBox(height: 6.h),
-                _Rule('Be at least 6 characters long'),
-                _Rule('Be different from your current password'),
+                rule('Be at least 6 characters long'),
+                rule('Be different from your current password'),
               ]),
             ),
 
@@ -244,11 +244,11 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
     );
   }
 
-  Widget _Label(String text) => Text(text,
+  Widget label(String text) => Text(text,
       style: GoogleFonts.dmSans(
           fontSize: 13.sp, fontWeight: FontWeight.w600, color: _dark));
 
-  Widget _Rule(String text) => Padding(
+  Widget rule(String text) => Padding(
     padding: EdgeInsets.only(bottom: 3.h),
     child: Row(children: [
       Icon(Icons.check_circle_outline_rounded,

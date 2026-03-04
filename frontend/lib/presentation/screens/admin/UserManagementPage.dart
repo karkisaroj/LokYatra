@@ -145,7 +145,7 @@ class _UserManagementPageState extends State<UserManagementPage>
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                   itemCount: filtered.length,
-                  separatorBuilder: (_, __) =>
+                  separatorBuilder: (_, _) =>
                   const SizedBox(height: 10),
                   itemBuilder: (ctx, i) => _UserCard(
                     user: filtered[i],

@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:lokyatra_frontend/core/image_proxy.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import '../../../data/models/Site.dart';
 import '../../../data/models/Homestay.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayState.dart';
 import '../../state_management/Bloc/sites/sites_bloc.dart';
 import '../../state_management/Bloc/sites/sites_state.dart';
-import '../../widgets/FavouriteButton.dart';
+import '../../widgets/Helpers/Favouritebutton.dart';
 import 'TouristHomestayDetailPage.dart';
 import 'TouristSitesDetails.dart';
 
@@ -20,7 +20,6 @@ class CategoryResultsPage extends StatelessWidget {
   const CategoryResultsPage({super.key, required this.category, this.type = 'All'});
 
   static const _dark  = Color(0xFF2D1B10);
-  static const _slate = Color(0xFF3D5A80);
   static const _bg    = Color(0xFFF4F6F9);
 
   @override
@@ -200,7 +199,6 @@ class _SiteCard extends StatelessWidget {
   const _SiteCard({required this.site, required this.onTap});
 
   static const _dark  = Color(0xFF2D1B10);
-  static const _slate = Color(0xFF3D5A80);
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +296,6 @@ class _HomestayCard extends StatelessWidget {
   const _HomestayCard({required this.homestay, required this.onTap});
 
   static const _dark  = Color(0xFF2D1B10);
-  static const _slate = Color(0xFF3D5A80);
 
   @override
   Widget build(BuildContext context) {

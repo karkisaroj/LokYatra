@@ -20,10 +20,9 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   bool _showPassword = false;
 
-  static const _brown      = Color(0xFF8B5E3C);
+  static const _brown      = Color(0xFF22150A);
   static const _dark       = Color(0xFF2D1B10);
   static const _cream      = Color(0xFFFAF7F2);
-  static const _terracotta = Color(0xFFCD6E4E);
 
   @override
   void dispose() {
@@ -58,7 +57,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ── MOBILE ───────────────────────────────────────────────────────────────
   Widget _mobileLayout(BuildContext context) {
     return SafeArea(
       child: Center(
@@ -68,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
             key: _formKey,
             child: Column(children: [
               Image.asset('assets/images/lokyatra_logo.png', height: 100,
-                  errorBuilder: (_, __, ___) => const Icon(Icons.temple_hindu_rounded, size: 80, color: _brown)),
+                  errorBuilder: (_, _, _) => const Icon(Icons.temple_hindu_rounded, size: 80, color: _brown)),
               const SizedBox(height: 16),
               const Text('Welcome Back',
                   style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _dark)),
@@ -118,7 +116,6 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // ── WEB ──────────────────────────────────────────────────────────────────
   Widget _webLayout(BuildContext context) {
     final size  = MediaQuery.of(context).size;
     final isWide = size.width > 1100;
@@ -128,77 +125,68 @@ class _LoginPageState extends State<LoginPage> {
 
   Widget _webWide(BuildContext context, Size size) {
     return Row(children: [
-      // LEFT — brand panel
       Expanded(
         flex: 50,
-        child: Container(
-          color: _dark,
-          child: Stack(children: [
-            // Background image tint
-            Positioned.fill(
-              child: Image.asset('assets/images/onboarding1.png', fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox()),
+        child: Stack(children: [
+          Positioned.fill(
+            child: Image.asset('assets/images/onboarding1.png', fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => const SizedBox()),
+          ),
+          Positioned.fill(child: Container(color: _dark.withValues(alpha: 0.75))),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 48),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  Container(width: 40, height: 40,
+                      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
+                      child:  Image.asset("assets/images/lokyatra_logo.png", color: _brown)),
+                  const SizedBox(width: 12),
+                  const Text('LokYatra', style: TextStyle(color: Colors.white, fontSize: 22,
+                      fontWeight: FontWeight.bold, letterSpacing: 0.5)),
+                ]),
+
+                const Spacer(),
+
+                const Text('Welcome\nBack', style: TextStyle(color: Colors.white,
+                    fontSize: 54, fontWeight: FontWeight.w800, height: 1.05, letterSpacing: -1)),
+                const SizedBox(height: 20),
+                Container(width: 48, height: 4,
+                    decoration: BoxDecoration(color: _dark, borderRadius: BorderRadius.circular(2))),
+                const SizedBox(height: 24),
+                const Text('Continue your journey through Nepal\'s\nancient heritage and culture.',
+                    style: TextStyle(color: Colors.white70, fontSize: 17, height: 1.65)),
+                const SizedBox(height: 40),
+
+                Row(children: [
+                  _statChip('700+', 'Heritage Sites'),
+                  const SizedBox(width: 20),
+                  _statChip('2K+', 'Travellers'),
+                  const SizedBox(width: 20),
+                  _statChip('4.8', 'Rating'),
+                ]),
+
+                const Spacer(),
+                const Text('New to LokYatra?', style: TextStyle(color: Colors.white54, fontSize: 14)),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      side: const BorderSide(color: Colors.white38)),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Register())),
+                  icon: const Icon(Icons.person_add_outlined, size: 18),
+                  label: const Text('Create an Account', style: TextStyle(fontWeight: FontWeight.w600)),
+                ),
+                const SizedBox(height: 48),
+              ],
             ),
-            Positioned.fill(child: Container(color: _dark.withValues(alpha: 0.75))),
-
-            // Content
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 56, vertical: 48),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Logo
-                  Row(children: [
-                    Container(width: 40, height: 40,
-                        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10)),
-                        child: const Icon(Icons.temple_hindu_rounded, color: _brown, size: 24)),
-                    const SizedBox(width: 12),
-                    const Text('LokYatra', style: TextStyle(color: Colors.white, fontSize: 22,
-                        fontWeight: FontWeight.bold, letterSpacing: 0.5)),
-                  ]),
-
-                  const Spacer(),
-
-                  const Text('Welcome\nBack', style: TextStyle(color: Colors.white,
-                      fontSize: 54, fontWeight: FontWeight.w800, height: 1.05, letterSpacing: -1)),
-                  const SizedBox(height: 20),
-                  Container(width: 48, height: 4,
-                      decoration: BoxDecoration(color: _terracotta, borderRadius: BorderRadius.circular(2))),
-                  const SizedBox(height: 24),
-                  const Text('Continue your journey through Nepal\'s\nancient heritage and culture.',
-                      style: TextStyle(color: Colors.white70, fontSize: 17, height: 1.65)),
-                  const SizedBox(height: 40),
-
-                  // Stats row
-                  Row(children: [
-                    _statChip('700+', 'Heritage Sites'),
-                    const SizedBox(width: 20),
-                    _statChip('2K+', 'Travellers'),
-                    const SizedBox(width: 20),
-                    _statChip('4.8★', 'Rating'),
-                  ]),
-
-                  const Spacer(),
-                  const Text('New to LokYatra?', style: TextStyle(color: Colors.white54, fontSize: 14)),
-                  const SizedBox(height: 8),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        side: const BorderSide(color: Colors.white38)),
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Register())),
-                    icon: const Icon(Icons.person_add_outlined, size: 18),
-                    label: const Text('Create an Account', style: TextStyle(fontWeight: FontWeight.w600)),
-                  ),
-                  const SizedBox(height: 48),
-                ],
-              ),
-            ),
-          ]),
-        ),
+          ),
+        ]),
       ),
 
-      // RIGHT — form panel
       Expanded(
         flex: 50,
         child: Container(
@@ -245,7 +233,7 @@ class _LoginPageState extends State<LoginPage> {
                         const Text("Don't have an account? ", style: TextStyle(color: Colors.grey)),
                         GestureDetector(
                           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Register())),
-                          child: const Text('Register', style: TextStyle(color: _terracotta,
+                          child: const Text('Register', style: TextStyle(color: _dark,
                               fontWeight: FontWeight.bold, fontSize: 15)),
                         ),
                       ]),
@@ -298,7 +286,7 @@ class _LoginPageState extends State<LoginPage> {
                 const Text("Don't have an account? "),
                 GestureDetector(
                   onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const Register())),
-                  child: const Text('Register', style: TextStyle(color: _terracotta, fontWeight: FontWeight.bold)),
+                  child: const Text('Register', style: TextStyle(color: _dark, fontWeight: FontWeight.bold)),
                 ),
               ]),
             ]),

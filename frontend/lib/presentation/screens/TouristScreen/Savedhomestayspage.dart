@@ -140,12 +140,11 @@ class _SavedCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20.r),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05),
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 14, offset: const Offset(0, 6))],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-          // ── Image with unsave button ───────────────────────────────────────
           ClipRRect(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
             child: Stack(children: [
@@ -154,16 +153,15 @@ class _SavedCard extends StatelessWidget {
                 height: 190.h,
                 child: imageUrl != null
                     ? Image.network(imageUrl, fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _placeholder())
+                    errorBuilder: (_, _, _) => _placeholder())
                     : _placeholder(),
               ),
-              // Category badge
               Positioned(
                 top: 12.h, left: 12.w,
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.55),
+                    color: Colors.black.withValues(alpha: 0.55),
                     borderRadius: BorderRadius.circular(10.r),
                   ),
                   child: Text(homestay.category ?? 'Homestay',
@@ -171,7 +169,6 @@ class _SavedCard extends StatelessWidget {
                           color: Colors.white, fontWeight: FontWeight.w500)),
                 ),
               ),
-              // Unsave (heart) button
               Positioned(
                 top: 10.h, right: 10.w,
                 child: GestureDetector(
@@ -181,7 +178,7 @@ class _SavedCard extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1),
+                      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 6)],
                     ),
                     child: Icon(Icons.favorite_rounded,
@@ -192,7 +189,6 @@ class _SavedCard extends StatelessWidget {
             ]),
           ),
 
-          // ── Details ─────────────────────────────────────────────────────────
           Padding(
             padding: EdgeInsets.all(14.w),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -299,7 +295,6 @@ class _Chip extends StatelessWidget {
   ]);
 }
 
-// ── Empty + error states ──────────────────────────────────────────────────────
 
 class _EmptyState extends StatelessWidget {
   @override
