@@ -1,5 +1,5 @@
-﻿// Controllers/QuizController.cs
-using backend.Database;
+﻿using backend.Database;
+using backend.DTO;
 using backend.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,7 +17,7 @@ namespace backend.Controllers
         private int CurrentUserId => int.Parse(
             User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
-        private const int PointsPerCorrect = 10;
+        private const int PointsPerCorrect = 15;
         private const int QuestionsPerQuiz = 10;
         private const int MaxAttemptsPerDay = 3;
 
@@ -25,14 +25,13 @@ namespace backend.Controllers
         {
             id = q.Id,
             question = q.Question,
-            options = JsonSerializer.Deserialize<string[]>(q.OptionsJson) ?? Array.Empty<string>(),
-            correctIndex = includeAnswer ? (int?)q.CorrectIndex : null,
+            options = JsonSerializer.Deserialize<string[]>(q.OptionsJson) ?? [],
+            correctIndex = includeAnswer ? (int?) q.CorrectIndex : null,
             category = q.Category,
             isActive = q.IsActive,
             createdAt = q.CreatedAt,
         };
 
-        // ── ADMIN: Get all questions (with answers) ────────────────────────────
         [HttpGet("admin/questions")]
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> AdminGetQuestions()
@@ -43,7 +42,6 @@ namespace backend.Controllers
             return Ok(list.Select(q => MapQuestion(q, includeAnswer: true)));
         }
 
-        // ── ADMIN: Add question ────────────────────────────────────────────────
         [HttpPost("admin/questions")]
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> AdminAdd([FromBody] QuizQuestionDto dto)
@@ -70,7 +68,6 @@ namespace backend.Controllers
             return Ok(MapQuestion(q, includeAnswer: true));
         }
 
-        // ── ADMIN: Update question ─────────────────────────────────────────────
         [HttpPut("admin/questions/{id:int}")]
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> AdminUpdate(int id, [FromBody] QuizQuestionDto dto)
@@ -92,7 +89,6 @@ namespace backend.Controllers
             return Ok(MapQuestion(q, includeAnswer: true));
         }
 
-        // ── ADMIN: Delete question ─────────────────────────────────────────────
         [HttpDelete("admin/questions/{id:int}")]
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> AdminDelete(int id)
@@ -104,7 +100,6 @@ namespace backend.Controllers
             return Ok(new { message = "Question deleted" });
         }
 
-        // ── ADMIN: Toggle active/inactive ─────────────────────────────────────
         [HttpPatch("admin/questions/{id:int}/toggle")]
         [Authorize(Roles = "admin")]
         public async Task<IActionResult> AdminToggle(int id)
@@ -117,7 +112,6 @@ namespace backend.Controllers
             return Ok(new { id = q.Id, isActive = q.IsActive });
         }
 
-        // ── TOURIST: Get quiz session (10 random Qs, no answers) ──────────────
         [HttpGet("play")]
         [Authorize(Roles = "tourist")]
         public async Task<IActionResult> Play()
@@ -157,7 +151,6 @@ namespace backend.Controllers
             });
         }
 
-        // ── TOURIST: Submit answers ────────────────────────────────────────────
         [HttpPost("submit")]
         [Authorize(Roles = "tourist")]
         public async Task<IActionResult> Submit([FromBody] QuizSubmitDto dto)
@@ -227,7 +220,6 @@ namespace backend.Controllers
             });
         }
 
-        // ── TOURIST: Quiz history 
         [HttpGet("history")]
         [Authorize(Roles = "tourist")]
         public async Task<IActionResult> History()
@@ -259,24 +251,4 @@ namespace backend.Controllers
         }
     }
 
-    
-    public class QuizQuestionDto
-    {
-        public string Question { get; set; } = string.Empty;
-        public string[] Options { get; set; } = Array.Empty<string>();
-        public int CorrectIndex { get; set; }
-        public string? Category { get; set; }
-        public bool IsActive { get; set; } = true;
-    }
-
-    public class QuizSubmitDto
-    {
-        public QuizAnswer[] Answers { get; set; } = Array.Empty<QuizAnswer>();
-    }
-
-    public class QuizAnswer
-    {
-        public int QuestionId { get; set; }
-        public int SelectedIndex { get; set; }
-    }
 }

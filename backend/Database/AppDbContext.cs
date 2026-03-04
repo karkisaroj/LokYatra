@@ -16,6 +16,7 @@ namespace backend.Database
         public DbSet<QuizAttempt> QuizAttempts { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<Review> Reviews { get; set; }
+        public DbSet<AppNotification> Notifications { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

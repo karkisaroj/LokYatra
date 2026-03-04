@@ -187,6 +187,37 @@ namespace backend.Controllers
             return Ok(new { message = "Review deleted" });
         }
 
+        [HttpGet("my-reviews")]
+        [Authorize]
+        public async Task<IActionResult> GetMyReviews()
+        {
+            var touristId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
+            var reviews = await db.Reviews
+                .Where(r => r.TouristId == touristId)
+                .OrderByDescending(r => r.CreatedAt)
+                .Select(r => new
+                {
+                    id = r.Id,
+                    touristId = r.TouristId,
+                    homestayId = r.HomestayId,
+                    siteId = r.SiteId,
+                    bookingId = r.BookingId,
+                    homestayName = r.HomestayId != null
+                        ? db.Homestays.Where(h => h.Id == r.HomestayId).Select(h => h.Name).FirstOrDefault()
+                        : null,
+                    siteName = r.SiteId != null
+                        ? db.CulturalSites.Where(s => s.Id == r.SiteId).Select(s => s.Name).FirstOrDefault()
+                        : null,
+                    rating = r.Rating,
+                    comment = r.Comment,
+                    createdAt = r.CreatedAt,
+                    updatedAt = r.UpdatedAt,
+                })
+                .ToListAsync();
+
+            return Ok(reviews);
+        }
 
         [HttpGet("all")]
         [Authorize(Roles = "admin")]

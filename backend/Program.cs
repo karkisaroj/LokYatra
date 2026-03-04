@@ -69,6 +69,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICloudImageService, CloudinaryImageService>();
+builder.Services.AddScoped<NotificationService>();
 builder.Services.AddHttpClient();
 var app = builder.Build();
 

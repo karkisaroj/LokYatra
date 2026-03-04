@@ -2,6 +2,7 @@
 using backend.DTO;
 using backend.Entities;
 using backend.Models;
+using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ namespace backend.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class BookingController(AppDbContext db) : ControllerBase
+    public class BookingController(AppDbContext db, NotificationService notificationService) : ControllerBase
     {
         private int CurrentUserId => int.Parse(
             User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -116,6 +117,17 @@ namespace backend.Controllers
 
             db.Bookings.Add(booking);
             await db.SaveChangesAsync();
+            var owner = await db.Users.FindAsync(homestay.OwnerId);
+            if (owner != null)
+            {
+                await notificationService.CreateAsync(
+                    userId: owner.UserId,
+                    title: "New Booking Request",
+                    message: $"You have a new booking request for {homestay.Name}.",
+                    type: "booking_created",
+                    referenceId: booking.Id
+                );
+            }
             return Ok(MapBooking(booking));
         }
 
@@ -156,6 +168,18 @@ namespace backend.Controllers
             booking.Status = BookingStatus.Cancelled;
             booking.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync();
+            //below is for notification so it wont be confusing for future
+            var cancelledHomestay = await db.Homestays.FindAsync(booking.HomestayId);
+            if (cancelledHomestay?.OwnerId != null)
+            {
+                await notificationService.CreateAsync(
+                    userId: cancelledHomestay.OwnerId.Value,
+                    title: "Booking Cancelled",
+                    message: $"A tourist has cancelled their booking at {cancelledHomestay.Name}.",
+                    type: "booking_cancelled",
+                    referenceId: booking.Id
+                );
+            }
             return Ok(new { message = "Booking cancelled" });
         }
 
@@ -178,7 +202,14 @@ namespace backend.Controllers
             booking.PaymentStatus = PaymentStatus.Paid;
             booking.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync();
-
+            var paidHomestay = await db.Homestays.FindAsync(booking.HomestayId);
+            await notificationService.CreateAsync(
+                userId: booking.TouristId,
+                title: "Payment Confirmed",
+                message: $"Your payment for {paidHomestay?.Name} has been received. Enjoy your stay!",
+                type: "payment_received",
+                referenceId: booking.Id
+            );
             return Ok(new
             {
                 bookingId = booking.Id,
@@ -276,6 +307,30 @@ namespace backend.Controllers
             booking.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync();
 
+            var (title, message, type) = newStatus switch
+            {
+                BookingStatus.Confirmed => ("Booking Confirmed! ",
+                    $"Your booking at {homestay?.Name} has been confirmed.",
+                    "booking_confirmed"),
+                BookingStatus.Rejected => ("Booking Rejected",
+                    $"Your booking at {homestay?.Name} was not accepted.",
+                    "booking_rejected"),
+                BookingStatus.Completed => ("Stay Completed",
+                    $"Your stay at {homestay?.Name} is complete. Please leave a review!",
+                    "booking_completed"),
+                _ => ("Booking Updated",
+                    $"Your booking status has been updated to {newStatus}.",
+                    "booking_updated"),
+            };
+
+            await notificationService.CreateAsync(
+                userId: booking.TouristId,
+                title: title,
+                message: message,
+                type: type,
+                referenceId: booking.Id
+            );
+
             return Ok(new { message = $"Booking {dto.Status.ToLower()}" });
         }
 
@@ -298,7 +353,6 @@ namespace backend.Controllers
                 var tourist = await db.Users.FindAsync(b.TouristId);
                 var homestay = await db.Homestays.FindAsync(b.HomestayId);
 
-                // Owner looked up via homestay's OwnerId (no nav property needed)
                 User? owner = null;
                 if (homestay != null)
                     owner = await db.Users.FindAsync(homestay.OwnerId);

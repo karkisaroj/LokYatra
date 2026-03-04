@@ -1,5 +1,6 @@
 ﻿using backend.Database;
 using backend.Models;
+using backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -13,8 +14,8 @@ namespace backend.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    public class KhaltiController(AppDbContext db, IConfiguration config, IHttpClientFactory http)
-        : ControllerBase
+    public class KhaltiController(AppDbContext db, IConfiguration config, IHttpClientFactory http, NotificationService notificationService)
+    : ControllerBase
     {
         private int CurrentUserId => int.Parse(
             User.FindFirstValue(ClaimTypes.NameIdentifier)!);
@@ -111,8 +112,6 @@ namespace backend.Controllers
             return Ok(new { pidx, paymentUrl, bookingId, amount = booking.TotalPrice });
         }
 
-        // POST api/Khalti/verify
-        // Body: { "pidx": "abc123" }
         [HttpPost("verify")]
         [Authorize(Roles = "tourist")]
         public async Task<IActionResult> Verify([FromBody] KhaltiVerifyDto dto)
@@ -125,7 +124,6 @@ namespace backend.Controllers
             if (booking.TouristId != CurrentUserId)
                 return Forbid();
 
-            // Idempotent — already paid, return success
             if (booking.PaymentStatus == PaymentStatus.Paid)
                 return Ok(new
                 {
@@ -162,6 +160,27 @@ namespace backend.Controllers
             booking.PaymentStatus = PaymentStatus.Paid;
             booking.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync();
+
+            var homestay = await db.Homestays.FindAsync(booking.HomestayId);
+            if (homestay?.OwnerId != null)
+            {
+                var tourist = await db.Users.FindAsync(CurrentUserId);
+                await notificationService.CreateAsync(
+                    userId: homestay.OwnerId.Value,
+                    title: "Khalti Payment Received ",
+                    message: $"{tourist?.Name ?? "A tourist"} has paid Rs. {booking.TotalPrice:0} via Khalti for {homestay.Name}.",
+                    type: "payment_received",
+                    referenceId: booking.Id
+                );
+            }
+
+            await notificationService.CreateAsync(
+                userId: booking.TouristId,
+                title: "Payment Successful ✓",
+                message: $"Your Khalti payment of Rs. {booking.TotalPrice:0} for {homestay?.Name ?? "your booking"} was confirmed.",
+                type: "payment_received",
+                referenceId: booking.Id
+            );
 
             return Ok(new
             {
