@@ -6,7 +6,7 @@ import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/QuizHistoryPage.dart';
 import '../../../data/datasources/quiz_remote_datasource.dart';
 
-enum _QuizPhase { loading, offline, error, home, playing, results }
+enum Phase { loading, offline, error, home, playing, results }
 
 class TouristQuizPage extends StatefulWidget {
   const TouristQuizPage({super.key});
@@ -15,184 +15,191 @@ class TouristQuizPage extends StatefulWidget {
 }
 
 class _TouristQuizPageState extends State<TouristQuizPage> {
-  static const _brown = Color(0xFF8B5E3C);
-  static const _cream = Color(0xFFFAF7F2);
-  static const _dark  = Color(0xFF2D1B10);
-  static const _gold  = Color(0xFFF5A623);
+  static const ink    = Color(0xFF2D1B10);
+  static const accent = Color(0xFFCD6E4E);
+  static const bg     = Color(0xFFFAF7F2);
+  static const green  = Color(0xFF2E7D52);
 
-  _QuizPhase _phase = _QuizPhase.loading;
+  Phase phase        = Phase.loading;
+  int   totalPoints  = 0;
+  int   attToday     = 0;
+  int   attLeft      = 3;
+  List<Map<String, dynamic>> recent = [];
 
-  int  _totalPoints   = 0;
-  int  _attemptsToday = 0;
-  int  _attemptsLeft  = 3;
-  List<Map<String, dynamic>> _history = [];
+  List<Map<String, dynamic>> questions = [];
+  int    current  = 0;
+  int    timeLeft = 20;
+  Timer? timer;
+  final  Map<int, int> answers = {};
 
-  List<Map<String, dynamic>> _questions = [];
-  int    _current  = 0;
-  int    _timeLeft = 20;
-  Timer? _timer;
-  final  Map<int, int> _answers = {};
-
-  Map<String, dynamic>? _result;
-  String? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadHistory();
-  }
+  Map<String, dynamic>? result;
+  String? error;
 
   @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
+  void initState() { super.initState(); loadHome(); }
 
+  @override
+  void dispose() { timer?.cancel(); super.dispose(); }
 
-  Future<void> _loadHistory() async {
-    setState(() { _phase = _QuizPhase.loading; _error = null; });
-
-    final isOnline = await SqliteService().isOnline();
-    if (!isOnline) {
-      if (mounted) setState(() => _phase = _QuizPhase.offline);
+  Future<void> loadHome() async {
+    setState(() { phase = Phase.loading; error = null; });
+    final online = await SqliteService().isOnline();
+    if (!online) {
+      if (mounted) setState(() => phase = Phase.offline);
       return;
     }
-
     try {
       final res = await QuizRemoteDatasource().getHistory();
       if (!mounted) return;
       if (res.statusCode == 200) {
         final d = res.data as Map<String, dynamic>;
         setState(() {
-          _totalPoints   = d['totalPoints']   as int? ?? 0;
-          _attemptsToday = d['attemptsToday'] as int? ?? 0;
-          _attemptsLeft  = d['attemptsLeft']  as int? ?? 3;
-          _history       = (d['history'] as List? ?? [])
+          totalPoints = d['totalPoints']   as int? ?? 0;
+          attToday    = d['attemptsToday'] as int? ?? 0;
+          attLeft     = d['attemptsLeft']  as int? ?? 3;
+          recent      = (d['history'] as List? ?? [])
               .map((e) => Map<String, dynamic>.from(e as Map)).toList();
-          _phase = _QuizPhase.home;
+          phase = Phase.home;
         });
       } else {
-        setState(() { _error = 'Could not load quiz'; _phase = _QuizPhase.error; });
+        setState(() { error = 'Could not load quiz'; phase = Phase.error; });
       }
     } catch (e) {
-      if (mounted) setState(() { _error = 'Network error: $e'; _phase = _QuizPhase.error; });
+      if (mounted) setState(() { error = 'Network error: $e'; phase = Phase.error; });
     }
   }
 
-  Future<void> _startQuiz() async {
-    // Re-check connectivity before starting
-    final isOnline = await SqliteService().isOnline();
-    if (!isOnline) {
-      if (mounted) setState(() => _phase = _QuizPhase.offline);
+  Future<void> startQuiz() async {
+    final online = await SqliteService().isOnline();
+    if (!online) {
+      if (mounted) setState(() => phase = Phase.offline);
       return;
     }
-
-    setState(() { _phase = _QuizPhase.loading; _error = null; });
+    setState(() { phase = Phase.loading; error = null; });
     try {
       final res = await QuizRemoteDatasource().getQuiz();
       if (!mounted) return;
       if (res.statusCode == 200) {
         final d = res.data as Map<String, dynamic>;
-        _questions = (d['questions'] as List)
+        questions = (d['questions'] as List)
             .map((e) => Map<String, dynamic>.from(e as Map)).toList();
-        _current = 0;
-        _answers.clear();
-        setState(() => _phase = _QuizPhase.playing);
-        _startTimer();
+        current = 0;
+        answers.clear();
+        setState(() => phase = Phase.playing);
+        startTimer();
       } else {
         final msg = (res.data as Map?)?['message'] ?? 'Cannot start quiz';
-        setState(() { _error = msg.toString(); _phase = _QuizPhase.error; });
+        setState(() { error = msg.toString(); phase = Phase.error; });
       }
     } catch (e) {
-      if (mounted) setState(() { _error = 'Error: $e'; _phase = _QuizPhase.error; });
+      if (mounted) setState(() { error = 'Error: $e'; phase = Phase.error; });
     }
   }
 
-  void _startTimer() {
-    _timer?.cancel();
-    _timeLeft = 20;
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+  void startTimer() {
+    timer?.cancel();
+    timeLeft = 20;
+    timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!mounted) return;
-      setState(() => _timeLeft--);
-      if (_timeLeft <= 0) _nextQuestion();
+      setState(() => timeLeft--);
+      if (timeLeft <= 0) nextQ();
     });
   }
 
-  void _nextQuestion() {
-    _timer?.cancel();
-    if (_current < _questions.length - 1) {
-      setState(() => _current++);
-      _startTimer();
+  void nextQ() {
+    timer?.cancel();
+    if (current < questions.length - 1) {
+      setState(() => current++);
+      startTimer();
     } else {
-      _submitAnswers();
+      submitAnswers();
     }
   }
 
-  void _selectAnswer(int idx) {
-    final qId = _questions[_current]['id'] as int;
-    if (_answers.containsKey(qId)) return;
-    setState(() => _answers[qId] = idx);
-    Future.delayed(const Duration(milliseconds: 600), _nextQuestion);
+  void pick(int idx) {
+    final qId = questions[current]['id'] as int;
+    if (answers.containsKey(qId)) return;
+    setState(() => answers[qId] = idx);
+    Future.delayed(const Duration(milliseconds: 600), nextQ);
   }
 
-  Future<void> _submitAnswers() async {
-    setState(() => _phase = _QuizPhase.loading);
+  Future<void> submitAnswers() async {
+    setState(() => phase = Phase.loading);
     try {
-      final payload = _questions.map((q) {
-        final qId    = q['id'] as int;
-        final selIdx = _answers[qId] ?? -1;
-        return {'questionId': qId, 'selectedIndex': selIdx};
-      }).toList();
-
+      final payload = questions.map((q) =>
+      {'questionId': q['id'] as int, 'selectedIndex': answers[q['id'] as int] ?? -1}
+      ).toList();
       final res = await QuizRemoteDatasource().submitQuiz(payload);
       if (!mounted) return;
-
       if (res.statusCode == 200) {
-        _result = Map<String, dynamic>.from(res.data as Map);
-        final pts = _result!['totalPoints'] as int? ?? 0;
-        await SqliteService().put('user_quiz_points', pts.toString());
-        setState(() => _phase = _QuizPhase.results);
+        result = Map<String, dynamic>.from(res.data as Map);
+        await SqliteService().put(
+            'user_quiz_points', '${result!['totalPoints'] ?? 0}');
+        setState(() => phase = Phase.results);
       } else {
         final msg = (res.data as Map?)?['message'] ?? 'Submission failed';
-        setState(() { _error = msg.toString(); _phase = _QuizPhase.error; });
+        setState(() { error = msg.toString(); phase = Phase.error; });
       }
     } catch (e) {
-      if (mounted) setState(() { _error = 'Error: $e'; _phase = _QuizPhase.error; });
+      if (mounted) setState(() { error = 'Error: $e'; phase = Phase.error; });
     }
+  }
+
+  String fmtDate(dynamic raw) {
+    if (raw == null) return '';
+    try {
+      final d = DateTime.parse(raw.toString()).toLocal();
+      const mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      return '${mo[d.month-1]} ${d.day}, ${d.year}';
+    } catch (_) { return ''; }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _cream,
+      backgroundColor: bg,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: Text('Nepal Quiz',
             style: GoogleFonts.playfairDisplay(
-                fontSize: 20.sp, fontWeight: FontWeight.bold, color: _dark)),
+                fontSize: 20.sp, fontWeight: FontWeight.bold, color: ink)),
+        actions: [
+          if (phase == Phase.home)
+            Padding(
+              padding: EdgeInsets.only(right: 12.w),
+              child: TextButton.icon(
+                onPressed: () => Navigator.push(context,
+                    MaterialPageRoute(builder: (_) => const QuizHistoryPage())),
+                icon: Icon(Icons.history_rounded, size: 16.sp, color: accent),
+                label: Text('History',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 13.sp,
+                        color: accent,
+                        fontWeight: FontWeight.w600)),
+              ),
+            ),
+        ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.grey.shade200),
-        ),
+            preferredSize: const Size.fromHeight(1),
+            child: Divider(height: 1, color: Colors.grey.shade200)),
       ),
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 280),
-        child: switch (_phase) {
-          _QuizPhase.loading  => const Center(child: CircularProgressIndicator()),
-          _QuizPhase.offline  => _buildOffline(),
-          _QuizPhase.error    => _buildError(),
-          _QuizPhase.home     => _buildHome(),
-          _QuizPhase.playing  => _buildPlaying(),
-          _QuizPhase.results  => _buildResults(),
+        child: switch (phase) {
+          Phase.loading => const Center(child: CircularProgressIndicator()),
+          Phase.offline => buildOffline(),
+          Phase.error   => buildError(),
+          Phase.home    => buildHome(),
+          Phase.playing => buildPlaying(),
+          Phase.results => buildResults(),
         },
       ),
     );
   }
 
-  // ── Offline screen ────────────────────────────────────────────────────────
-
-  Widget _buildOffline() => Center(
+  Widget buildOffline() => Center(
     key: const ValueKey('offline'),
     child: Padding(
       padding: EdgeInsets.all(32.w),
@@ -200,51 +207,34 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
         Container(
           padding: EdgeInsets.all(24.w),
           decoration: BoxDecoration(
-            color: Colors.orange.shade50,
-            shape: BoxShape.circle,
-          ),
-          child: Icon(Icons.wifi_off_rounded, size: 56.sp, color: Colors.orange[700]),
+              color: Colors.grey.shade100, shape: BoxShape.circle),
+          child: Icon(Icons.wifi_off_rounded, size: 52.sp, color: Colors.grey[500]),
         ),
         SizedBox(height: 24.h),
         Text('No Internet Connection',
             style: GoogleFonts.playfairDisplay(
-                fontSize: 22.sp, fontWeight: FontWeight.bold, color: _dark)),
+                fontSize: 22.sp, fontWeight: FontWeight.bold, color: ink)),
         SizedBox(height: 12.h),
         Text(
-          'The quiz requires an internet connection to load questions and save your points to the server.',
+          'The quiz requires an internet connection to load questions and save your points.',
           textAlign: TextAlign.center,
-          style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey[600], height: 1.5),
-        ),
-        SizedBox(height: 8.h),
-        Container(
-          margin: EdgeInsets.only(top: 8.h),
-          padding: EdgeInsets.all(14.w),
-          decoration: BoxDecoration(
-            color: Colors.amber.shade50,
-            borderRadius: BorderRadius.circular(12.r),
-            border: Border.all(color: Colors.amber.shade200),
-          ),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Icon(Icons.info_outline_rounded, size: 16.sp, color: Colors.amber[700]),
-            SizedBox(width: 8.w),
-            Expanded(child: Text(
-              'Quiz points are saved to your account — internet is needed to record your score.',
-              style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.amber[900], height: 1.4),
-            )),
-          ]),
+          style: GoogleFonts.dmSans(
+              fontSize: 14.sp, color: Colors.grey[500], height: 1.5),
         ),
         SizedBox(height: 28.h),
         SizedBox(
           width: double.infinity, height: 48.h,
           child: ElevatedButton.icon(
-            icon: Icon(Icons.refresh_rounded, size: 20.sp),
-            label: Text('Try Again', style: GoogleFonts.dmSans(
-                fontSize: 15.sp, fontWeight: FontWeight.bold)),
-            onPressed: _loadHistory,
+            icon: Icon(Icons.refresh_rounded, size: 18.sp),
+            label: Text('Try Again',
+                style: GoogleFonts.dmSans(
+                    fontSize: 14.sp, fontWeight: FontWeight.bold)),
+            onPressed: loadHome,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _brown, foregroundColor: Colors.white,
+              backgroundColor: accent, foregroundColor: Colors.white,
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14.r)),
             ),
           ),
         ),
@@ -252,88 +242,116 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
     ),
   );
 
-  Widget _buildError() => Center(
+  Widget buildError() => Center(
     key: const ValueKey('error'),
-    child: Padding(padding: EdgeInsets.all(28.w),
+    child: Padding(
+      padding: EdgeInsets.all(28.w),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         Icon(Icons.error_outline, size: 56.sp, color: Colors.red[300]),
         SizedBox(height: 12.h),
-        Text(_error ?? 'Something went wrong',
+        Text(error ?? 'Something went wrong',
             textAlign: TextAlign.center,
-            style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey[600])),
+            style: GoogleFonts.dmSans(
+                fontSize: 14.sp, color: Colors.grey[500])),
         SizedBox(height: 20.h),
         ElevatedButton(
-          onPressed: _loadHistory,
+          onPressed: loadHome,
           style: ElevatedButton.styleFrom(
-              backgroundColor: _brown, foregroundColor: Colors.white, elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r))),
-          child: Text('Try Again', style: GoogleFonts.dmSans()),
+            backgroundColor: accent, foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10.r)),
+          ),
+          child: Text('Try Again',
+              style: GoogleFonts.dmSans(fontWeight: FontWeight.w600)),
         ),
       ]),
     ),
   );
 
-  Widget _buildHome() {
-    final canPlay = _attemptsLeft > 0;
+  Widget buildHome() {
+    final canPlay = attLeft > 0;
     return SingleChildScrollView(
       key: const ValueKey('home'),
       padding: EdgeInsets.all(20.w),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-        // Points banner
         Container(
           width: double.infinity,
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.all(22.w),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF8B5E3C), Color(0xFFCD6E4E)],
-              begin: Alignment.topLeft, end: Alignment.bottomRight,
-            ),
+            color: accent.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(20.r),
+            border: Border.all(color: accent.withValues(alpha: 0.2)),
           ),
           child: Row(children: [
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Your Points', style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.white70)),
-              SizedBox(height: 4.h),
-              Text('$_totalPoints pts',
-                  style: GoogleFonts.playfairDisplay(
-                      fontSize: 32.sp, fontWeight: FontWeight.bold, color: Colors.white)),
-              SizedBox(height: 4.h),
-              Text('≈ Rs. ${(_totalPoints / 2).toStringAsFixed(0)} booking discount',
-                  style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.white60)),
-            ])),
+            Expanded(child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Your Points',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12.sp, color: Colors.grey[500])),
+                  SizedBox(height: 4.h),
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text('$totalPoints pts',
+                        style: GoogleFonts.playfairDisplay(
+                            fontSize: 32.sp,
+                            fontWeight: FontWeight.bold,
+                            color: ink)),
+                  ),
+                  SizedBox(height: 4.h),
+                  Text(
+                    'Rs. ${(totalPoints / 2).toStringAsFixed(0)} booking discount',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 12.sp, color: Colors.grey[500]),
+                  ),
+                ])),
+            SizedBox(width: 12.w),
             Container(
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15), shape: BoxShape.circle),
-              child: Icon(Icons.emoji_events_rounded, color: _gold, size: 40.sp),
+                color: Colors.white,
+                shape: BoxShape.circle,
+                border: Border.all(color: accent.withValues(alpha: 0.2)),
+              ),
+              child: Icon(Icons.emoji_events_rounded,
+                  color: accent, size: 36.sp),
             ),
           ]),
         ),
 
         SizedBox(height: 14.h),
 
-        // Attempts card
         Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            color: Colors.white, borderRadius: BorderRadius.circular(16.r),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
             border: Border.all(color: Colors.grey.shade200),
           ),
           child: Column(children: [
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('Daily Attempts', style: GoogleFonts.dmSans(
-                  fontSize: 13.sp, fontWeight: FontWeight.w600, color: _dark)),
-              Text('$_attemptsToday / 3 used',
-                  style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
-            ]),
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Daily Attempts',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: ink)),
+                  Text('$attToday / 3 used',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12.sp, color: Colors.grey[400])),
+                ]),
             SizedBox(height: 10.h),
             Row(children: List.generate(3, (i) => Expanded(
               child: Container(
                 margin: EdgeInsets.only(right: i < 2 ? 6.w : 0),
-                height: 8.h,
+                height: 7.h,
                 decoration: BoxDecoration(
-                  color: i < _attemptsToday ? Colors.red[300] : Colors.green[400],
+                  color: i < attToday
+                      ? Colors.red[200]
+                      : green.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(4.r),
                 ),
               ),
@@ -341,18 +359,23 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
             SizedBox(height: 10.h),
             Row(children: [
               Icon(
-                canPlay ? Icons.check_circle_rounded : Icons.do_not_disturb_rounded,
-                size: 14.sp, color: canPlay ? Colors.green[700] : Colors.red[400],
+                canPlay
+                    ? Icons.check_circle_rounded
+                    : Icons.do_not_disturb_rounded,
+                size: 14.sp,
+                color: canPlay ? green : Colors.red[400],
               ),
               SizedBox(width: 6.w),
-              Text(
-                canPlay
-                    ? '$_attemptsLeft attempt${_attemptsLeft > 1 ? 's' : ''} remaining today'
-                    : 'All attempts used — come back tomorrow!',
-                style: GoogleFonts.dmSans(
-                    fontSize: 12.sp,
-                    color: canPlay ? Colors.green[700] : Colors.red[400],
-                    fontWeight: FontWeight.w500),
+              Flexible(
+                child: Text(
+                  canPlay
+                      ? '$attLeft attempt${attLeft > 1 ? 's' : ''} remaining today'
+                      : 'All attempts used — come back tomorrow!',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 12.sp,
+                      color: canPlay ? green : Colors.red[400],
+                      fontWeight: FontWeight.w500),
+                ),
               ),
             ]),
           ]),
@@ -360,26 +383,29 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
 
         SizedBox(height: 14.h),
 
-        // How it works
         Container(
           padding: EdgeInsets.all(16.w),
           decoration: BoxDecoration(
-            color: Colors.amber.shade50, borderRadius: BorderRadius.circular(16.r),
-            border: Border.all(color: Colors.amber.shade200),
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16.r),
+            border: Border.all(color: Colors.grey.shade200),
           ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('How it works', style: GoogleFonts.dmSans(
-                fontSize: 13.sp, fontWeight: FontWeight.bold, color: Colors.amber[900])),
-            SizedBox(height: 8.h),
-            for (final s in [
-              '10 random Nepal questions per quiz',
-              '20 seconds to answer each question',
-              '10 points for every correct answer',
-              '3 attempts per day',
-              '10 pts = Rs. 5 off at booking (max 20%)',
-              'Internet required — points are saved to your account',
-            ]) _HowRow(s),
-          ]),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('How it works',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 13.sp,
+                        fontWeight: FontWeight.bold,
+                        color: ink)),
+                SizedBox(height: 8.h),
+                for (final s in [
+                  '10 random Nepal questions per quiz',
+                  '20 seconds to answer each question',
+                  '10 points for every correct answer',
+                  '3 attempts per day maximum',
+                  '10 pts = Rs. 5 off at booking (max 20%)',
+                ]) _Bullet(s),
+              ]),
         ),
 
         SizedBox(height: 20.h),
@@ -387,220 +413,285 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
         SizedBox(
           width: double.infinity, height: 52.h,
           child: ElevatedButton.icon(
-            icon: Icon(canPlay ? Icons.play_arrow_rounded : Icons.lock_clock_rounded, size: 22.sp),
-            label: Text(canPlay ? 'Start Quiz' : 'Come Back Tomorrow',
-                style: GoogleFonts.dmSans(fontSize: 16.sp, fontWeight: FontWeight.bold)),
-            onPressed: canPlay ? _startQuiz : null,
+            icon: Icon(
+              canPlay ? Icons.play_arrow_rounded : Icons.lock_clock_rounded,
+              size: 22.sp,
+            ),
+            label: Text(
+              canPlay ? 'Start Quiz' : 'Come Back Tomorrow',
+              style: GoogleFonts.dmSans(
+                  fontSize: 16.sp, fontWeight: FontWeight.bold),
+            ),
+            onPressed: canPlay ? startQuiz : null,
             style: ElevatedButton.styleFrom(
-              backgroundColor: _brown, foregroundColor: Colors.white,
-              disabledBackgroundColor: Colors.grey[300],
-              disabledForegroundColor: Colors.grey[500],
+              backgroundColor: accent,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.grey[200],
+              disabledForegroundColor: Colors.grey[400],
               elevation: 0,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16.r)),
             ),
           ),
         ),
 
-        if (_history.isNotEmpty) ...[
-          SizedBox(height: 24.h),
-          Text('Recent Attempts', style: GoogleFonts.dmSans(
-              fontSize: 15.sp, fontWeight: FontWeight.bold, color: _dark)),
-          SizedBox(height: 10.h),
-          ..._history.map((a) {
-            final score = a['score'] as int? ?? 0;
+        if (recent.isNotEmpty) ...[
+          SizedBox(height: 28.h),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Recent Attempts',
+                    style: GoogleFonts.dmSans(
+                        fontSize: 15.sp,
+                        fontWeight: FontWeight.bold,
+                        color: ink)),
+                TextButton(
+                  onPressed: () => Navigator.push(context,
+                      MaterialPageRoute(
+                          builder: (_) => const QuizHistoryPage())),
+                  child: Text('View all',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12.sp,
+                          color: accent,
+                          fontWeight: FontWeight.w600)),
+                ),
+              ]),
+          SizedBox(height: 8.h),
+          ...recent.take(3).map((a) {
+            final score = a['score']          as int? ?? 0;
             final total = a['totalQuestions'] as int? ?? 10;
-            final pts   = a['pointsEarned'] as int? ?? 0;
+            final pts   = a['pointsEarned']   as int? ?? 0;
             final pct   = total > 0 ? score / total : 0.0;
+            final c     = pct >= 0.7 ? green : accent;
             return Container(
               margin: EdgeInsets.only(bottom: 8.h),
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
-                color: Colors.white, borderRadius: BorderRadius.circular(12.r),
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12.r),
                 border: Border.all(color: Colors.grey.shade200),
               ),
               child: Row(children: [
                 Container(
-                  width: 44.w, height: 44.h,
+                  width: 44.w, height: 44.w,
                   decoration: BoxDecoration(
-                    color: pct >= 0.7 ? Colors.green.shade50 : Colors.orange.shade50,
+                    color: c.withValues(alpha: 0.08),
                     shape: BoxShape.circle,
+                    border: Border.all(color: c.withValues(alpha: 0.2)),
                   ),
-                  child: Center(child: Text('$score/$total',
-                      style: GoogleFonts.dmSans(
-                        fontSize: 12.sp, fontWeight: FontWeight.bold,
-                        color: pct >= 0.7 ? Colors.green[700] : Colors.orange[700],
-                      ))),
+                  child: Center(child: FittedBox(
+                    child: Padding(
+                      padding: EdgeInsets.all(4.w),
+                      child: Text('$score/$total',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12.sp,
+                              fontWeight: FontWeight.bold,
+                              color: c)),
+                    ),
+                  )),
                 ),
                 SizedBox(width: 12.w),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text('$score correct out of $total',
-                      style: GoogleFonts.dmSans(fontSize: 13.sp,
-                          fontWeight: FontWeight.w600, color: _dark)),
-                  Text(_fmtDate(a['attemptedAt']),
-                      style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500])),
-                ])),
+                Expanded(child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('$score correct out of $total',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 13.sp,
+                              fontWeight: FontWeight.w600,
+                              color: ink)),
+                      Text(fmtDate(a['attemptedAt']),
+                          style: GoogleFonts.dmSans(
+                              fontSize: 11.sp,
+                              color: Colors.grey[400])),
+                    ])),
                 Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: 10.w, vertical: 5.h),
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade50, borderRadius: BorderRadius.circular(20.r),
+                    color: accent.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(8.r),
+                    border: Border.all(
+                        color: accent.withValues(alpha: 0.2)),
                   ),
-                  child: Text('+$pts pts', style: GoogleFonts.dmSans(
-                      fontSize: 12.sp, fontWeight: FontWeight.bold, color: Colors.amber[800])),
+                  child: Text('+$pts pts',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12.sp,
+                          fontWeight: FontWeight.bold,
+                          color: accent)),
                 ),
               ]),
             );
           }),
         ],
+
         SizedBox(height: 20.h),
       ]),
     );
   }
 
-  Widget _buildPlaying() {
-    if (_questions.isEmpty) return const SizedBox.shrink();
-    final q       = _questions[_current];
-    final qId     = q['id'] as int;
-    final options = (q['options'] as List? ?? []).map((o) => o.toString()).toList();
-    final selected = _answers[qId];
+  Widget buildPlaying() {
+    if (questions.isEmpty) return const SizedBox.shrink();
+    final q      = questions[current];
+    final qId    = q['id'] as int;
+    final opts   = (q['options'] as List? ?? []).map((o) => o.toString()).toList();
+    final picked = answers[qId];
+    final urgent = timeLeft <= 5;
 
     return Column(
-        key: ValueKey('playing-$_current'),
-        children: [
-          Container(
-            color: Colors.white,
-            padding: EdgeInsets.fromLTRB(20.w, 14.h, 20.w, 14.h),
-            child: Column(children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Question ${_current + 1} of ${_questions.length}',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 13.sp, fontWeight: FontWeight.w600, color: _dark)),
-                Container(
-                  width: 40.w, height: 40.h,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _timeLeft <= 5 ? Colors.red.shade50 : Colors.amber.shade50,
-                  ),
-                  child: Center(child: Text('$_timeLeft',
+      key: ValueKey('playing-$current'),
+      children: [
+        Container(
+          color: Colors.white,
+          padding: EdgeInsets.fromLTRB(20.w, 14.h, 20.w, 14.h),
+          child: Column(children: [
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Question ${current + 1} of ${questions.length}',
                       style: GoogleFonts.dmSans(
-                        fontSize: 14.sp, fontWeight: FontWeight.bold,
-                        color: _timeLeft <= 5 ? Colors.red[700] : Colors.amber[800],
-                      ))),
-                ),
-              ]),
-              SizedBox(height: 10.h),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4.r),
-                child: LinearProgressIndicator(
-                  value: (_current + 1) / _questions.length,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: AlwaysStoppedAnimation(_brown),
-                  minHeight: 6.h,
-                ),
-              ),
-              SizedBox(height: 4.h),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4.r),
-                child: LinearProgressIndicator(
-                  value: _timeLeft / 20.0,
-                  backgroundColor: Colors.grey.shade200,
-                  valueColor: AlwaysStoppedAnimation(
-                      _timeLeft <= 5 ? Colors.red : Colors.amber),
-                  minHeight: 4.h,
-                ),
-              ),
-            ]),
-          ),
-
-          Expanded(child: SingleChildScrollView(
-            padding: EdgeInsets.all(20.w),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              if ((q['category'] ?? '').toString().isNotEmpty)
-                Container(
-                  margin: EdgeInsets.only(bottom: 12.h),
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                  decoration: BoxDecoration(
-                    color: _brown.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(20.r),
-                  ),
-                  child: Text(q['category'].toString(),
-                      style: GoogleFonts.dmSans(
-                          fontSize: 11.sp, fontWeight: FontWeight.bold, color: _brown)),
-                ),
-
-              Text(q['question'].toString(),
-                  style: GoogleFonts.dmSans(
-                      fontSize: 17.sp, fontWeight: FontWeight.w700,
-                      color: _dark, height: 1.4)),
-
-              SizedBox(height: 24.h),
-
-              ...List.generate(options.length, (i) {
-                final isSelected = selected == i;
-                return GestureDetector(
-                  onTap: selected == null ? () => _selectAnswer(i) : null,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: EdgeInsets.only(bottom: 10.h),
-                    padding: EdgeInsets.all(16.w),
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: ink)),
+                  Container(
+                    width: 40.w, height: 40.w,
                     decoration: BoxDecoration(
-                      color: isSelected ? Colors.blue.shade50 : Colors.white,
-                      borderRadius: BorderRadius.circular(14.r),
-                      border: Border.all(
-                        color: isSelected ? Colors.blue.shade300 : Colors.grey.shade200,
-                        width: 1.5,
-                      ),
+                      shape: BoxShape.circle,
+                      color: urgent
+                          ? Colors.red.withValues(alpha: 0.08)
+                          : accent.withValues(alpha: 0.08),
                     ),
-                    child: Row(children: [
-                      Container(
-                        width: 30.w, height: 30.h,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isSelected ? Colors.blue : _brown.withValues(alpha: 0.08),
-                        ),
-                        child: Center(child: Text(String.fromCharCode(65 + i),
-                            style: GoogleFonts.dmSans(
-                              fontSize: 13.sp, fontWeight: FontWeight.bold,
-                              color: isSelected ? Colors.white : _brown,
-                            ))),
-                      ),
-                      SizedBox(width: 12.w),
-                      Expanded(child: Text(options[i],
-                          style: GoogleFonts.dmSans(
-                            fontSize: 14.sp, fontWeight: FontWeight.w500,
-                            color: isSelected ? Colors.blue.shade800 : _dark,
-                          ))),
-                    ]),
+                    child: Center(child: Text('$timeLeft',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 14.sp,
+                            fontWeight: FontWeight.bold,
+                            color: urgent ? Colors.red[600] : accent))),
                   ),
-                );
-              }),
+                ]),
+            SizedBox(height: 10.h),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4.r),
+              child: LinearProgressIndicator(
+                value: (current + 1) / questions.length,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation(accent),
+                minHeight: 5.h,
+              ),
+            ),
+            SizedBox(height: 4.h),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(4.r),
+              child: LinearProgressIndicator(
+                value: timeLeft / 20.0,
+                backgroundColor: Colors.grey.shade200,
+                valueColor: AlwaysStoppedAnimation(
+                    urgent ? Colors.red[400]! : accent),
+                minHeight: 4.h,
+              ),
+            ),
+          ]),
+        ),
 
-              if (selected == null)
-                Center(child: TextButton(
-                  onPressed: _nextQuestion,
-                  child: Text('Skip →', style: GoogleFonts.dmSans(
-                      fontSize: 13.sp, color: Colors.grey[500])),
-                )),
-            ]),
-          )),
-        ]);
+        Expanded(child: SingleChildScrollView(
+          padding: EdgeInsets.all(20.w),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if ((q['category'] ?? '').toString().isNotEmpty)
+                  Container(
+                    margin: EdgeInsets.only(bottom: 12.h),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 10.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6.r),
+                    ),
+                    child: Text(q['category'].toString(),
+                        style: GoogleFonts.dmSans(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.bold,
+                            color: accent)),
+                  ),
+
+                Text(q['question'].toString(),
+                    style: GoogleFonts.dmSans(
+                        fontSize: 17.sp,
+                        fontWeight: FontWeight.w700,
+                        color: ink,
+                        height: 1.4)),
+
+                SizedBox(height: 24.h),
+
+                ...List.generate(opts.length, (i) {
+                  final sel = picked == i;
+                  return GestureDetector(
+                    onTap: picked == null ? () => pick(i) : null,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: EdgeInsets.only(bottom: 10.h),
+                      padding: EdgeInsets.all(16.w),
+                      decoration: BoxDecoration(
+                        color: sel
+                            ? accent.withValues(alpha: 0.06)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(14.r),
+                        border: Border.all(
+                          color: sel ? accent : Colors.grey.shade200,
+                          width: sel ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Row(children: [
+                        Container(
+                          width: 30.w, height: 30.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: sel
+                                ? accent
+                                : accent.withValues(alpha: 0.08),
+                          ),
+                          child: Center(child: Text(
+                            String.fromCharCode(65 + i),
+                            style: GoogleFonts.dmSans(
+                                fontSize: 13.sp,
+                                fontWeight: FontWeight.bold,
+                                color: sel ? Colors.white : accent),
+                          )),
+                        ),
+                        SizedBox(width: 12.w),
+                        Expanded(child: Text(opts[i],
+                            style: GoogleFonts.dmSans(
+                                fontSize: 14.sp,
+                                fontWeight: FontWeight.w500,
+                                color: ink))),
+                      ]),
+                    ),
+                  );
+                }),
+
+                if (picked == null)
+                  Center(child: TextButton(
+                    onPressed: nextQ,
+                    child: Text('Skip →',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 13.sp,
+                            color: Colors.grey[400])),
+                  )),
+              ]),
+        )),
+      ],
+    );
   }
 
-  Widget _buildResults() {
-    if (_result == null) return const SizedBox.shrink();
-    final score   = _result!['score']       as int? ?? 0;
-    final total   = _result!['total']       as int? ?? 10;
-    final earned  = _result!['pointsEarned'] as int? ?? 0;
-    final allPts  = _result!['totalPoints'] as int? ?? 0;
-    final left    = _result!['attemptsLeft'] as int? ?? 0;
-    final results = (_result!['results'] as List? ?? [])
+  Widget buildResults() {
+    if (result == null) return const SizedBox.shrink();
+    final score  = result!['score']        as int? ?? 0;
+    final total  = result!['total']        as int? ?? 10;
+    final pts    = result!['pointsEarned'] as int? ?? 0;
+    final allPts = result!['totalPoints']  as int? ?? 0;
+    final left   = result!['attemptsLeft'] as int? ?? 0;
+    final list   = (result!['results'] as List? ?? [])
         .map((e) => Map<String, dynamic>.from(e as Map)).toList();
-    final pct = total > 0 ? score / total : 0.0;
-
-    final Color hColor;
-    final String hMsg;
-    if (pct >= 0.8)      { hColor = Colors.green;  hMsg = 'Excellent! 🎉'; }
-    else if (pct >= 0.5) { hColor = Colors.orange; hMsg = 'Good job! 👍'; }
-    else                 { hColor = Colors.red;    hMsg = 'Keep trying! 💪'; }
+    final pct  = total > 0 ? score / total : 0.0;
+    final c    = pct >= 0.8 ? green : pct >= 0.5 ? accent : Colors.red[600]!;
+    final msg  = pct >= 0.8 ? 'Excellent! 🎉'
+        : pct >= 0.5 ? 'Good job! 👍'
+        : 'Keep trying! 💪';
 
     return SingleChildScrollView(
       key: const ValueKey('results'),
@@ -611,53 +702,72 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
           width: double.infinity,
           padding: EdgeInsets.all(24.w),
           decoration: BoxDecoration(
-            color: hColor.withValues(alpha: 0.08),
+            color: c.withValues(alpha: 0.06),
             borderRadius: BorderRadius.circular(20.r),
-            border: Border.all(color: hColor.withValues(alpha: 0.3)),
+            border: Border.all(color: c.withValues(alpha: 0.2)),
           ),
           child: Column(children: [
-            Text(hMsg, style: GoogleFonts.playfairDisplay(
-                fontSize: 24.sp, fontWeight: FontWeight.bold, color: hColor)),
+            Text(msg,
+                style: GoogleFonts.playfairDisplay(
+                    fontSize: 24.sp,
+                    fontWeight: FontWeight.bold,
+                    color: c)),
             SizedBox(height: 16.h),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceEvenly, children: [
-              _ResultStat('$score/$total', 'Score', hColor),
-              Container(width: 1, height: 40.h, color: Colors.grey.shade300),
-              _ResultStat('+$earned', 'Points', Colors.amber[700]!),
-              Container(width: 1, height: 40.h, color: Colors.grey.shade300),
-              _ResultStat('$allPts', 'Total', _brown),
-            ]),
+            IntrinsicHeight(
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _Stat('$score/$total', 'Score', c),
+                    VerticalDivider(color: Colors.grey.shade300),
+                    _Stat('+$pts', 'Points', accent),
+                    VerticalDivider(color: Colors.grey.shade300),
+                    _Stat('$allPts', 'Total', ink),
+                  ]),
+            ),
           ]),
         ),
 
-        if (earned > 0) ...[
+        if (pts > 0) ...[
           SizedBox(height: 14.h),
           Container(
             padding: EdgeInsets.all(14.w),
             decoration: BoxDecoration(
-              color: Colors.amber.shade50, borderRadius: BorderRadius.circular(14.r),
-              border: Border.all(color: Colors.amber.shade200),
+              color: green.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(12.r),
+              border: Border.all(color: green.withValues(alpha: 0.2)),
             ),
             child: Row(children: [
-              Icon(Icons.info_outline_rounded, size: 16.sp, color: Colors.amber[700]),
+              Icon(Icons.check_circle_outline_rounded,
+                  size: 16.sp, color: green),
               SizedBox(width: 8.w),
               Expanded(child: Text(
-                '+$earned pts added! Use them at booking for discounts — 10 pts = Rs. 5 off.',
-                style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.amber[900]),
+                '+$pts pts added! 10 pts = Rs. 5 off at booking.',
+                style: GoogleFonts.dmSans(
+                    fontSize: 12.sp, color: green),
               )),
             ]),
           ),
         ],
 
-        SizedBox(height: 16.h),
-        Text('Answer Review', style: GoogleFonts.dmSans(
-            fontSize: 15.sp, fontWeight: FontWeight.bold, color: _dark)),
+        SizedBox(height: 20.h),
+        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+          Text('Answer Review',
+              style: GoogleFonts.dmSans(
+                  fontSize: 15.sp,
+                  fontWeight: FontWeight.bold,
+                  color: ink)),
+          Text('$score/$total correct',
+              style: GoogleFonts.dmSans(
+                  fontSize: 12.sp, color: Colors.grey[400])),
+        ]),
         SizedBox(height: 10.h),
 
-        ...results.asMap().entries.map((entry) {
-          final i    = entry.key;
-          final r    = entry.value;
-          final ok   = r['isCorrect'] as bool? ?? false;
-          final opts = (r['options'] as List? ?? []).map((o) => o.toString()).toList();
+        ...list.asMap().entries.map((entry) {
+          final i       = entry.key;
+          final r       = entry.value;
+          final ok      = r['isCorrect']     as bool? ?? false;
+          final opts    = (r['options'] as List? ?? [])
+              .map((o) => o.toString()).toList();
           final selIdx  = r['selectedIndex'] as int? ?? -1;
           final corrIdx = r['correctIndex']  as int? ?? 0;
 
@@ -665,56 +775,86 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
             margin: EdgeInsets.only(bottom: 10.h),
             padding: EdgeInsets.all(14.w),
             decoration: BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.circular(14.r),
-              border: Border.all(color: ok ? Colors.green.shade200 : Colors.red.shade200),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Icon(ok ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                    size: 16.sp, color: ok ? Colors.green[700] : Colors.red[400]),
-                SizedBox(width: 6.w),
-                Text('Q${i + 1}', style: GoogleFonts.dmSans(
-                    fontSize: 11.sp, fontWeight: FontWeight.bold, color: Colors.grey[500])),
-              ]),
-              SizedBox(height: 6.h),
-              Text(r['question'].toString(), style: GoogleFonts.dmSans(
-                  fontSize: 13.sp, fontWeight: FontWeight.w600, color: _dark)),
-              SizedBox(height: 8.h),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50, borderRadius: BorderRadius.circular(8.r),
-                  border: Border.all(color: Colors.green.shade200),
-                ),
-                child: Row(children: [
-                  Icon(Icons.check_rounded, size: 13.sp, color: Colors.green[700]),
-                  SizedBox(width: 6.w),
-                  Text('Correct: ${opts.isNotEmpty ? opts[corrIdx] : ''}',
-                      style: GoogleFonts.dmSans(fontSize: 12.sp,
-                          color: Colors.green[800], fontWeight: FontWeight.w600)),
-                ]),
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(14.r),
+              border: Border.all(
+                color: ok
+                    ? green.withValues(alpha: 0.3)
+                    : Colors.red.withValues(alpha: 0.25),
               ),
-              if (!ok && selIdx >= 0 && selIdx < opts.length) ...[
-                SizedBox(height: 4.h),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50, borderRadius: BorderRadius.circular(8.r),
-                    border: Border.all(color: Colors.red.shade200),
-                  ),
-                  child: Row(children: [
-                    Icon(Icons.close_rounded, size: 13.sp, color: Colors.red[400]),
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Icon(
+                      ok ? Icons.check_circle_rounded : Icons.cancel_rounded,
+                      size: 15.sp,
+                      color: ok ? green : Colors.red[400],
+                    ),
                     SizedBox(width: 6.w),
-                    Text('You chose: ${opts[selIdx]}',
-                        style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.red[700])),
+                    Text('Q${i + 1}',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[400])),
                   ]),
-                ),
-              ],
-              if (!ok && selIdx == -1) ...[
-                SizedBox(height: 4.h),
-                Text('Skipped', style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
-              ],
-            ]),
+                  SizedBox(height: 6.h),
+                  Text(r['question'].toString(),
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13.sp,
+                          fontWeight: FontWeight.w600,
+                          color: ink)),
+                  SizedBox(height: 8.h),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: 10.w, vertical: 6.h),
+                    decoration: BoxDecoration(
+                      color: green.withValues(alpha: 0.07),
+                      borderRadius: BorderRadius.circular(8.r),
+                      border: Border.all(color: green.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(children: [
+                      Icon(Icons.check_rounded, size: 13.sp, color: green),
+                      SizedBox(width: 6.w),
+                      Expanded(child: Text(
+                        'Correct: ${opts.isNotEmpty ? opts[corrIdx] : ''}',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 12.sp,
+                            color: green,
+                            fontWeight: FontWeight.w600),
+                      )),
+                    ]),
+                  ),
+                  if (!ok && selIdx >= 0 && selIdx < opts.length) ...[
+                    SizedBox(height: 6.h),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 10.w, vertical: 6.h),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(8.r),
+                        border: Border.all(
+                            color: Colors.red.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(children: [
+                        Icon(Icons.close_rounded,
+                            size: 13.sp, color: Colors.red[400]),
+                        SizedBox(width: 6.w),
+                        Expanded(child: Text(
+                          'You chose: ${opts[selIdx]}',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 12.sp, color: Colors.red[400]),
+                        )),
+                      ]),
+                    ),
+                  ],
+                  if (!ok && selIdx == -1) ...[
+                    SizedBox(height: 4.h),
+                    Text('Skipped',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 12.sp, color: Colors.grey[400])),
+                  ],
+                ]),
           );
         }),
 
@@ -725,26 +865,28 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
               icon: Icon(Icons.replay_rounded, size: 18.sp),
               label: Text('Play Again ($left left)',
                   style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
-              onPressed: _startQuiz,
+              onPressed: startQuiz,
               style: ElevatedButton.styleFrom(
-                backgroundColor: _brown, foregroundColor: Colors.white,
-                elevation: 0, padding: EdgeInsets.symmetric(vertical: 14.h),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+                backgroundColor: accent, foregroundColor: Colors.white,
+                elevation: 0,
+                padding: EdgeInsets.symmetric(vertical: 14.h),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14.r)),
               ),
             )),
             SizedBox(width: 10.w),
           ],
           Expanded(child: OutlinedButton.icon(
-            icon: Icon(Icons.home_outlined, size: 18.sp),
-            label: Text('Done', style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
-            onPressed: () {
-              _timer?.cancel();
-              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context)=>QuizHistoryPage()),(route)=>false);
-              },
+            icon: Icon(Icons.done_rounded, size: 18.sp),
+            label: Text('Done',
+                style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
+            onPressed: () { timer?.cancel(); loadHome(); },
             style: OutlinedButton.styleFrom(
-              foregroundColor: _brown, side: BorderSide(color: _brown),
+              foregroundColor: accent,
+              side: BorderSide(color: accent.withValues(alpha: 0.5)),
               padding: EdgeInsets.symmetric(vertical: 14.h),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14.r)),
             ),
           )),
         ]),
@@ -752,39 +894,43 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
       ]),
     );
   }
-
-  String _fmtDate(dynamic raw) {
-    if (raw == null) return '';
-    try {
-      final d = DateTime.parse(raw.toString()).toLocal();
-      const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      return '${m[d.month-1]} ${d.day}, ${d.year}';
-    } catch (_) { return ''; }
-  }
 }
 
-class _HowRow extends StatelessWidget {
+class _Bullet extends StatelessWidget {
   final String text;
-  const _HowRow(this.text);
+  const _Bullet(this.text);
   @override
   Widget build(BuildContext context) => Padding(
-    padding: EdgeInsets.only(bottom: 4.h),
+    padding: EdgeInsets.only(bottom: 5.h),
     child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text('• ', style: TextStyle(color: Colors.amber[700], fontSize: 13.sp)),
-      Expanded(child: Text(text, style: GoogleFonts.dmSans(
-          fontSize: 12.sp, color: Colors.amber[900]))),
+      Padding(
+        padding: EdgeInsets.only(top: 5.h, right: 8.w),
+        child: Container(
+          width: 4, height: 4,
+          decoration: const BoxDecoration(
+              color: Color(0xFFCD6E4E), shape: BoxShape.circle),
+        ),
+      ),
+      Expanded(child: Text(text,
+          style: GoogleFonts.dmSans(
+              fontSize: 12.sp, color: Color(0xFF2D1B10)))),
     ]),
   );
 }
 
-class _ResultStat extends StatelessWidget {
+class _Stat extends StatelessWidget {
   final String value, label;
   final Color color;
-  const _ResultStat(this.value, this.label, this.color);
+  const _Stat(this.value, this.label, this.color);
   @override
   Widget build(BuildContext context) => Column(children: [
-    Text(value, style: GoogleFonts.dmSans(
-        fontSize: 20.sp, fontWeight: FontWeight.bold, color: color)),
-    Text(label, style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[500])),
+    FittedBox(
+      child: Text(value,
+          style: GoogleFonts.dmSans(
+              fontSize: 20.sp, fontWeight: FontWeight.bold, color: color)),
+    ),
+    Text(label,
+        style: GoogleFonts.dmSans(
+            fontSize: 10.sp, color: Colors.grey[500])),
   ]);
 }

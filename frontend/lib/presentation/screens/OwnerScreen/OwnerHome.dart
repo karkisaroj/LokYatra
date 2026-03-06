@@ -5,7 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 import 'package:lokyatra_frontend/data/datasources/user_remote_datasource.dart';
-import 'package:lokyatra_frontend/presentation/screens/NotificationsPage.dart';
+import 'package:lokyatra_frontend/presentation/widgets/Helpers/NotificationsPage.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/notification/notification_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/notification/notification_event.dart';
 

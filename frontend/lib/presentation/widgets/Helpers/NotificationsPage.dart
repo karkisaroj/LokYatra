@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-import '../../data/models/AppNotification.dart';
-import '../state_management/Bloc/notification/notification_bloc.dart';
-import '../state_management/Bloc/notification/notification_event.dart';
-import '../state_management/Bloc/notification/notification_state.dart';
+import '../../../data/models/AppNotification.dart';
+import '../../state_management/Bloc/notification/notification_bloc.dart';
+import '../../state_management/Bloc/notification/notification_event.dart';
+import '../../state_management/Bloc/notification/notification_state.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});

@@ -11,7 +11,7 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/boo
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/booking_state.dart';
 import '../../../data/datasources/quiz_remote_datasource.dart';
 import '../../state_management/Bloc/notification/notification_bloc.dart';
-import '../NotificationsPage.dart';
+import '../../widgets/Helpers/NotificationsPage.dart';
 import '../OwnerScreen/ProfileImageWidget.dart';
 import 'MyReviewsPage.dart';
 import 'Savedhomestayspage.dart';

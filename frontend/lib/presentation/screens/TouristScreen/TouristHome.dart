@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
-import 'package:lokyatra_frontend/presentation/screens/NotificationsPage.dart';
+import 'package:lokyatra_frontend/presentation/widgets/Helpers/NotificationsPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/QuizPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristProfilePage.dart';
 import '../../../core/services/constants.dart';
