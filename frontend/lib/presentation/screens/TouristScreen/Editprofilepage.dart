@@ -137,7 +137,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                   child: Column(children: [
                     ProfileImageWidget(
                       initialImageUrl: _profileImageUrl,
-                      accentColor: _terracotta,
+                      accent: _terracotta,
                       onUploaded: (newUrl) async {
                         setState(() => _profileImageUrl = newUrl);
                         await SqliteService().put('user_image', newUrl);

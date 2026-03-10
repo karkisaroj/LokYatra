@@ -125,7 +125,6 @@ class SqliteService {
     return DateTime.now().difference(DateTime.parse(ts as String)) > maxAge;
   }
 
-  // ── Profile ───────────────────────────────────────────────────────────────
 
   Future<void> cacheUserProfile({
     required String name,

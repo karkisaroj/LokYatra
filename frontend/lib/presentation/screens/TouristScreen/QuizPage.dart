@@ -54,12 +54,16 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
       if (res.statusCode == 200) {
         final d = res.data as Map<String, dynamic>;
         setState(() {
-          totalPoints = d['totalPoints']   as int? ?? 0;
+          final list = (d['history'] as List? ?? [])
+              .map((e) => Map<String, dynamic>.from(e as Map)).toList();
+          final apiTotal = d['totalPoints'] as int? ?? 0;
+          final sumFromHistory = list.fold<int>(0, (s, h) => s + (h['pointsEarned'] as int? ?? 0));
+
+          totalPoints = apiTotal > 0 ? apiTotal : sumFromHistory;
           attToday    = d['attemptsToday'] as int? ?? 0;
           attLeft     = d['attemptsLeft']  as int? ?? 3;
-          recent      = (d['history'] as List? ?? [])
-              .map((e) => Map<String, dynamic>.from(e as Map)).toList();
-          phase = Phase.home;
+          recent      = list;
+          phase       = Phase.home;
         });
       } else {
         setState(() { error = 'Could not load quiz'; phase = Phase.error; });

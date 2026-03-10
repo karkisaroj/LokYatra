@@ -2,314 +2,294 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
-
 import '../../../data/datasources/User_remote_datasource.dart';
+
+const pageInk    = Color(0xFF2D1B10);
+const pageAccent = Color(0xFFCD6E4E);
+const pageCream  = Color(0xFFFAF7F2);
+const pageGreen  = Color(0xFF2E7D52);
+
+double fontSize(double v, bool wide)   => wide ? v : v.sp;
+double widthVal(double v, bool wide)   => wide ? v : v.w;
+double heightVal(double v, bool wide)  => wide ? v : v.h;
+double radiusVal(double v, bool wide)  => wide ? v : v.r;
 
 class OwnerChangePasswordPage extends StatefulWidget {
   const OwnerChangePasswordPage({super.key});
-
   @override
-  State<OwnerChangePasswordPage> createState() => _OwnerChangePasswordPageState();
+  State<OwnerChangePasswordPage> createState() => OwnerChangePasswordPageState();
 }
 
-class _OwnerChangePasswordPageState extends State<OwnerChangePasswordPage> {
-  static const _brown   = Color(0xFF5C4033);
-  static const _dark    = Color(0xFF1C1C1C);
-  static const _cream   = Color(0xFFFAF7F2);
-  static const _divider = Color(0xFFEDE8E1);
-  static const _muted   = Color(0xFF8A8279);
-  static const _green   = Color(0xFF3D5A4F);
-
-  final _formKey        = GlobalKey<FormState>();
-  final _currentCtrl    = TextEditingController();
-  final _newCtrl        = TextEditingController();
-  final _confirmCtrl    = TextEditingController();
-
-  bool _showCurrent = false;
-  bool _showNew     = false;
-  bool _showConfirm = false;
-  bool _saving      = false;
+class OwnerChangePasswordPageState extends State<OwnerChangePasswordPage> {
+  final formKey  = GlobalKey<FormState>();
+  final currCtrl = TextEditingController();
+  final nextCtrl = TextEditingController();
+  final confCtrl = TextEditingController();
+  bool showCurr  = false;
+  bool showNext  = false;
+  bool showConf  = false;
+  bool busy      = false;
 
   @override
   void dispose() {
-    _currentCtrl.dispose();
-    _newCtrl.dispose();
-    _confirmCtrl.dispose();
+    currCtrl.dispose(); nextCtrl.dispose(); confCtrl.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _saving = true);
-
+  Future<void> submit() async {
+    if (!formKey.currentState!.validate()) return;
+    setState(() => busy = true);
     try {
       final res = await UserRemoteDatasource().changePassword(
-        currentPassword: _currentCtrl.text,
-        newPassword:     _newCtrl.text,
-      );
-
+          currentPassword: currCtrl.text, newPassword: nextCtrl.text);
       if (!mounted) return;
-
       if (res.statusCode == 200) {
+        final wide = MediaQuery.of(context).size.width > 700;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Password changed successfully!',
-              style: GoogleFonts.dmSans()),
-          backgroundColor: _green,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-        ));
+            content: Text('Password changed successfully!', style: GoogleFonts.dmSans()),
+            backgroundColor: pageGreen,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(radiusVal(10, wide)))));
         Navigator.pop(context);
       } else {
-        final msg = (res.data as Map?)?['message'] ?? 'Failed to change password';
-        _showError(msg.toString());
+        showError(((res.data as Map?)?['message'] ?? 'Failed to change password').toString());
       }
     } catch (e) {
-      final msg = (e is DioException)
-          ? ((e.response?.data as Map?)?['message'] ?? 'Something went wrong')
-          : 'Error: $e';
-      _showError(msg.toString());
+      showError(e is DioException
+          ? ((e.response?.data as Map?)?['message'] ?? 'Something went wrong').toString()
+          : 'Error: $e');
     } finally {
-      if (mounted) setState(() => _saving = false);
+      if (mounted) setState(() => busy = false);
     }
   }
 
-  void _showError(String msg) {
+  void showError(String msg) {
+    final wide = MediaQuery.of(context).size.width > 700;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(msg, style: GoogleFonts.dmSans()),
-      backgroundColor: Colors.red[700],
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
-    ));
+        content: Text(msg, style: GoogleFonts.dmSans()),
+        backgroundColor: Colors.red[700],
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radiusVal(10, wide)))));
   }
 
   @override
   Widget build(BuildContext context) {
+    final wide = MediaQuery.of(context).size.width > 700;
+
     return Scaffold(
-      backgroundColor: _cream,
+      backgroundColor: pageCream,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded, size: 18.sp, color: _dark),
-          onPressed: () => Navigator.pop(context),
-        ),
+            icon: Icon(Icons.arrow_back_ios_new_rounded,
+                size: fontSize(18, wide), color: pageInk),
+            onPressed: () => Navigator.pop(context)),
         title: Text('Change Password',
             style: GoogleFonts.playfairDisplay(
-                fontSize: 20.sp, fontWeight: FontWeight.bold, color: _dark)),
+                fontSize: fontSize(20, wide),
+                fontWeight: FontWeight.bold,
+                color: pageInk)),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: _divider),
-        ),
+            preferredSize: const Size.fromHeight(1),
+            child: Divider(height: 1, color: Colors.grey.shade200)),
       ),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(20.w),
-        child: Form(
-          key: _formKey,
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
-            SizedBox(height: 8.h),
-
-            // Info banner
-            Container(
-              padding: EdgeInsets.all(14.w),
-              decoration: BoxDecoration(
-                color: _green.withValues(alpha: 0.06),
-                borderRadius: BorderRadius.circular(12.r),
-                border: Border.all(color: _green.withValues(alpha: 0.2)),
-              ),
-              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(Icons.shield_outlined, size: 18.sp, color: _green),
-                SizedBox(width: 10.w),
-                Expanded(child: Text(
-                  'For your security, enter your current password before setting a new one.',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 12.sp, color: _green, height: 1.4),
-                )),
-              ]),
-            ),
-
-            SizedBox(height: 28.h),
-
-            _Label('Current Password'),
-            SizedBox(height: 6.h),
-            TextFormField(
-              controller: _currentCtrl,
-              obscureText: !_showCurrent,
-              style: GoogleFonts.dmSans(fontSize: 14.sp),
-              decoration: _inputDeco(
-                hint: 'Enter your current password',
-                icon: Icons.lock_outline_rounded,
-                showToggle: true,
-                isVisible: _showCurrent,
-                onToggle: () => setState(() => _showCurrent = !_showCurrent),
-              ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Current password is required';
-                return null;
-              },
-            ),
-
-            SizedBox(height: 20.h),
-
-            _Label('New Password'),
-            SizedBox(height: 6.h),
-            TextFormField(
-              controller: _newCtrl,
-              obscureText: !_showNew,
-              style: GoogleFonts.dmSans(fontSize: 14.sp),
-              decoration: _inputDeco(
-                hint: 'Enter new password',
-                icon: Icons.lock_reset_rounded,
-                showToggle: true,
-                isVisible: _showNew,
-                onToggle: () => setState(() => _showNew = !_showNew),
-              ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'New password is required';
-                if (v.length < 6) return 'Minimum 6 characters';
-                if (v == _currentCtrl.text) return 'New password must differ from current';
-                return null;
-              },
-            ),
-
-            SizedBox(height: 20.h),
-
-            _Label('Confirm New Password'),
-            SizedBox(height: 6.h),
-            TextFormField(
-              controller: _confirmCtrl,
-              obscureText: !_showConfirm,
-              style: GoogleFonts.dmSans(fontSize: 14.sp),
-              decoration: _inputDeco(
-                hint: 'Re-enter new password',
-                icon: Icons.lock_outline_rounded,
-                showToggle: true,
-                isVisible: _showConfirm,
-                onToggle: () => setState(() => _showConfirm = !_showConfirm),
-              ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Please confirm your password';
-                if (v != _newCtrl.text) return 'Passwords do not match';
-                return null;
-              },
-            ),
-
-            SizedBox(height: 12.h),
-
-            // Password rules
-            Container(
-              padding: EdgeInsets.all(12.w),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10.r),
-                border: Border.all(color: _divider),
-              ),
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: wide ? 520 : double.infinity),
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(widthVal(20, wide)),
+            child: Form(
+              key: formKey,
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Password must:',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 11.sp, fontWeight: FontWeight.w600,
-                        color: _muted)),
-                SizedBox(height: 6.h),
-                _Rule('Be at least 6 characters long'),
-                _Rule('Be different from your current password'),
+
+                SizedBox(height: heightVal(8, wide)),
+
+                Container(
+                  padding: EdgeInsets.all(widthVal(14, wide)),
+                  decoration: BoxDecoration(
+                    color: pageGreen.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(radiusVal(12, wide)),
+                    border: Border.all(color: pageGreen.withValues(alpha: 0.2)),
+                  ),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Icon(Icons.shield_outlined, size: fontSize(18, wide), color: pageGreen),
+                    SizedBox(width: widthVal(10, wide)),
+                    Expanded(child: Text(
+                        'For your security, enter your current password before setting a new one.',
+                        style: GoogleFonts.dmSans(
+                            fontSize: fontSize(12, wide), color: pageGreen, height: 1.4))),
+                  ]),
+                ),
+
+                SizedBox(height: heightVal(28, wide)),
+
+                fieldLabel(wide, 'Current Password'),
+                SizedBox(height: heightVal(6, wide)),
+                TextFormField(
+                  controller: currCtrl,
+                  obscureText: !showCurr,
+                  style: GoogleFonts.dmSans(fontSize: fontSize(14, wide)),
+                  decoration: fieldDecoration(wide, 'Enter your current password',
+                      Icons.lock_outline_rounded, showCurr,
+                          () => setState(() => showCurr = !showCurr)),
+                  validator: (v) =>
+                  (v == null || v.isEmpty) ? 'Current password is required' : null,
+                ),
+
+                SizedBox(height: heightVal(20, wide)),
+
+                fieldLabel(wide, 'New Password'),
+                SizedBox(height: heightVal(6, wide)),
+                TextFormField(
+                  controller: nextCtrl,
+                  obscureText: !showNext,
+                  style: GoogleFonts.dmSans(fontSize: fontSize(14, wide)),
+                  decoration: fieldDecoration(wide, 'Enter new password',
+                      Icons.lock_reset_rounded, showNext,
+                          () => setState(() => showNext = !showNext)),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'New password is required';
+                    if (v.length < 6) return 'Minimum 6 characters';
+                    if (v == currCtrl.text) return 'New password must differ from current';
+                    return null;
+                  },
+                ),
+
+                SizedBox(height: heightVal(20, wide)),
+
+                fieldLabel(wide, 'Confirm New Password'),
+                SizedBox(height: heightVal(6, wide)),
+                TextFormField(
+                  controller: confCtrl,
+                  obscureText: !showConf,
+                  style: GoogleFonts.dmSans(fontSize: fontSize(14, wide)),
+                  decoration: fieldDecoration(wide, 'Re-enter new password',
+                      Icons.lock_outline_rounded, showConf,
+                          () => setState(() => showConf = !showConf)),
+                  validator: (v) {
+                    if (v == null || v.isEmpty) return 'Please confirm your password';
+                    if (v != nextCtrl.text) return 'Passwords do not match';
+                    return null;
+                  },
+                ),
+
+                SizedBox(height: heightVal(12, wide)),
+
+                Container(
+                  padding: EdgeInsets.all(widthVal(12, wide)),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(radiusVal(10, wide)),
+                    border: Border.all(color: Colors.grey.shade200),
+                  ),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Password must:',
+                        style: GoogleFonts.dmSans(
+                            fontSize: fontSize(11, wide),
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[600])),
+                    SizedBox(height: heightVal(6, wide)),
+                    ruleRow(wide, 'Be at least 6 characters long'),
+                    ruleRow(wide, 'Be different from your current password'),
+                  ]),
+                ),
+
+                SizedBox(height: heightVal(36, wide)),
+
+                SizedBox(
+                  width: double.infinity,
+                  height: heightVal(52, wide),
+                  child: ElevatedButton(
+                    onPressed: busy ? null : submit,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: pageAccent,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      disabledBackgroundColor: pageAccent.withValues(alpha: 0.5),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(radiusVal(14, wide))),
+                    ),
+                    child: busy
+                        ? const CircularProgressIndicator(color: Colors.white, strokeWidth: 2)
+                        : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                      Icon(Icons.lock_reset_rounded, size: fontSize(18, wide)),
+                      SizedBox(width: widthVal(8, wide)),
+                      Text('Update Password',
+                          style: GoogleFonts.dmSans(
+                              fontSize: fontSize(15, wide),
+                              fontWeight: FontWeight.bold)),
+                    ]),
+                  ),
+                ),
+
+                SizedBox(height: heightVal(20, wide)),
               ]),
             ),
-
-            SizedBox(height: 36.h),
-
-            SizedBox(
-              width: double.infinity,
-              height: 52.h,
-              child: ElevatedButton(
-                onPressed: _saving ? null : _submit,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _brown,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  disabledBackgroundColor: _brown.withValues(alpha: 0.5),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14.r)),
-                ),
-                child: _saving
-                    ? const CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2)
-                    : Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.lock_reset_rounded, size: 18.sp),
-                  SizedBox(width: 8.w),
-                  Text('Update Password',
-                      style: GoogleFonts.dmSans(
-                          fontSize: 15.sp, fontWeight: FontWeight.bold)),
-                ]),
-              ),
-            ),
-
-            SizedBox(height: 20.h),
-          ]),
+          ),
         ),
       ),
     );
   }
 
-  Widget _Label(String text) => Text(text,
+  Widget fieldLabel(bool wide, String text) => Text(text,
       style: GoogleFonts.dmSans(
-          fontSize: 13.sp, fontWeight: FontWeight.w600, color: _dark));
+          fontSize: fontSize(13, wide),
+          fontWeight: FontWeight.w600,
+          color: pageInk));
 
-  Widget _Rule(String text) => Padding(
-    padding: EdgeInsets.only(bottom: 3.h),
+  Widget ruleRow(bool wide, String text) => Padding(
+    padding: EdgeInsets.only(bottom: heightVal(3, wide)),
     child: Row(children: [
       Icon(Icons.check_circle_outline_rounded,
-          size: 13.sp, color: _muted),
-      SizedBox(width: 6.w),
-      Text(text, style: GoogleFonts.dmSans(
-          fontSize: 11.sp, color: _muted)),
+          size: fontSize(13, wide), color: Colors.grey[500]),
+      SizedBox(width: widthVal(6, wide)),
+      Text(text,
+          style: GoogleFonts.dmSans(
+              fontSize: fontSize(11, wide), color: Colors.grey[500])),
     ]),
   );
 
-  InputDecoration _inputDeco({
-    required String hint,
-    required IconData icon,
-    bool showToggle = false,
-    bool isVisible  = false,
-    VoidCallback? onToggle,
-  }) =>
+  InputDecoration fieldDecoration(
+      bool wide,
+      String hint,
+      IconData icon,
+      bool visible,
+      VoidCallback onToggle,
+      ) =>
       InputDecoration(
         hintText: hint,
-        hintStyle: GoogleFonts.dmSans(color: _muted, fontSize: 13.sp),
-        prefixIcon: Icon(icon, color: _muted, size: 20.sp),
-        suffixIcon: showToggle
-            ? IconButton(
+        hintStyle: GoogleFonts.dmSans(
+            color: Colors.grey[400], fontSize: fontSize(13, wide)),
+        prefixIcon: Icon(icon, color: Colors.grey[400], size: fontSize(20, wide)),
+        suffixIcon: IconButton(
           icon: Icon(
-            isVisible
-                ? Icons.visibility_off_outlined
-                : Icons.visibility_outlined,
-            color: _muted, size: 20.sp,
-          ),
+              visible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+              color: Colors.grey[400],
+              size: fontSize(20, wide)),
           onPressed: onToggle,
-        )
-            : null,
+        ),
         filled: true,
         fillColor: Colors.white,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: _divider),
-        ),
+            borderRadius: BorderRadius.circular(radiusVal(12, wide)),
+            borderSide: BorderSide(color: Colors.grey.shade200)),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: _divider),
-        ),
+            borderRadius: BorderRadius.circular(radiusVal(12, wide)),
+            borderSide: BorderSide(color: Colors.grey.shade200)),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: _brown, width: 1.5),
-        ),
+            borderRadius: BorderRadius.circular(radiusVal(12, wide)),
+            borderSide: const BorderSide(color: pageAccent, width: 1.5)),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: Colors.red.shade300),
-        ),
+            borderRadius: BorderRadius.circular(radiusVal(12, wide)),
+            borderSide: BorderSide(color: Colors.red.shade300)),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12.r),
-          borderSide: BorderSide(color: Colors.red.shade300, width: 1.5),
-        ),
-        contentPadding: EdgeInsets.symmetric(vertical: 16.h, horizontal: 16.w),
+            borderRadius: BorderRadius.circular(radiusVal(12, wide)),
+            borderSide: BorderSide(color: Colors.red.shade300, width: 1.5)),
+        contentPadding: EdgeInsets.symmetric(
+            vertical: heightVal(16, wide), horizontal: widthVal(16, wide)),
       );
 }

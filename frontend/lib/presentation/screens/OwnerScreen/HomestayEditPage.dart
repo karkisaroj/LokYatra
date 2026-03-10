@@ -10,157 +10,139 @@ import 'package:lokyatra_frontend/data/datasources/sites_remote_datasource.dart'
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
 import '../../widgets/Helpers/form_helpers.dart';
 
+const editBrown = Color(0xFF5C4033);
+const editBg    = Color(0xFFFAF9F7);
+const editInk   = Color(0xFF2D1B10);
+
+double efs(double v, bool wide) => wide ? v : v.sp;
+double ew(double v, bool wide)  => wide ? v : v.w;
+double eh(double v, bool wide)  => wide ? v : v.h;
+double er(double v, bool wide)  => wide ? v : v.r;
+
 class HomestayEditPage extends StatefulWidget {
   final Homestay homestay;
   const HomestayEditPage({super.key, required this.homestay});
-
   @override
-  State<HomestayEditPage> createState() => _HomestayEditPageState();
+  State<HomestayEditPage> createState() => HomestayEditPageState();
 }
 
-class _HomestayEditPageState extends State<HomestayEditPage> {
-  final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
-  bool _sitesLoading = true;
+class HomestayEditPageState extends State<HomestayEditPage> {
+  final formKey       = GlobalKey<FormState>();
+  bool isLoading      = false;
+  bool sitesLoading   = true;
+  double? uploadProgress;
 
-  // null = not uploading, 0.0–1.0 = upload progress
-  double? _uploadProgress;
+  late final TextEditingController nameCtrl;
+  late final TextEditingController locationCtrl;
+  late final TextEditingController descCtrl;
+  late final TextEditingController priceCtrl;
+  late final TextEditingController roomsCtrl;
+  late final TextEditingController guestsCtrl;
+  late final TextEditingController bathsCtrl;
+  late final TextEditingController buildingCtrl;
+  late final TextEditingController tradFeatCtrl;
+  late final TextEditingController cultExpCtrl;
+  late final TextEditingController cultSigCtrl;
 
-  late final TextEditingController _name;
-  late final TextEditingController _location;
-  late final TextEditingController _description;
-  late final TextEditingController _price;
-  late final TextEditingController _rooms;
-  late final TextEditingController _guests;
-  late final TextEditingController _bathrooms;
-  late final TextEditingController _buildingHistory;
-  late final TextEditingController _traditionalFeatures;
-  late final TextEditingController _culturalExperiences;
-  late final TextEditingController _culturalSignificance;
+  String?       selectedCategory;
+  int?          selectedSiteId;
+  List<dynamic> sites = [];
+  late Set<String> selectedAmenities;
+  late List<String> existingImages;
+  final List<PlatformFile?> newImages = [null, null, null, null];
+  late bool isVisible;
 
-  String? _selectedCategory;
-  int? _selectedSiteId;
-  List<dynamic> _sites = [];
-
-  static const _allAmenities = [
+  final categories   = ['homestay', 'guest_house', 'traditional'];
+  final allAmenities = [
     'WiFi', 'Parking', 'Hot Water', 'Air Conditioning', 'Heating',
     'Kitchen', 'Breakfast Included', 'Laundry', 'Garden', 'Terrace',
     'Mountain View', 'River View', 'TV', 'Bonfire', 'Guided Tours', 'Bicycle Rental',
   ];
-  late Set<String> _selectedAmenities;
-
-  late List<String> _existingImages;
-  final List<PlatformFile?> _newImages = [null, null, null, null];
-  late bool _isVisible;
-
-  static const _brown = Color(0xFF5C4033);
-  final _categories = ['homestay', 'guest_house', 'traditional'];
 
   @override
   void initState() {
     super.initState();
-    final h = widget.homestay;
-    _name = TextEditingController(text: h.name);
-    _location = TextEditingController(text: h.location);
-    _description = TextEditingController(text: h.description);
-    _price = TextEditingController(text: h.pricePerNight.toStringAsFixed(0));
-    _rooms = TextEditingController(text: h.numberOfRooms.toString());
-    _guests = TextEditingController(text: h.maxGuests.toString());
-    _bathrooms = TextEditingController(text: h.bathrooms.toString());
-    _buildingHistory = TextEditingController(text: h.buildingHistory ?? '');
-    _traditionalFeatures = TextEditingController(text: h.traditionalFeatures ?? '');
-    _culturalExperiences = TextEditingController(text: h.culturalExperiences.join(', '));
-    _culturalSignificance = TextEditingController(text: h.culturalSignificance ?? '');
-
-    _selectedCategory = h.category;
-    _selectedSiteId = h.nearCulturalSite?.id;
-    _isVisible = h.isVisible;
-    _selectedAmenities = h.amenities.map((a) => a.trim()).where((a) => a.isNotEmpty).toSet();
-
-    _existingImages = List.filled(4, '');
+    final h          = widget.homestay;
+    nameCtrl         = TextEditingController(text: h.name);
+    locationCtrl     = TextEditingController(text: h.location);
+    descCtrl         = TextEditingController(text: h.description);
+    priceCtrl        = TextEditingController(text: h.pricePerNight.toStringAsFixed(0));
+    roomsCtrl        = TextEditingController(text: h.numberOfRooms.toString());
+    guestsCtrl       = TextEditingController(text: h.maxGuests.toString());
+    bathsCtrl        = TextEditingController(text: h.bathrooms.toString());
+    buildingCtrl     = TextEditingController(text: h.buildingHistory ?? '');
+    tradFeatCtrl     = TextEditingController(text: h.traditionalFeatures ?? '');
+    cultExpCtrl      = TextEditingController(text: h.culturalExperiences.join(', '));
+    cultSigCtrl      = TextEditingController(text: h.culturalSignificance ?? '');
+    selectedCategory = h.category;
+    selectedSiteId   = h.nearCulturalSite?.id;
+    isVisible        = h.isVisible;
+    selectedAmenities = h.amenities.map((a) => a.trim()).where((a) => a.isNotEmpty).toSet();
+    existingImages   = List.filled(4, '');
     for (int i = 0; i < 4 && i < h.imageUrls.length; i++) {
-      _existingImages[i] = h.imageUrls[i];
+      existingImages[i] = h.imageUrls[i];
     }
-    _loadSites();
+    loadSites();
   }
 
   @override
   void dispose() {
-    for (final c in [_name, _location, _description, _price, _rooms, _guests,
-      _bathrooms, _buildingHistory, _traditionalFeatures, _culturalExperiences,
-      _culturalSignificance]) {
-      c.dispose();
-    }
+    for (final c in [
+      nameCtrl, locationCtrl, descCtrl, priceCtrl, roomsCtrl, guestsCtrl,
+      bathsCtrl, buildingCtrl, tradFeatCtrl, cultExpCtrl, cultSigCtrl,
+    ]) { c.dispose(); }
     super.dispose();
   }
 
-  Future<void> _loadSites() async {
+  Future<void> loadSites() async {
     try {
       final res = await SitesRemoteDatasource().getSites();
       if (res.statusCode == 200 && mounted) {
-        setState(() {
-          _sites = res.data as List<dynamic>;
-          _sitesLoading = false;
-        });
+        setState(() { sites = res.data as List<dynamic>; sitesLoading = false; });
       }
-    } catch (_) {
-      if (mounted) setState(() => _sitesLoading = false);
+    } catch (e) {
+      if (mounted) setState(() => sitesLoading = false);
     }
   }
 
-  Future<void> _pickImage(int i) async {
+  Future<void> pickImage(int i) async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
     if (result != null && result.files.isNotEmpty) {
-      setState(() {
-        _newImages[i] = result.files.first;
-        _existingImages[i] = '';
-      });
+      setState(() { newImages[i] = result.files.first; existingImages[i] = ''; });
     }
   }
 
-  void _removeImage(int i) => setState(() {
-    _newImages[i] = null;
-    _existingImages[i] = '';
-  });
+  void removeImage(int i) => setState(() { newImages[i] = null; existingImages[i] = ''; });
 
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-      _uploadProgress = null; // show spinner until first progress event
-    });
-
+  Future<void> submit() async {
+    if (!formKey.currentState!.validate()) return;
+    setState(() { isLoading = true; uploadProgress = null; });
     try {
       final res = await HomestaysRemoteDatasource().updateHomestay(
         id: widget.homestay.id,
         fields: {
-          'Name': _name.text.trim(),
-          'Location': _location.text.trim(),
-          'Description': _description.text.trim(),
-          'PricePerNight': _price.text.trim(),
-          'NumberOfRooms': _rooms.text.trim(),
-          'MaxGuests': _guests.text.trim(),
-          'Bathrooms': _bathrooms.text.trim(),
-          'BuildingHistory': _buildingHistory.text.trim(),
-          'TraditionalFeatures': _traditionalFeatures.text.trim(),
-          'CulturalExperiences': _culturalExperiences.text.trim(),
-          'CulturalSignificance': _culturalSignificance.text.trim(),
-          'Amenities': _selectedAmenities.join(','),
-          'IsVisible': _isVisible.toString(),
-          if (_selectedCategory != null) 'Category': _selectedCategory!,
-          if (_selectedSiteId != null) 'NearCulturalSiteId': _selectedSiteId.toString(),
+          'Name':                nameCtrl.text.trim(),
+          'Location':            locationCtrl.text.trim(),
+          'Description':         descCtrl.text.trim(),
+          'PricePerNight':       priceCtrl.text.trim(),
+          'NumberOfRooms':       roomsCtrl.text.trim(),
+          'MaxGuests':           guestsCtrl.text.trim(),
+          'Bathrooms':           bathsCtrl.text.trim(),
+          'BuildingHistory':     buildingCtrl.text.trim(),
+          'TraditionalFeatures': tradFeatCtrl.text.trim(),
+          'CulturalExperiences': cultExpCtrl.text.trim(),
+          'CulturalSignificance':cultSigCtrl.text.trim(),
+          'Amenities':           selectedAmenities.join(','),
+          'IsVisible':           isVisible.toString(),
+          if (selectedCategory != null) 'Category': selectedCategory!,
+          if (selectedSiteId   != null) 'NearCulturalSiteId': selectedSiteId.toString(),
         },
-        files: _newImages.whereType<PlatformFile>().toList(),
+        files: newImages.whereType<PlatformFile>().toList(),
         onSendProgress: (sent, total) {
-          if (total > 0 && mounted) {
-            setState(() => _uploadProgress = sent / total);
-          }
+          if (total > 0 && mounted) setState(() => uploadProgress = sent / total);
         },
       );
-
       if (!mounted) return;
-
       if (res.statusCode == 200 || res.statusCode == 204) {
         Navigator.pop(context, true);
       } else {
@@ -182,264 +164,218 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
     } catch (e) {
       if (mounted) FormHelpers.showSnack(context, 'Error: $e');
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-          _uploadProgress = null;
-        });
-      }
+      if (mounted) setState(() { isLoading = false; uploadProgress = null; });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final wide = MediaQuery.of(context).size.width > 700;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFAF9F7),
+      backgroundColor: editBg,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
         title: Text('Edit Homestay',
             style: GoogleFonts.playfairDisplay(
-                fontSize: 18.sp, fontWeight: FontWeight.bold,
-                color: const Color(0xFF2D1B10))),
-        // Removed the save button from AppBar as requested
+                fontSize: efs(18, wide), fontWeight: FontWeight.bold, color: editInk)),
+        iconTheme: const IconThemeData(color: Colors.black87),
+        bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Divider(height: 1, color: Colors.grey.shade200)),
       ),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: EdgeInsets.all(16.w),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Visibility toggle
-              _card(child: SwitchListTile(
-                title: Text('Listing Active',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 14.sp, fontWeight: FontWeight.w600)),
-                subtitle: Text(_isVisible ? 'Visible to guests' : 'Hidden from guests',
-                    style: GoogleFonts.dmSans(fontSize: 12.sp)),
-                value: _isVisible,
-                activeThumbColor: Colors.green,
-                onChanged: (val) => setState(() => _isVisible = val),
-              )),
-              SizedBox(height: 4.h),
-
-              _section('Basic Information', Icons.home_outlined, [
-                _field(_name, 'Name'),
-                _field(_location, 'Location'),
-                _field(_description, 'Description', lines: 4),
-                _categoryDropdown(),
-              ]),
-
-              _section('Pricing & Capacity', Icons.payments_outlined, [
-                _field(_price, 'Price per Night (Rs.)', number: true),
-                Row(children: [
-                  Expanded(child: _field(_rooms, 'Rooms', number: true)),
-                  SizedBox(width: 10.w),
-                  Expanded(child: _field(_guests, 'Max Guests', number: true)),
-                  SizedBox(width: 10.w),
-                  Expanded(child: _field(_bathrooms, 'Bathrooms', number: true)),
-                ]),
-              ]),
-
-              _section('Near Cultural Site', Icons.temple_hindu_outlined, [
-                Text('Tap a site to select it',
-                    style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey)),
-                SizedBox(height: 10.h),
-                _siteSelector(),
-              ]),
-
-              _section('Cultural Heritage', Icons.auto_stories_outlined, [
-                _field(_culturalSignificance, 'Cultural Significance',
-                    lines: 3, required: false),
-                _field(_buildingHistory, 'Building History',
-                    lines: 3, required: false),
-                _field(_traditionalFeatures, 'Traditional Features',
-                    lines: 3, required: false),
-                _field(_culturalExperiences, 'Cultural Experiences',
-                    lines: 3, required: false,
-                    hint: 'e.g. Thangka painting, Mask dance'),
-              ]),
-
-              _section('Amenities', Icons.checklist_outlined, [
-                _amenityChips(),
-              ]),
-
-              _section('Photos', Icons.photo_library_outlined, [
-                Text('Tap a slot to change · Tap ✕ to remove',
-                    style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey)),
-                SizedBox(height: 12.h),
-                Wrap(
-                  spacing: 12.w,
-                  runSpacing: 12.h,
-                  children: List.generate(4, _imageSlot),
-                ),
-              ]),
-
-              SizedBox(height: 20.h),
-
-              // Bottom upload button — shows progress when uploading
-              SizedBox(
-                width: double.infinity,
-                height: 58.h,
-                child: _isLoading ? _uploadButton() : _submitButton(),
-              ),
-
-              SizedBox(height: 40.h),
-            ],
+      body: Align(
+        alignment: Alignment.topCenter,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: wide ? 780 : double.infinity),
+          child: Form(
+            key: formKey,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.all(ew(16, wide)),
+              child: wide ? wideLayout(wide) : narrowLayout(wide),
+            ),
           ),
         ),
       ),
     );
   }
 
-  // Plain submit button
-  Widget _submitButton() => ElevatedButton.icon(
-    onPressed: _submit,
-    icon: Icon(Icons.save, size: 18.sp),
-    label: Text('Save Changes',
-        style: GoogleFonts.dmSans(
-            fontSize: 15.sp, fontWeight: FontWeight.w600)),
-    style: ElevatedButton.styleFrom(
-      backgroundColor: _brown,
-      foregroundColor: Colors.white,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.r)),
-    ),
+  Widget narrowLayout(bool wide) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: allSections(wide),
   );
 
-  // Progress button — replaces submit button while uploading
-  Widget _uploadButton() {
-    final hasProgress = _uploadProgress != null;
-    final pct = hasProgress
-        ? '${(_uploadProgress! * 100).toStringAsFixed(0)}%'
-        : '';
-    final label = !hasProgress
-        ? 'Preparing...'
-        : _uploadProgress! < 1.0
-        ? 'Uploading images  $pct'
-        : 'Saving to server...';
-
-    return Container(
-      decoration: BoxDecoration(
-        color: _brown,
-        borderRadius: BorderRadius.circular(12.r),
+  Widget wideLayout(bool wide) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      visibilityCard(wide),
+      SizedBox(height: eh(4, wide)),
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Expanded(child: Column(children: [
+          buildSection(wide, 'Basic Information',  Icons.home_outlined,       basicFields(wide)),
+          buildSection(wide, 'Pricing & Capacity', Icons.payments_outlined,   pricingFields(wide)),
+          buildSection(wide, 'Near Cultural Site', Icons.temple_hindu_outlined, [
+            Text('Tap a site to select it',
+                style: GoogleFonts.dmSans(fontSize: efs(12, wide), color: Colors.grey)),
+            SizedBox(height: eh(10, wide)),
+            siteSelector(wide),
+          ]),
+        ])),
+        SizedBox(width: ew(16, wide)),
+        Expanded(child: Column(children: [
+          buildSection(wide, 'Cultural Heritage', Icons.auto_stories_outlined, heritageFields(wide)),
+          buildSection(wide, 'Amenities',         Icons.checklist_outlined,    [amenityChips(wide)]),
+          buildSection(wide, 'Photos',            Icons.photo_library_outlined, photoSection(wide)),
+        ])),
+      ]),
+      SizedBox(height: eh(20, wide)),
+      SizedBox(
+        width: double.infinity, height: eh(58, wide),
+        child: isLoading ? uploadButton(wide) : submitButton(wide),
       ),
-      padding: EdgeInsets.symmetric(horizontal: 20.w),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 14.w,
-                height: 14.h,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white.withOpacity(0.8)),
-              ),
-              SizedBox(width: 10.w),
-              Text(label,
-                  style: GoogleFonts.dmSans(
-                      color: Colors.white,
-                      fontSize: 13.sp,
-                      fontWeight: FontWeight.w600)),
-            ],
-          ),
-          if (hasProgress) ...[
-            SizedBox(height: 8.h),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(4.r),
-              child: LinearProgressIndicator(
-                value: _uploadProgress,
-                backgroundColor: Colors.white.withOpacity(0.25),
-                color: Colors.white,
-                minHeight: 4.h,
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+      SizedBox(height: eh(40, wide)),
+    ],
+  );
 
-  Widget _card({required Widget child}) => Container(
-    margin: EdgeInsets.only(bottom: 14.h),
+  List<Widget> allSections(bool wide) => [
+    visibilityCard(wide),
+    SizedBox(height: eh(4, wide)),
+    buildSection(wide, 'Basic Information',  Icons.home_outlined,        basicFields(wide)),
+    buildSection(wide, 'Pricing & Capacity', Icons.payments_outlined,    pricingFields(wide)),
+    buildSection(wide, 'Near Cultural Site', Icons.temple_hindu_outlined, [
+      Text('Tap a site to select it',
+          style: GoogleFonts.dmSans(fontSize: efs(12, wide), color: Colors.grey)),
+      SizedBox(height: eh(10, wide)),
+      siteSelector(wide),
+    ]),
+    buildSection(wide, 'Cultural Heritage',  Icons.auto_stories_outlined, heritageFields(wide)),
+    buildSection(wide, 'Amenities',          Icons.checklist_outlined,    [amenityChips(wide)]),
+    buildSection(wide, 'Photos',             Icons.photo_library_outlined, photoSection(wide)),
+    SizedBox(height: eh(20, wide)),
+    SizedBox(
+      width: double.infinity, height: eh(58, wide),
+      child: isLoading ? uploadButton(wide) : submitButton(wide),
+    ),
+    SizedBox(height: eh(40, wide)),
+  ];
+
+  List<Widget> basicFields(bool wide) => [
+    formField(wide, nameCtrl,     'Name'),
+    formField(wide, locationCtrl, 'Location'),
+    formField(wide, descCtrl,     'Description', lines: 4),
+    categoryDropdown(wide),
+  ];
+
+  List<Widget> pricingFields(bool wide) => [
+    formField(wide, priceCtrl, 'Price per Night (Rs.)', number: true),
+    Row(children: [
+      Expanded(child: formField(wide, roomsCtrl,  'Rooms',     number: true)),
+      SizedBox(width: ew(10, wide)),
+      Expanded(child: formField(wide, guestsCtrl, 'Max Guests',number: true)),
+      SizedBox(width: ew(10, wide)),
+      Expanded(child: formField(wide, bathsCtrl,  'Bathrooms', number: true)),
+    ]),
+  ];
+
+  List<Widget> heritageFields(bool wide) => [
+    formField(wide, cultSigCtrl,  'Cultural Significance',  lines: 3, required: false),
+    formField(wide, buildingCtrl, 'Building History',        lines: 3, required: false),
+    formField(wide, tradFeatCtrl, 'Traditional Features',    lines: 3, required: false),
+    formField(wide, cultExpCtrl,  'Cultural Experiences',    lines: 3, required: false,
+        hint: 'e.g. Thangka painting, Mask dance'),
+  ];
+
+  List<Widget> photoSection(bool wide) => [
+    Text('Tap a slot to change · Tap ✕ to remove',
+        style: GoogleFonts.dmSans(fontSize: efs(12, wide), color: Colors.grey)),
+    SizedBox(height: eh(12, wide)),
+    Wrap(
+      spacing: ew(12, wide),
+      runSpacing: eh(12, wide),
+      children: List.generate(4, (i) => imageSlot(wide, i)),
+    ),
+  ];
+
+  Widget visibilityCard(bool wide) => Container(
+    margin: EdgeInsets.only(bottom: eh(14, wide)),
     decoration: BoxDecoration(
       color: Colors.white,
-      borderRadius: BorderRadius.circular(16.r),
-      boxShadow: [
-        BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2)),
-      ],
+      borderRadius: BorderRadius.circular(er(16, wide)),
+      boxShadow: [BoxShadow(
+          color: Colors.black.withValues(alpha: 0.05),
+          blurRadius: 8, offset: const Offset(0, 2))],
     ),
-    child: child,
+    child: SwitchListTile(
+      title: Text('Listing Active',
+          style: GoogleFonts.dmSans(fontSize: efs(14, wide), fontWeight: FontWeight.w600)),
+      subtitle: Text(isVisible ? 'Visible to guests' : 'Hidden from guests',
+          style: GoogleFonts.dmSans(fontSize: efs(12, wide))),
+      value: isVisible,
+      activeThumbColor: Colors.green,
+      onChanged: (val) => setState(() => isVisible = val),
+    ),
   );
 
-  Widget _section(String title, IconData icon, List<Widget> children) =>
+  Widget buildSection(bool wide, String title, IconData icon, List<Widget> children) =>
       Container(
-        margin: EdgeInsets.only(bottom: 14.h),
-        padding: EdgeInsets.all(16.w),
+        margin: EdgeInsets.only(bottom: eh(14, wide)),
+        padding: EdgeInsets.all(ew(16, wide)),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16.r),
-          boxShadow: [
-            BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2)),
-          ],
+          borderRadius: BorderRadius.circular(er(16, wide)),
+          boxShadow: [BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8, offset: const Offset(0, 2))],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(children: [
-              Icon(icon, size: 18.sp, color: _brown),
-              SizedBox(width: 8.w),
-              Text(title,
-                  style: GoogleFonts.dmSans(
-                      fontSize: 14.sp, fontWeight: FontWeight.bold)),
-            ]),
-            SizedBox(height: 14.h),
-            ...children,
-          ],
-        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(icon, size: efs(18, wide), color: editBrown),
+            SizedBox(width: ew(8, wide)),
+            Text(title,
+                style: GoogleFonts.dmSans(
+                    fontSize: efs(14, wide), fontWeight: FontWeight.bold)),
+          ]),
+          SizedBox(height: eh(14, wide)),
+          ...children,
+        ]),
       );
 
-  Widget _field(TextEditingController ctrl, String label,
-      {int lines = 1, bool number = false, bool required = true, String? hint}) =>
+  Widget formField(
+      bool wide,
+      TextEditingController ctrl,
+      String label, {
+        int lines     = 1,
+        bool number   = false,
+        bool required = true,
+        String? hint,
+      }) =>
       Padding(
-        padding: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.only(bottom: eh(12, wide)),
         child: TextFormField(
           controller: ctrl,
           maxLines: lines,
           keyboardType: number
-              ? const TextInputType.numberWithOptions(decimal: true)
-              : null,
-          style: GoogleFonts.dmSans(fontSize: 14.sp),
+              ? const TextInputType.numberWithOptions(decimal: true) : null,
+          style: GoogleFonts.dmSans(fontSize: efs(14, wide)),
           decoration: InputDecoration(
             labelText: label,
-            labelStyle: GoogleFonts.dmSans(fontSize: 13.sp),
+            labelStyle: GoogleFonts.dmSans(fontSize: efs(13, wide)),
             hintText: hint,
-            hintStyle:
-            GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[400]),
+            hintStyle: GoogleFonts.dmSans(fontSize: efs(12, wide), color: Colors.grey[400]),
             border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10.r),
+                borderRadius: BorderRadius.circular(er(10, wide)),
                 borderSide: BorderSide(color: Colors.grey.shade300)),
             enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10.r),
+                borderRadius: BorderRadius.circular(er(10, wide)),
                 borderSide: BorderSide(color: Colors.grey.shade300)),
             focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10.r),
-                borderSide: BorderSide(color: _brown, width: 1.5)),
+                borderRadius: BorderRadius.circular(er(10, wide)),
+                borderSide: BorderSide(color: editBrown, width: 1.5)),
             filled: true,
-            fillColor: const Color(0xFFFAF9F7),
-            contentPadding:
-            EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+            fillColor: editBg,
+            contentPadding: EdgeInsets.symmetric(
+                horizontal: ew(14, wide), vertical: eh(12, wide)),
           ),
           validator: required
               ? (v) => (v?.trim().isEmpty ?? true) ? '$label is required' : null
@@ -447,123 +383,122 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
         ),
       );
 
-  Widget _categoryDropdown() => Padding(
-    padding: EdgeInsets.only(bottom: 12.h),
+  Widget categoryDropdown(bool wide) => Padding(
+    padding: EdgeInsets.only(bottom: eh(12, wide)),
     child: DropdownButtonFormField<String>(
-      initialValue: _selectedCategory,
-      style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.black87),
+      initialValue: selectedCategory,
+      style: GoogleFonts.dmSans(fontSize: efs(14, wide), color: Colors.black87),
       decoration: InputDecoration(
         labelText: 'Category',
+        labelStyle: GoogleFonts.dmSans(fontSize: efs(13, wide)),
         border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.r),
+            borderRadius: BorderRadius.circular(er(10, wide)),
             borderSide: BorderSide(color: Colors.grey.shade300)),
         enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.r),
+            borderRadius: BorderRadius.circular(er(10, wide)),
             borderSide: BorderSide(color: Colors.grey.shade300)),
         focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(10.r),
-            borderSide: BorderSide(color: _brown, width: 1.5)),
+            borderRadius: BorderRadius.circular(er(10, wide)),
+            borderSide: BorderSide(color: editBrown, width: 1.5)),
         filled: true,
-        fillColor: const Color(0xFFFAF9F7),
-        contentPadding:
-        EdgeInsets.symmetric(horizontal: 14.w, vertical: 12.h),
+        fillColor: editBg,
+        contentPadding: EdgeInsets.symmetric(
+            horizontal: ew(14, wide), vertical: eh(12, wide)),
       ),
-      items: _categories
+      items: categories
           .map((c) => DropdownMenuItem(value: c, child: Text(c)))
           .toList(),
-      onChanged: (val) => setState(() => _selectedCategory = val),
+      onChanged: (val) => setState(() => selectedCategory = val),
     ),
   );
 
-  Widget _siteSelector() {
-    if (_sitesLoading) return const Center(child: CircularProgressIndicator());
-    if (_sites.isEmpty) {
+  Widget siteSelector(bool wide) {
+    if (sitesLoading) return const Center(child: CircularProgressIndicator());
+    if (sites.isEmpty) {
       return Text('No sites available.',
-          style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey));
+          style: GoogleFonts.dmSans(fontSize: efs(13, wide), color: Colors.grey));
     }
     return Container(
-      height: 200.h,
+      height: eh(200, wide),
       decoration: BoxDecoration(
         border: Border.all(color: Colors.grey.shade300),
-        borderRadius: BorderRadius.circular(10.r),
-        color: const Color(0xFFFAF9F7),
+        borderRadius: BorderRadius.circular(er(10, wide)),
+        color: editBg,
       ),
       child: ListView.builder(
-        itemCount: _sites.length,
+        itemCount: sites.length,
         itemBuilder: (_, i) {
-          final site = _sites[i];
-          final id = site['id'] as int?;
-          final name = site['name']?.toString() ?? 'Unnamed';
-          final selected = _selectedSiteId == id;
+          final site     = sites[i];
+          final id       = site['id'] as int?;
+          final name     = site['name']?.toString() ?? 'Unnamed';
+          final selected = selectedSiteId == id;
           return ListTile(
             dense: true,
             leading: CircleAvatar(
-              radius: 16.r,
-              backgroundColor: selected ? _brown : Colors.grey.shade200,
+              radius: er(16, wide),
+              backgroundColor: selected ? editBrown : Colors.grey.shade200,
               child: Icon(Icons.temple_hindu,
-                  size: 14.sp,
+                  size: efs(14, wide),
                   color: selected ? Colors.white : Colors.grey),
             ),
             title: Text(name,
                 style: GoogleFonts.dmSans(
-                    fontSize: 13.sp,
+                    fontSize: efs(13, wide),
                     fontWeight: selected ? FontWeight.bold : FontWeight.normal)),
             trailing: selected
-                ? Icon(Icons.check_circle, color: _brown, size: 18.sp)
+                ? Icon(Icons.check_circle, color: editBrown, size: efs(18, wide))
                 : null,
-            onTap: () => setState(() => _selectedSiteId = id),
+            onTap: () => setState(() => selectedSiteId = id),
           );
         },
       ),
     );
   }
 
-  Widget _amenityChips() => Wrap(
-    spacing: 8.w,
-    runSpacing: 8.h,
-    children: _allAmenities.map((a) {
-      final selected = _selectedAmenities
+  Widget amenityChips(bool wide) => Wrap(
+    spacing: ew(8, wide),
+    runSpacing: eh(8, wide),
+    children: allAmenities.map((a) {
+      final selected = selectedAmenities
           .any((s) => s.toLowerCase() == a.toLowerCase());
       return FilterChip(
-        label: Text(a, style: GoogleFonts.dmSans(fontSize: 12.sp)),
+        label: Text(a, style: GoogleFonts.dmSans(fontSize: efs(12, wide))),
         selected: selected,
         onSelected: (val) => setState(() {
           if (val) {
-            _selectedAmenities.add(a);
+            selectedAmenities.add(a);
           } else {
-            _selectedAmenities
-                .removeWhere((s) => s.toLowerCase() == a.toLowerCase());
+            selectedAmenities.removeWhere((s) => s.toLowerCase() == a.toLowerCase());
           }
         }),
-        selectedColor: _brown.withOpacity(0.12),
-        checkmarkColor: _brown,
-        side: BorderSide(color: selected ? _brown : Colors.grey.shade300),
-        backgroundColor: const Color(0xFFFAF9F7),
+        selectedColor: editBrown.withValues(alpha: 0.12),
+        checkmarkColor: editBrown,
+        side: BorderSide(color: selected ? editBrown : Colors.grey.shade300),
+        backgroundColor: editBg,
       );
     }).toList(),
   );
 
-  Widget _imageSlot(int i) {
-    final newFile = _newImages[i];
-    final existing = _existingImages[i];
+  Widget imageSlot(bool wide, int i) {
+    final newFile    = newImages[i];
+    final existing   = existingImages[i];
     final hasContent = newFile != null || existing.isNotEmpty;
+    final boxSz      = wide ? 110.0 : 100.h;
 
     return GestureDetector(
-      onTap: () => _pickImage(i),
+      onTap: () => pickImage(i),
       child: Container(
-        height: 100.h,
-        width: 100.w,
+        height: boxSz, width: boxSz,
         decoration: BoxDecoration(
           color: Colors.grey[100],
           border: Border.all(
-            color: hasContent ? _brown : Colors.grey.shade300,
-            width: hasContent ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(12.r),
+              color: hasContent ? editBrown : Colors.grey.shade300,
+              width: hasContent ? 2 : 1),
+          borderRadius: BorderRadius.circular(er(12, wide)),
         ),
         child: Stack(fit: StackFit.expand, children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(10.r),
+            borderRadius: BorderRadius.circular(er(10, wide)),
             child: newFile != null
                 ? Image.file(File(newFile.path!), fit: BoxFit.cover)
                 : existing.isNotEmpty
@@ -572,33 +507,78 @@ class _HomestayEditPageState extends State<HomestayEditPage> {
                 width: double.infinity,
                 height: double.infinity,
                 borderRadiusValue: 0)
-                : Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.add_photo_alternate,
-                    size: 28.sp, color: Colors.grey[400]),
-                SizedBox(height: 4.h),
-                Text('Slot ${i + 1}',
-                    style: GoogleFonts.dmSans(
-                        fontSize: 10.sp, color: Colors.grey[400])),
-              ],
-            ),
+                : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+              Icon(Icons.add_photo_alternate,
+                  size: efs(28, wide), color: Colors.grey[400]),
+              SizedBox(height: eh(4, wide)),
+              Text('Slot ${i + 1}',
+                  style: GoogleFonts.dmSans(
+                      fontSize: efs(10, wide), color: Colors.grey[400])),
+            ]),
           ),
           if (hasContent)
             Positioned(
-              top: 4.h,
-              right: 4.w,
+              top: eh(4, wide), right: ew(4, wide),
               child: GestureDetector(
-                onTap: () => _removeImage(i),
+                onTap: () => removeImage(i),
                 child: CircleAvatar(
-                  radius: 11.r,
+                  radius: er(11, wide),
                   backgroundColor: Colors.red,
-                  child: Icon(Icons.close, size: 12.sp, color: Colors.white),
+                  child: Icon(Icons.close, size: efs(12, wide), color: Colors.white),
                 ),
               ),
             ),
         ]),
       ),
+    );
+  }
+
+  Widget submitButton(bool wide) => ElevatedButton.icon(
+    onPressed: submit,
+    icon: Icon(Icons.save, size: efs(18, wide)),
+    label: Text('Save Changes',
+        style: GoogleFonts.dmSans(fontSize: efs(15, wide), fontWeight: FontWeight.w600)),
+    style: ElevatedButton.styleFrom(
+      backgroundColor: editBrown, foregroundColor: Colors.white, elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(er(12, wide))),
+    ),
+  );
+
+  Widget uploadButton(bool wide) {
+    final hasProgress = uploadProgress != null;
+    final pct   = hasProgress ? '${(uploadProgress! * 100).toStringAsFixed(0)}%' : '';
+    final label = !hasProgress
+        ? 'Preparing...'
+        : uploadProgress! < 1.0 ? 'Uploading images  $pct' : 'Saving to server...';
+    return Container(
+      decoration: BoxDecoration(
+          color: editBrown, borderRadius: BorderRadius.circular(er(12, wide))),
+      padding: EdgeInsets.symmetric(horizontal: ew(20, wide)),
+      child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+          SizedBox(
+            width: ew(14, wide), height: eh(14, wide),
+            child: CircularProgressIndicator(
+                strokeWidth: 2, color: Colors.white.withValues(alpha: 0.8)),
+          ),
+          SizedBox(width: ew(10, wide)),
+          Text(label,
+              style: GoogleFonts.dmSans(
+                  color: Colors.white, fontSize: efs(13, wide), fontWeight: FontWeight.w600)),
+        ]),
+        if (hasProgress) ...[
+          SizedBox(height: eh(8, wide)),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(er(4, wide)),
+            child: LinearProgressIndicator(
+              value: uploadProgress,
+              backgroundColor: Colors.white.withValues(alpha: 0.25),
+              color: Colors.white,
+              minHeight: eh(4, wide),
+            ),
+          ),
+        ],
+      ]),
     );
   }
 }

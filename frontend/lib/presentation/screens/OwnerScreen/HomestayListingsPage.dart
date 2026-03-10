@@ -11,49 +11,65 @@ import '../../state_management/Bloc/homestays/HomestayEvent.dart';
 import '../../state_management/Bloc/homestays/HomestayState.dart';
 import 'HomestayAddPage.dart';
 
+const Color kBrown = Color(0xFF5C4033);
+const Color kDarkInk = Color(0xFF2D1B10);
+const Color kBg = Color(0xFFF5F4F2);
+
+double fs(double v, bool wide) => wide ? v : v.sp;
+double sw(double v, bool wide) => wide ? v : v.w;
+double sh(double v, bool wide) => wide ? v : v.h;
+double sr(double v, bool wide) => wide ? v : v.r;
+
 class HomestayListingsPage extends StatefulWidget {
   const HomestayListingsPage({super.key});
-
   @override
-  State<HomestayListingsPage> createState() => _HomestayListingsPageState();
+  State<HomestayListingsPage> createState() => HomestayListingsPageState();
 }
 
-class _HomestayListingsPageState extends State<HomestayListingsPage> {
-  static const _brown = Color(0xFF5C4033);
-
+class HomestayListingsPageState extends State<HomestayListingsPage> {
   @override
   void initState() {
     super.initState();
     context.read<HomestayBloc>().add(const OwnerLoadMyHomestays());
   }
 
-  void _reload() {
+  void reload() {
     if (mounted) context.read<HomestayBloc>().add(const OwnerLoadMyHomestays());
   }
 
-  void _goToDetail(Homestay h) =>
+  void goToDetail(Homestay h) =>
       Navigator.push(context, MaterialPageRoute(builder: (_) => OwnerHomestayDetailPage(homestay: h)))
-          .then((_) => _reload());
+          .then((_) => reload());
 
-  void _goToEdit(Homestay h) =>
+  void goToEdit(Homestay h) =>
       Navigator.push(context, MaterialPageRoute(builder: (_) => HomestayEditPage(homestay: h)))
-          .then((updated) { if (updated == true) _reload(); });
+          .then((updated) { if (updated == true) reload(); });
 
-  void _goToAdd() =>
+  void goToAdd() =>
       Navigator.push(context, MaterialPageRoute(builder: (_) => const HomestayAddPage()))
-          .then((added) { if (added == true) _reload(); });
+          .then((added) { if (added == true) reload(); });
 
   @override
   Widget build(BuildContext context) {
+    final bool wide = MediaQuery.of(context).size.width > 700;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F4F2),
+      backgroundColor: kBg,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        title: Text('My Homestays',
-            style: GoogleFonts.playfairDisplay(
-                fontSize: 20.sp, fontWeight: FontWeight.bold,
-                color: const Color(0xFF2D1B10))),
+        title: Text(
+          'My Homestays',
+          style: GoogleFonts.playfairDisplay(
+            fontSize: fs(20, wide),
+            fontWeight: FontWeight.bold,
+            color: kDarkInk,
+          ),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Divider(height: 1, color: Colors.grey.shade200),
+        ),
       ),
       body: BlocBuilder<HomestayBloc, HomestayState>(
         builder: (context, state) {
@@ -66,18 +82,18 @@ class _HomestayListingsPageState extends State<HomestayListingsPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.error_outline, size: 48.sp, color: Colors.red),
-                  SizedBox(height: 12.h),
-                  Text('Error: ${state.message}',
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 14.sp, color: Colors.grey)),
-                  SizedBox(height: 16.h),
+                  Icon(Icons.error_outline, size: fs(48, wide), color: Colors.red),
+                  SizedBox(height: sh(12, wide)),
+                  Text(
+                    'Error: ${state.message}',
+                    textAlign: TextAlign.center,
+                    style: GoogleFonts.dmSans(fontSize: fs(14, wide), color: Colors.grey),
+                  ),
+                  SizedBox(height: sh(16, wide)),
                   ElevatedButton(
-                    onPressed: _reload,
-                    style: ElevatedButton.styleFrom(backgroundColor: _brown),
-                    child: Text('Retry',
-                        style: GoogleFonts.dmSans(color: Colors.white)),
+                    onPressed: reload,
+                    style: ElevatedButton.styleFrom(backgroundColor: kBrown),
+                    child: Text('Retry', style: GoogleFonts.dmSans(color: Colors.white)),
                   ),
                 ],
               ),
@@ -90,31 +106,66 @@ class _HomestayListingsPageState extends State<HomestayListingsPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.home_outlined, size: 64.sp, color: Colors.grey[300]),
-                    SizedBox(height: 16.h),
-                    Text('No homestays yet',
-                        style: GoogleFonts.playfairDisplay(
-                            fontSize: 20.sp, color: Colors.grey[600])),
-                    SizedBox(height: 8.h),
-                    Text('Tap + to add your first homestay',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 13.sp, color: Colors.grey)),
+                    Icon(Icons.home_outlined, size: fs(64, wide), color: Colors.grey[300]),
+                    SizedBox(height: sh(16, wide)),
+                    Text(
+                      'No homestays yet',
+                      style: GoogleFonts.playfairDisplay(
+                        fontSize: fs(20, wide),
+                        color: Colors.grey[600],
+                      ),
+                    ),
+                    SizedBox(height: sh(8, wide)),
+                    Text(
+                      'Tap + to add your first homestay',
+                      style: GoogleFonts.dmSans(fontSize: fs(13, wide), color: Colors.grey),
+                    ),
                   ],
                 ),
               );
             }
 
-            return ListView.builder(
-              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-              itemCount: state.homestays.length,
-              itemBuilder: (_, i) {
-                final homestay = state.homestays[i];
-                return _HomestayCard(
-                  homestay: homestay,
-                  onTap: () => _goToDetail(homestay),
-                  onEdit: () => _goToEdit(homestay),
-                );
-              },
+            return Align(
+              alignment: Alignment.topCenter,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: wide ? 900 : double.infinity),
+                child: wide
+                    ? GridView.builder(
+                  padding: EdgeInsets.all(sw(20, wide)),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 20,
+                    mainAxisSpacing: 20,
+                    childAspectRatio: 1.15,
+                  ),
+                  itemCount: state.homestays.length,
+                  itemBuilder: (_, i) {
+                    final h = state.homestays[i];
+                    return HomestayCard(
+                      wide: wide,
+                      homestay: h,
+                      onTap: () => goToDetail(h),
+                      onEdit: () => goToEdit(h),
+                    );
+                  },
+                )
+                    : ListView.builder(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: sw(16, wide),
+                    vertical: sh(12, wide),
+                  ),
+                  itemCount: state.homestays.length,
+                  itemBuilder: (_, i) {
+                    final h = state.homestays[i];
+                    return HomestayCard(
+                      wide: wide,
+                      homestay: h,
+                      onTap: () => goToDetail(h),
+                      onEdit: () => goToEdit(h),
+                    );
+                  },
+                ),
+              ),
             );
           }
 
@@ -122,23 +173,25 @@ class _HomestayListingsPageState extends State<HomestayListingsPage> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _goToAdd,
-        backgroundColor: _brown,
+        onPressed: goToAdd,
+        backgroundColor: kBrown,
         foregroundColor: Colors.white,
-        icon: Icon(Icons.add, size: 20.sp),
-        label: Text('Add Homestay',
-            style: GoogleFonts.dmSans(fontWeight: FontWeight.w600)),
+        icon: Icon(Icons.add, size: fs(20, wide)),
+        label: Text('Add Homestay', style: GoogleFonts.dmSans(fontWeight: FontWeight.w600)),
       ),
     );
   }
 }
 
-class _HomestayCard extends StatelessWidget {
+class HomestayCard extends StatelessWidget {
+  final bool wide;
   final Homestay homestay;
   final VoidCallback onTap;
   final VoidCallback onEdit;
 
-  const _HomestayCard({
+  const HomestayCard({
+    super.key,
+    required this.wide,
     required this.homestay,
     required this.onTap,
     required this.onEdit,
@@ -146,126 +199,132 @@ class _HomestayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final firstImage =
-    homestay.imageUrls.isNotEmpty ? homestay.imageUrls.first : null;
+    final String? firstImage = homestay.imageUrls.isNotEmpty ? homestay.imageUrls.first : null;
+    final double imgHeight = wide ? 180 : 180.h;
 
     return Card(
-      margin: EdgeInsets.only(bottom: 16.h),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16.r)),
+      margin: wide ? EdgeInsets.zero : EdgeInsets.only(bottom: sh(16, wide)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(sr(16, wide))),
       elevation: 2,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Image + badges
             Stack(
               children: [
                 firstImage != null
                     ? ProxyImage(
                   imageUrl: firstImage,
                   width: double.infinity,
-                  height: 180.h,
+                  height: imgHeight,
                   borderRadiusValue: 0,
                 )
                     : Container(
                   width: double.infinity,
-                  height: 180.h,
+                  height: imgHeight,
                   color: Colors.grey[200],
-                  child: Icon(Icons.home, size: 64.sp, color: Colors.grey[400]),
+                  child: Icon(Icons.home, size: fs(64, wide), color: Colors.grey[400]),
                 ),
-
-                // Active / Inactive badge
                 Positioned(
-                  top: 10.h,
-                  left: 10.w,
-                  child: _badge(
+                  top: sh(10, wide),
+                  left: sw(10, wide),
+                  child: StatusBadge(
+                    wide: wide,
                     label: homestay.isVisible ? 'Active' : 'Inactive',
                     icon: homestay.isVisible ? Icons.visibility : Icons.visibility_off,
                     color: homestay.isVisible ? Colors.green : Colors.grey.shade600,
                   ),
                 ),
-
-                // Category badge
                 if (homestay.category != null && homestay.category!.isNotEmpty)
                   Positioned(
-                    top: 10.h,
-                    right: 10.w,
-                    child: _badge(
+                    top: sh(10, wide),
+                    right: sw(10, wide),
+                    child: StatusBadge(
+                      wide: wide,
                       label: homestay.category!,
-                      color: const Color(0xFF5C4033),
+                      color: kBrown,
                     ),
                   ),
               ],
             ),
-
-            // Details
             Padding(
-              padding: EdgeInsets.fromLTRB(14.w, 12.h, 8.w, 12.h),
+              padding: EdgeInsets.fromLTRB(sw(14, wide), sh(12, wide), sw(8, wide), sh(12, wide)),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(homestay.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.playfairDisplay(
-                                fontSize: 17.sp, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 4.h),
+                        Text(
+                          homestay.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.playfairDisplay(
+                            fontSize: fs(17, wide),
+                            fontWeight: FontWeight.bold,
+                            color: kDarkInk,
+                          ),
+                        ),
+                        SizedBox(height: sh(4, wide)),
                         Row(
                           children: [
-                            Icon(Icons.location_on,
-                                size: 13.sp, color: Colors.grey),
-                            SizedBox(width: 2.w),
+                            Icon(Icons.location_on, size: fs(13, wide), color: Colors.grey),
+                            SizedBox(width: sw(2, wide)),
                             Expanded(
-                              child: Text(homestay.location,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 12.sp, color: Colors.grey)),
+                              child: Text(
+                                homestay.location,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.dmSans(
+                                  fontSize: fs(12, wide),
+                                  color: Colors.grey,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        SizedBox(height: 6.h),
+                        SizedBox(height: sh(6, wide)),
                         RichText(
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text:
-                                'Rs. ${homestay.pricePerNight.toStringAsFixed(0)}',
+                                text: 'Rs. ${homestay.pricePerNight.toStringAsFixed(0)}',
                                 style: GoogleFonts.dmSans(
-                                    fontSize: 15.sp,
-                                    fontWeight: FontWeight.bold,
-                                    color: const Color(0xFF5C4033)),
+                                  fontSize: fs(15, wide),
+                                  fontWeight: FontWeight.bold,
+                                  color: kBrown,
+                                ),
                               ),
                               TextSpan(
                                 text: ' / night',
                                 style: GoogleFonts.dmSans(
-                                    fontSize: 12.sp, color: Colors.grey),
+                                  fontSize: fs(12, wide),
+                                  color: Colors.grey,
+                                ),
                               ),
                             ],
                           ),
                         ),
-                        SizedBox(height: 8.h),
+                        SizedBox(height: sh(8, wide)),
                         Row(
                           children: [
-                            _miniChip(Icons.bed_outlined, '${homestay.numberOfRooms}'),
-                            SizedBox(width: 6.w),
-                            _miniChip(Icons.people_outline, '${homestay.maxGuests}'),
-                            SizedBox(width: 6.w),
-                            _miniChip(Icons.bathtub_outlined, '${homestay.bathrooms}'),
+                            InfoChip(wide: wide, icon: Icons.bed_outlined, label: '${homestay.numberOfRooms}'),
+                            SizedBox(width: sw(6, wide)),
+                            InfoChip(wide: wide, icon: Icons.people_outline, label: '${homestay.maxGuests}'),
+                            SizedBox(width: sw(6, wide)),
+                            InfoChip(wide: wide, icon: Icons.bathtub_outlined, label: '${homestay.bathrooms}'),
                           ],
                         ),
                       ],
                     ),
                   ),
                   IconButton(
-                    icon: Icon(Icons.edit_outlined,
-                        color: const Color(0xFF5C4033), size: 22.sp),
+                    icon: Icon(Icons.edit_outlined, color: kBrown, size: fs(22, wide)),
                     onPressed: onEdit,
                   ),
                 ],
@@ -276,53 +335,85 @@ class _HomestayCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _badge({required String label, IconData? icon, required Color color}) {
+class StatusBadge extends StatelessWidget {
+  final bool wide;
+  final String label;
+  final IconData? icon;
+  final Color color;
+
+  const StatusBadge({
+    super.key,
+    required this.wide,
+    required this.label,
+    required this.color,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+      padding: EdgeInsets.symmetric(horizontal: sw(10, wide), vertical: sh(5, wide)),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(sr(20, wide)),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.15),
-              blurRadius: 4,
-              offset: const Offset(0, 2)),
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           if (icon != null) ...[
-            Icon(icon, color: Colors.white, size: 11.sp),
-            SizedBox(width: 4.w),
+            Icon(icon, color: Colors.white, size: fs(11, wide)),
+            SizedBox(width: sw(4, wide)),
           ],
-          Text(label,
-              style: GoogleFonts.dmSans(
-                  color: Colors.white,
-                  fontSize: 11.sp,
-                  fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: GoogleFonts.dmSans(
+              color: Colors.white,
+              fontSize: fs(11, wide),
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
-  Widget _miniChip(IconData icon, String label) => Container(
-    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-    decoration: BoxDecoration(
-      color: Colors.grey[100],
-      borderRadius: BorderRadius.circular(20.r),
-      border: Border.all(color: Colors.grey.shade300),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 11.sp, color: Colors.grey[600]),
-        SizedBox(width: 3.w),
-        Text(label,
-            style: GoogleFonts.dmSans(
-                fontSize: 10.sp, color: Colors.grey[700])),
-      ],
-    ),
-  );
+class InfoChip extends StatelessWidget {
+  final bool wide;
+  final IconData icon;
+  final String label;
+
+  const InfoChip({super.key, required this.wide, required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: sw(8, wide), vertical: sh(3, wide)),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(sr(20, wide)),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: fs(11, wide), color: Colors.grey[600]),
+          SizedBox(width: sw(3, wide)),
+          Text(
+            label,
+            style: GoogleFonts.dmSans(fontSize: fs(10, wide), color: Colors.grey[700]),
+          ),
+        ],
+      ),
+    );
+  }
 }

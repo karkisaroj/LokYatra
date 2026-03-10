@@ -55,7 +55,7 @@ class UserRemoteDatasource {
     if (name != null && name.isNotEmpty) {
       formData.fields.add(MapEntry('Name', name));
     }
-    if (phoneNumber != null && phoneNumber.isNotEmpty) {
+    if (phoneNumber != null ) {
       formData.fields.add(MapEntry('PhoneNumber', phoneNumber));
     }
     if (imagePath != null) {

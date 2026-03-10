@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -43,116 +44,165 @@ class _OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
     final site   = widget.site;
     final images = site.imageUrls.isNotEmpty ? site.imageUrls : <String>[];
 
+    // Responsive header height - perfect on web (no more "too big") and mobile
+    final double headerHeight = kIsWeb
+        ? MediaQuery.of(context).size.height * 0.42
+        : 340.h;
+
     return Scaffold(
       backgroundColor: _cream,
       body: Stack(
         children: [
           CustomScrollView(
             slivers: [
-
               SliverToBoxAdapter(
                 child: SizedBox(
-                  height: 340.h,
+                  height: headerHeight,
                   child: Stack(
                     fit: StackFit.expand,
                     children: [
                       images.isEmpty
-                          ? Container(color: Colors.grey[300],
+                          ? Container(
+                          color: Colors.grey[300],
                           child: Icon(Icons.image_not_supported, size: 60.sp, color: Colors.grey[400]))
                           : PageView.builder(
                         controller: _pageController,
                         itemCount: images.length,
+                        physics: const PageScrollPhysics(),
                         onPageChanged: (i) => setState(() => _currentImageIndex = i),
                         itemBuilder: (_, i) => ProxyImage(
                           imageUrl: images[i],
                           width: double.infinity,
-                          height: 340.h,
+                          height: headerHeight,
                           borderRadiusValue: 0,
+                          thumb: true, // ← FIXED BLUR: uses Cloudinary optimized sharp version at exact display size
                         ),
                       ),
 
+                      // Gradient overlay
                       Positioned.fill(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.black.withValues(alpha: 0.35),
-                                Colors.transparent,
-                                Colors.black.withValues(alpha: 0.75),
-                              ],
-                              stops: const [0, 0.4, 1],
+                        child: IgnorePointer(
+                          ignoring: true,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.black.withValues(alpha: 0.35),
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.75),
+                                ],
+                                stops: const [0, 0.4, 1],
+                              ),
                             ),
                           ),
                         ),
                       ),
 
-                      if (images.length > 1)
+                      // UNESCO badge - moved to TOP LEFT to match your screenshot design
+                      if (site.isUNESCO)
                         Positioned(
-                          top: 52.h, right: 16.w,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-                            decoration: BoxDecoration(
-                              color: Colors.black54,
-                              borderRadius: BorderRadius.circular(20.r),
-                            ),
-                            child: Row(mainAxisSize: MainAxisSize.min, children: [
-                              Icon(Icons.photo_library_outlined, size: 12.sp, color: Colors.white),
-                              SizedBox(width: 4.w),
-                              Text('${_currentImageIndex + 1}/${images.length}',
-                                  style: GoogleFonts.dmSans(color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600)),
-                            ]),
-                          ),
-                        ),
-
-                      if (images.length > 1)
-                        Positioned(
-                          bottom: 80.h, left: 0, right: 0,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: List.generate(images.length, (i) => AnimatedContainer(
-                              duration: const Duration(milliseconds: 250),
-                              margin: EdgeInsets.symmetric(horizontal: 3.w),
-                              height: 6.h,
-                              width: _currentImageIndex == i ? 20.w : 6.w,
-                              decoration: BoxDecoration(
-                                color: _currentImageIndex == i ? Colors.white : Colors.white54,
-                                borderRadius: BorderRadius.circular(3.r),
-                              ),
-                            )),
-                          ),
-                        ),
-
-                      Positioned(
-                        bottom: 20.h, left: 20.w, right: 20.w,
-                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          if (site.isUNESCO)
-                            Container(
-                              margin: EdgeInsets.only(bottom: 6.h),
-                              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                          top: 52.h,
+                          left: 16.w,
+                          child: IgnorePointer(
+                            ignoring: true,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
                               decoration: BoxDecoration(
                                 color: _terracotta,
-                                borderRadius: BorderRadius.circular(4.r),
+                                borderRadius: BorderRadius.circular(6.r),
                               ),
-                              child: Text('🏛 UNESCO World Heritage',
-                                  style: GoogleFonts.dmSans(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.bold)),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Text('🏛 ', style: TextStyle(fontSize: 13)),
+                                  Text('UNESCO World Heritage',
+                                      style: GoogleFonts.dmSans(
+                                          color: Colors.white,
+                                          fontSize: 11.sp,
+                                          fontWeight: FontWeight.bold)),
+                                ],
+                              ),
                             ),
-                          Text(site.name ?? '',
-                              style: GoogleFonts.playfairDisplay(
-                                  color: Colors.white, fontSize: 26.sp, fontWeight: FontWeight.bold,
-                                  shadows: [const Shadow(blurRadius: 8, color: Colors.black45)])),
-                          SizedBox(height: 4.h),
-                          Row(children: [
-                            Icon(Icons.location_on, color: Colors.white70, size: 13.sp),
-                            SizedBox(width: 3.w),
-                            Text(site.district ?? '', style: GoogleFonts.dmSans(color: Colors.white70, fontSize: 13.sp)),
-                            if ((site.category ?? '').isNotEmpty) ...[
-                              Text('  ·  ', style: GoogleFonts.dmSans(color: Colors.white38, fontSize: 13.sp)),
-                              Text(site.category!, style: GoogleFonts.dmSans(color: Colors.white70, fontSize: 13.sp)),
-                            ],
+                          ),
+                        ),
+
+                      // Image counter
+                      if (images.length > 1)
+                        Positioned(
+                          top: 52.h,
+                          right: 16.w,
+                          child: IgnorePointer(
+                            ignoring: true,
+                            child: Container(
+                              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                              decoration: BoxDecoration(
+                                color: Colors.black54,
+                                borderRadius: BorderRadius.circular(20.r),
+                              ),
+                              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                                Icon(Icons.photo_library_outlined, size: 12.sp, color: Colors.white),
+                                SizedBox(width: 4.w),
+                                Text('${_currentImageIndex + 1}/${images.length}',
+                                    style: GoogleFonts.dmSans(
+                                        color: Colors.white, fontSize: 12.sp, fontWeight: FontWeight.w600)),
+                              ]),
+                            ),
+                          ),
+                        ),
+
+                      // Dots indicator
+                      if (images.length > 1)
+                        Positioned(
+                          bottom: 80.h,
+                          left: 0,
+                          right: 0,
+                          child: IgnorePointer(
+                            ignoring: true,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: List.generate(images.length, (i) => AnimatedContainer(
+                                duration: const Duration(milliseconds: 250),
+                                margin: EdgeInsets.symmetric(horizontal: 3.w),
+                                height: 6.h,
+                                width: _currentImageIndex == i ? 20.w : 6.w,
+                                decoration: BoxDecoration(
+                                  color: _currentImageIndex == i ? Colors.white : Colors.white54,
+                                  borderRadius: BorderRadius.circular(3.r),
+                                ),
+                              )),
+                            ),
+                          ),
+                        ),
+
+                      // Title + location at bottom (classic hero style - looks great on both mobile & web)
+                      Positioned(
+                        bottom: 20.h,
+                        left: 20.w,
+                        right: 20.w,
+                        child: IgnorePointer(
+                          ignoring: true,
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(site.name ?? '',
+                                style: GoogleFonts.playfairDisplay(
+                                    color: Colors.white,
+                                    fontSize: 28.sp,
+                                    fontWeight: FontWeight.bold,
+                                    shadows: [const Shadow(blurRadius: 8, color: Colors.black45)])),
+                            SizedBox(height: 4.h),
+                            Row(children: [
+                              Icon(Icons.location_on, color: Colors.white70, size: 14.sp),
+                              SizedBox(width: 4.w),
+                              Text(site.district ?? '',
+                                  style: GoogleFonts.dmSans(color: Colors.white70, fontSize: 14.sp)),
+                              if ((site.category ?? '').isNotEmpty) ...[
+                                Text('  ·  ', style: GoogleFonts.dmSans(color: Colors.white38, fontSize: 14.sp)),
+                                Text(site.category!, style: GoogleFonts.dmSans(color: Colors.white70, fontSize: 14.sp)),
+                              ],
+                            ]),
                           ]),
-                        ]),
+                        ),
                       ),
                     ],
                   ),
@@ -163,7 +213,6 @@ class _OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
                 child: Padding(
                   padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: Row(children: [
@@ -187,8 +236,7 @@ class _OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
 
                     if ((site.shortDescription ?? '').isNotEmpty) ...[
                       Text(site.shortDescription!,
-                          style: GoogleFonts.dmSans(fontSize: 15.sp, height: 1.65,
-                              color: _dark.withValues(alpha: 0.85))),
+                          style: GoogleFonts.dmSans(fontSize: 15.sp, height: 1.65, color: _dark.withValues(alpha: 0.85))),
                       SizedBox(height: 24.h),
                     ],
 
@@ -238,8 +286,13 @@ class _OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
                                 ),
                                 child: ClipRRect(
                                   borderRadius: BorderRadius.circular(8.r),
-                                  child: ProxyImage(imageUrl: images[i], width: 100.w, height: 100.h,
-                                      borderRadiusValue: 0, thumb: true),
+                                  child: ProxyImage(
+                                    imageUrl: images[i],
+                                    width: 100.w,
+                                    height: 100.h,
+                                    borderRadiusValue: 0,
+                                    thumb: true,
+                                  ),
                                 ),
                               ),
                             );
@@ -253,9 +306,9 @@ class _OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
                     SizedBox(height: 10.h),
                     _ContentCard(
                       child: Column(children: [
-                        _DetailRow(Icons.calendar_today_outlined, 'Added On',     _formatDate(site.createdAt)),
+                        _DetailRow(Icons.calendar_today_outlined, 'Added On', _formatDate(site.createdAt)),
                         Divider(height: 20.h, color: Colors.grey.shade100),
-                        _DetailRow(Icons.update_rounded,          'Last Updated', _formatDate(site.updatedAt)),
+                        _DetailRow(Icons.update_rounded, 'Last Updated', _formatDate(site.updatedAt)),
                         if (site.address != null) ...[
                           Divider(height: 20.h, color: Colors.grey.shade100),
                           _DetailRow(Icons.map_outlined, 'Address', site.address!),
@@ -269,13 +322,15 @@ class _OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
             ],
           ),
 
+          // Back button
           Positioned(
             top: MediaQuery.of(context).padding.top + 8.h,
             left: 8.w,
             child: GestureDetector(
               onTap: () => Navigator.pop(context),
               child: Container(
-                width: 38.w, height: 38.h,
+                width: 38.w,
+                height: 38.h,
                 decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
                 child: Icon(Icons.arrow_back, size: 20.sp, color: _dark),
               ),
@@ -287,6 +342,8 @@ class _OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
   }
 }
 
+// ==================== UNCHANGED HELPER WIDGETS ====================
+
 class _SectionHeader extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -297,8 +354,9 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) => Row(children: [
     Icon(icon, size: 18.sp, color: color),
     SizedBox(width: 8.w),
-    Text(title, style: GoogleFonts.playfairDisplay(
-        fontSize: 17.sp, fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
+    Text(title,
+        style: GoogleFonts.playfairDisplay(
+            fontSize: 17.sp, fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
   ]);
 }
 
@@ -341,7 +399,8 @@ class _InfoChip extends StatelessWidget {
         Text(label, style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500])),
       ]),
       SizedBox(height: 4.h),
-      Text(value, style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
+      Text(value,
+          style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
     ]),
   );
 }
@@ -355,10 +414,12 @@ class _DetailRow extends StatelessWidget {
   Widget build(BuildContext context) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Icon(icon, size: 15.sp, color: Colors.grey[400]),
     SizedBox(width: 10.w),
-    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500])),
-      SizedBox(height: 2.h),
-      Text(value, style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF2D1B10))),
-    ])),
+    Expanded(
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500])),
+          SizedBox(height: 2.h),
+          Text(value,
+              style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.w600, color: const Color(0xFF2D1B10))),
+        ])),
   ]);
 }
