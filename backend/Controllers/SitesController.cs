@@ -183,11 +183,22 @@ namespace backend.Controllers
             if (string.IsNullOrWhiteSpace(url)) return BadRequest("url required");
             try
             {
+                string fetchUrl = url;
+                if (url.Contains("upload.wikimedia.org"))
+                {
+                    var filename = url.Split('/').Last();
+                    fetchUrl = $"https://commons.wikimedia.org/wiki/Special:FilePath/{filename}";
+                }
+
                 using var http = new HttpClient();
                 http.Timeout = TimeSpan.FromSeconds(30);
-                var response = await http.GetAsync(url);
+                http.DefaultRequestHeaders.Add("User-Agent",
+                    "LokYatraApp/1.0 (educational tourism app; contact@lokyatra.app)");
+
+                var response = await http.GetAsync(fetchUrl);
                 if (!response.IsSuccessStatusCode)
                     return StatusCode((int)response.StatusCode, "Image fetch failed");
+
                 var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/jpeg";
                 var bytes = await response.Content.ReadAsByteArrayAsync();
                 return File(bytes, contentType);

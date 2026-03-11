@@ -46,7 +46,9 @@ namespace backend.Database
                 entity.Property(b => b.TotalPrice).HasColumnType("numeric(18,2)");
                 entity.Property(b => b.PricePerNight).HasColumnType("numeric(18,2)");
             });
-
+            modelBuilder.Entity<CulturalSite>()
+            .Property(e => e.ImageUrls)
+            .HasColumnType("text[]");
             // One review per booking
             modelBuilder.Entity<Review>()
                 .HasIndex(r => r.BookingId)
