@@ -10,7 +10,7 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/boo
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/booking_state.dart';
 import '../../../core/services/sqlite_service.dart';
 import 'Ownereditprofilepage.dart';
-import 'ProfileImageWidget.dart';
+import '../../widgets/Helpers/ProfileImageWidget.dart';
 
 const _ink    = Color(0xFF2D1B10);
 const _accent = Color(0xFFCD6E4E);

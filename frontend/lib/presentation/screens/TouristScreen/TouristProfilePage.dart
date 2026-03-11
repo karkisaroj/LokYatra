@@ -12,7 +12,7 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/booking/boo
 import '../../../data/datasources/quiz_remote_datasource.dart';
 import '../../state_management/Bloc/notification/notification_bloc.dart';
 import '../../widgets/Helpers/NotificationsPage.dart';
-import '../OwnerScreen/ProfileImageWidget.dart';
+import '../../widgets/Helpers/ProfileImageWidget.dart';
 import 'MyReviewsPage.dart';
 import 'Savedhomestayspage.dart';
 import 'TouristBookingsPage.dart';
@@ -26,9 +26,9 @@ const Color brownColor   = Color(0xFFCD6E4E);
 const Color darkColor    = Color(0xFF2D1B10);
 const Color pageBg       = Color(0xFFF7F3EF);
 
-const Color headerStart  = Color(0xFFF0E6DE);
-const Color headerMid    = Color(0xFFE8C9B8);
-const Color headerEnd    = Color(0xFFD4906E);
+const Color headerStart  = Color(0xFFFDFAF8);
+const Color headerMid    = Color(0xFFF5EDE7);
+const Color headerEnd    = Color(0xFFEDD4C4);
 
 const Color cardWhite    = Colors.white;
 
@@ -110,9 +110,8 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
 
       final quizRes = await QuizRemoteDatasource().getHistory();
       if (quizRes.statusCode == 200 && mounted) {
-        final d       = quizRes.data as Map<String, dynamic>;
-        final history = (d['history'] as List? ?? []);
-
+        final d          = quizRes.data as Map<String, dynamic>;
+        final history    = (d['history'] as List? ?? []);
         final sumFromHistory = history.fold<int>(
           0, (s, h) => s + ((h as Map)['pointsEarned'] as int? ?? 0),
         );
@@ -194,7 +193,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
       children: [
         Container(
           width: double.infinity,
-          padding: EdgeInsets.only(bottom: 56.h),
+          padding: EdgeInsets.only(bottom: 70.h),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [headerStart, headerMid, headerEnd],
@@ -211,7 +210,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                   width: 160.w, height: 160.w,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: brownColor.withValues(alpha: 0.08),
+                    color: brownColor.withValues(alpha: 0.06),
                   ),
                 ),
               ),
@@ -221,11 +220,10 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                   width: 120.w, height: 120.w,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: brownColor.withValues(alpha: 0.06),
+                    color: brownColor.withValues(alpha: 0.04),
                   ),
                 ),
               ),
-
               SafeArea(
                 child: Padding(
                   padding: EdgeInsets.fromLTRB(20.w, 12.h, 16.w, 0),
@@ -244,12 +242,11 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                           Row(children: [
                             HeaderIconBtn(
                               icon: Icons.notifications_outlined,
-                              onTap: () => Navigator.push(context, MaterialPageRoute(
-                                builder: (_) => BlocProvider.value(
-                                  value: context.read<NotificationBloc>(),
-                                  child: const NotificationsPage(),
-                                ),
-                              )),
+                              onTap: () => Navigator.push(context,
+                                  MaterialPageRoute(builder: (_) => BlocProvider.value(
+                                    value: context.read<NotificationBloc>(),
+                                    child: const NotificationsPage(),
+                                  ))),
                             ),
                             SizedBox(width: 8.w),
                             HeaderIconBtn(
@@ -260,11 +257,12 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                         ],
                       ),
 
-                      SizedBox(height: 24.h),
+                      SizedBox(height: 20.h),
 
                       Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          // Profile image — NO ClipOval so camera badge is visible
                           Stack(
                             clipBehavior: Clip.none,
                             children: [
@@ -275,53 +273,28 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                                   color: Colors.white,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: brownColor.withValues(alpha: 0.25),
+                                      color: brownColor.withValues(alpha: 0.2),
                                       blurRadius: 16,
                                       offset: const Offset(0, 6),
                                     ),
                                   ],
                                 ),
-                                child: ClipOval(
-                                  child: ProfileImageWidget(
-                                    initialImageUrl: profileImageUrl,
-                                    accent: brownColor,
-                                    onUploaded: (newUrl) async {
-                                      setState(() => profileImageUrl = newUrl);
-                                      await SqliteService().put('user_image', newUrl);
-                                    },
-                                  ),
+                                // No ClipOval — lets ProfileImageWidget's camera badge show
+                                child: ProfileImageWidget(
+                                  initialImageUrl: profileImageUrl,
+                                  accent: brownColor,
+                                  onUploaded: (newUrl) async {
+                                    setState(() => profileImageUrl = newUrl);
+                                    await SqliteService().put('user_image', newUrl);
+                                  },
                                 ),
                               ),
 
-                              Positioned(
-                                top: 0,
-                                right: 0,
-                                child: GestureDetector(
-                                  onTap: goToEditProfile,
-                                  child: Container(
-                                    width: 22.w, height: 22.w,
-                                    decoration: BoxDecoration(
-                                      color: brownColor,
-                                      shape: BoxShape.circle,
-                                      border: Border.all(color: Colors.white, width: 1.5),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: brownColor.withValues(alpha: 0.4),
-                                          blurRadius: 6,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Icon(Icons.edit_rounded,
-                                        size: 11.sp, color: Colors.white),
-                                  ),
-                                ),
-                              ),
-
+                              // Verified tick — top left, away from camera (bottom right)
                               if (isVerified)
                                 Positioned(
-                                  bottom: 0,
-                                  right: 0,
+                                  top: 0,
+                                  left: 0,
                                   child: Container(
                                     width: 22.w, height: 22.w,
                                     decoration: BoxDecoration(
@@ -342,10 +315,11 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                SizedBox(height: 4.h),
                                 Text(
                                   name.isEmpty ? 'Traveller' : name,
                                   style: GoogleFonts.playfairDisplay(
-                                    fontSize: 21.sp,
+                                    fontSize: 20.sp,
                                     fontWeight: FontWeight.bold,
                                     color: darkColor,
                                     height: 1.1,
@@ -364,7 +338,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 if (phone.isNotEmpty) ...[
-                                  SizedBox(height: 2.h),
+                                  SizedBox(height: 3.h),
                                   Row(children: [
                                     Icon(Icons.phone_outlined,
                                         size: 11.sp,
@@ -401,7 +375,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                         ],
                       ),
 
-                      SizedBox(height: 28.h),
+                      SizedBox(height: 24.h),
                     ],
                   ),
                 ),
@@ -410,13 +384,12 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
           ),
         ),
 
-        // ── Floating stats card ─────────────────────────────────────
         Positioned(
           bottom: 0,
           left: 20.w,
           right: 20.w,
           child: Container(
-            padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 8.w),
+            padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 16.w),
             decoration: BoxDecoration(
               color: cardWhite,
               borderRadius: BorderRadius.circular(20.r),
@@ -437,14 +410,14 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                   label: 'Quiz Pts',
                   color: brownColor,
                 ),
-                const VertDivider(),
+                Container(width: 1, height: 36.h, color: Colors.grey.shade200),
                 MiniStat(
                   icon: Icons.local_offer_outlined,
                   value: 'Rs. ${(quizPoints / 2).toStringAsFixed(0)}',
                   label: 'Discount',
                   color: accentGreen,
                 ),
-                const VertDivider(),
+                Container(width: 1, height: 36.h, color: Colors.grey.shade200),
                 MiniStat(
                   icon: Icons.verified_outlined,
                   value: isVerified ? 'Yes' : 'No',
@@ -673,8 +646,6 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
   }
 }
 
-// ── Helper widgets ──────────────────────────────────────────────────────────
-
 class HeaderIconBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -687,9 +658,9 @@ class HeaderIconBtn extends StatelessWidget {
       child: Container(
         width: 38.w, height: 38.w,
         decoration: BoxDecoration(
-          color: brownColor.withValues(alpha: 0.12),
+          color: brownColor.withValues(alpha: 0.1),
           shape: BoxShape.circle,
-          border: Border.all(color: brownColor.withValues(alpha: 0.2), width: 1),
+          border: Border.all(color: brownColor.withValues(alpha: 0.15), width: 1),
         ),
         child: Icon(icon, color: darkColor.withValues(alpha: 0.7), size: 18.sp),
       ),
@@ -726,6 +697,7 @@ class PillBadge extends StatelessWidget {
   }
 }
 
+// Fixed: removed Expanded wrapper so spaceEvenly works correctly
 class MiniStat extends StatelessWidget {
   final IconData icon;
   final String value;
@@ -741,19 +713,16 @@ class MiniStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, size: 16.sp, color: color),
-        SizedBox(height: 4.h),
-        FittedBox(
-          child: Text(value,
-              style: GoogleFonts.dmSans(
-                  fontSize: 13.sp, fontWeight: FontWeight.bold, color: darkColor)),
-        ),
-        SizedBox(height: 2.h),
-        Text(label, style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[500])),
-      ]),
-    );
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 18.sp, color: color),
+      SizedBox(height: 4.h),
+      Text(value,
+          style: GoogleFonts.dmSans(
+              fontSize: 13.sp, fontWeight: FontWeight.bold, color: darkColor)),
+      SizedBox(height: 2.h),
+      Text(label,
+          style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[500])),
+    ]);
   }
 }
 
@@ -814,10 +783,13 @@ class ActivityTile extends StatelessWidget {
                 children: [
                   Text(label,
                       style: GoogleFonts.dmSans(
-                          fontSize: 14.sp, fontWeight: FontWeight.w600, color: darkColor)),
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                          color: darkColor)),
                   SizedBox(height: 2.h),
                   Text(sublabel,
-                      style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12.sp, color: Colors.grey[500])),
                 ],
               ),
             ),

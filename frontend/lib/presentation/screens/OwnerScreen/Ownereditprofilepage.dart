@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../core/services/sqlite_service.dart';
 import '../../../data/datasources/user_remote_datasource.dart';
-import 'ProfileImageWidget.dart';
+import '../../widgets/Helpers/ProfileImageWidget.dart';
 
 const editProfileInk    = Color(0xFF2D1B10);
 const editProfileAccent = Color(0xFFCD6E4E);

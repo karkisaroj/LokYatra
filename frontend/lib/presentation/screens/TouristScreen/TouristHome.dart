@@ -29,6 +29,15 @@ import 'TouristHomestayDetailPage.dart';
 import 'Touristsitespage.dart';
 import 'TouristSearchPage.dart';
 
+// Helper function to clean up long addresses for the UI
+String _formatLocation(String? location) {
+  if (location == null || location.isEmpty) return 'Nepal';
+  List<String> parts = location.split(',').map((e) => e.trim()).toList();
+  if (parts.length <= 2) return location;
+  // Takes the last two parts, e.g., "Kathmandu, Nepal"
+  return "${parts[parts.length - 2]}, ${parts.last}";
+}
+
 class TouristHome extends StatefulWidget {
   const TouristHome({super.key});
 
@@ -65,9 +74,7 @@ class _TouristHomeState extends State<TouristHome> {
   @override
   Widget build(BuildContext context) {
     final pages = [
-      FocusScope(
-        child: _HomeTab(onTabSwitch: _goToTab),
-      ),
+      FocusScope(child: _HomeTab(onTabSwitch: _goToTab)),
       FocusScope(child: const TouristSitesPage()),
       FocusScope(child: const TouristQuizPage()),
       FocusScope(child: const TouristStayPage()),
@@ -93,17 +100,16 @@ class _TouristHomeState extends State<TouristHome> {
         unselectedLabelStyle: GoogleFonts.dmSans(fontSize: 11.sp, fontWeight: FontWeight.w500),
         elevation: 20,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_outlined),        activeIcon: Icon(Icons.home_rounded),           label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.map_outlined),          activeIcon: Icon(Icons.map_rounded),            label: 'Sites'),
-          BottomNavigationBarItem(icon: Icon(Icons.emoji_events_outlined), activeIcon: Icon(Icons.emoji_events_rounded),   label: 'Quiz'),
-          BottomNavigationBarItem(icon: Icon(Icons.hotel_outlined),        activeIcon: Icon(Icons.hotel_rounded),          label: 'Stay'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded),activeIcon: Icon(Icons.person_rounded),         label: 'Profile'),
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home_rounded), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.map_outlined), activeIcon: Icon(Icons.map_rounded), label: 'Sites'),
+          BottomNavigationBarItem(icon: Icon(Icons.emoji_events_outlined), activeIcon: Icon(Icons.emoji_events_rounded), label: 'Quiz'),
+          BottomNavigationBarItem(icon: Icon(Icons.hotel_outlined), activeIcon: Icon(Icons.hotel_rounded), label: 'Stay'),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline_rounded), activeIcon: Icon(Icons.person_rounded), label: 'Profile'),
         ],
       ),
     );
   }
 }
-
 
 class _HomeTab extends StatefulWidget {
   final void Function(int) onTabSwitch;
@@ -115,7 +121,6 @@ class _HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<_HomeTab> {
   static const _dark = Color(0xFF2D1B10);
-
   String? _profileImage;
 
   @override
@@ -165,7 +170,7 @@ class _HomeTabState extends State<_HomeTab> {
     return SafeArea(
       child: RefreshIndicator(
         color: const Color(0xFFCD6E4E),
-        onRefresh: () async{
+        onRefresh: () async {
           context.read<SitesBloc>().add(LoadSites());
           context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
           context.read<NotificationBloc>().add(const LoadNotifications());
@@ -185,7 +190,6 @@ class _HomeTabState extends State<_HomeTab> {
                           Text('Explore Nepal', style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey[600])),
                           Text('LokYatra', style: GoogleFonts.playfairDisplay(fontSize: 28.sp, fontWeight: FontWeight.bold, color: _dark)),
                         ]),
-
                         Row(children: [
                           const BellButton(),
                           SizedBox(width: 8.w),
@@ -199,8 +203,7 @@ class _HomeTabState extends State<_HomeTab> {
                                     ? Image.network(
                                   _resolveImageUrl(_profileImage!),
                                   width: 44.r, height: 44.r, fit: BoxFit.cover,
-                                  errorBuilder: (_, _, _) =>
-                                      Icon(Icons.person_rounded, color: Colors.grey[600], size: 28.sp),
+                                  errorBuilder: (_, _, _) => Icon(Icons.person_rounded, color: Colors.grey[600], size: 28.sp),
                                 )
                                     : Icon(Icons.person_rounded, color: Colors.grey[600], size: 28.sp),
                               ),
@@ -209,9 +212,7 @@ class _HomeTabState extends State<_HomeTab> {
                         ]),
                       ],
                     ),
-
                     SizedBox(height: 20.h),
-
                     GestureDetector(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TouristSearchPage())),
                       child: Container(
@@ -233,7 +234,6 @@ class _HomeTabState extends State<_HomeTab> {
                         ),
                       ),
                     ),
-
                     SizedBox(height: 24.h),
                     Text('Browse by Category', style: GoogleFonts.playfairDisplay(fontSize: 20.sp, fontWeight: FontWeight.bold, color: _dark)),
                     SizedBox(height: 16.h),
@@ -242,13 +242,9 @@ class _HomeTabState extends State<_HomeTab> {
                 ),
               ),
             ),
-
             SliverToBoxAdapter(
               child: Column(children: [
-                _SectionHeader(
-                  title: 'Popular Sites',
-                  onSeeAll: () => widget.onTabSwitch(1),
-                ),
+                _SectionHeader(title: 'Popular Sites', onSeeAll: () => widget.onTabSwitch(1)),
                 SizedBox(height: 12.h),
                 BlocBuilder<SitesBloc, SitesState>(
                   builder: (context, state) {
@@ -283,13 +279,8 @@ class _HomeTabState extends State<_HomeTab> {
                 ),
               ]),
             ),
-
             SliverToBoxAdapter(
-              child: _SectionHeader(
-                title: 'Popular Stays',
-                topPadding: 32,
-                onSeeAll: () => widget.onTabSwitch(3),
-              ),
+              child: _SectionHeader(title: 'Popular Stays', topPadding: 32, onSeeAll: () => widget.onTabSwitch(3)),
             ),
             SliverToBoxAdapter(
               child: BlocBuilder<HomestayBloc, HomestayState>(
@@ -318,7 +309,6 @@ class _HomeTabState extends State<_HomeTab> {
                 },
               ),
             ),
-
             SliverToBoxAdapter(child: SizedBox(height: 40.h)),
           ],
         ),
@@ -327,17 +317,12 @@ class _HomeTabState extends State<_HomeTab> {
   }
 }
 
-
 class _SectionHeader extends StatelessWidget {
   final String title;
   final VoidCallback onSeeAll;
   final double topPadding;
 
-  const _SectionHeader({
-    required this.title,
-    required this.onSeeAll,
-    this.topPadding = 0,
-  });
+  const _SectionHeader({required this.title, required this.onSeeAll, this.topPadding = 0});
 
   @override
   Widget build(BuildContext context) {
@@ -346,12 +331,10 @@ class _SectionHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: GoogleFonts.playfairDisplay(
-              fontSize: 20.sp, fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
+          Text(title, style: GoogleFonts.playfairDisplay(fontSize: 20.sp, fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
           TextButton(
             onPressed: onSeeAll,
-            child: Text('See All', style: GoogleFonts.dmSans(
-                fontSize: 13.sp, color: Colors.black54, fontWeight: FontWeight.bold)),
+            child: Text('See All', style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.black54, fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -359,10 +342,8 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-
 class _Categories extends StatelessWidget {
   const _Categories();
-
   static const _items = [
     (name: 'Temple',      icon: Icons.temple_hindu_outlined,    type: 'Site'),
     (name: 'Palace',      icon: Icons.account_balance_outlined, type: 'Site'),
@@ -396,8 +377,7 @@ class _Categories extends StatelessWidget {
               child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
                 Icon(item.icon, size: 28.sp, color: const Color(0xFF2D1B10)),
                 SizedBox(height: 8.h),
-                Text(item.name, style: GoogleFonts.dmSans(
-                    fontSize: 12.sp, fontWeight: FontWeight.w500, color: const Color(0xFF2D1B10))),
+                Text(item.name, style: GoogleFonts.dmSans(fontSize: 12.sp, fontWeight: FontWeight.w500, color: const Color(0xFF2D1B10))),
               ]),
             ),
           );
@@ -412,16 +392,12 @@ class _SiteCard extends StatelessWidget {
   final VoidCallback onTap;
   const _SiteCard({required this.site, required this.onTap});
 
-  static const _terracotta = Color(0xFFCD6E4E);
-  static const _dark       = Color(0xFF2D1B10);
-
   @override
   Widget build(BuildContext context) {
-    final image    = site.imageUrls.isNotEmpty ? site.imageUrls.first : '';
-    final name     = site.name     ?? 'Unnamed Site';
-    final district = site.district ?? 'Nepal';
-    final category = site.category ?? '';
-    final isUnesco = site.isUNESCO == true;
+    final image = site.imageUrls.isNotEmpty ? site.imageUrls.first : '';
+    final name = site.name ?? 'Unnamed Site';
+
+    final cleanLocation = _formatLocation(site.district);
 
     return GestureDetector(
       onTap: onTap,
@@ -441,7 +417,7 @@ class _SiteCard extends StatelessWidget {
                   borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
                   child: ProxyImage(imageUrl: image, width: 160.w, height: 120.h, borderRadiusValue: 0, thumb: true),
                 ),
-                if (isUnesco)
+                if (site.isUNESCO == true)
                   Positioned(
                     top: 8.h, left: 8.w,
                     child: Container(
@@ -452,6 +428,7 @@ class _SiteCard extends StatelessWidget {
                   ),
               ],
             ),
+            // In _SiteCard — replace the Expanded > Padding child:
             Expanded(
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
@@ -460,26 +437,26 @@ class _SiteCard extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(name, maxLines: 2, overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.playfairDisplay(fontSize: 13.sp, fontWeight: FontWeight.bold, color: _dark, height: 1.25)),
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(children: [
-                        Icon(Icons.location_on_outlined, size: 11.sp, color: Colors.grey[500]),
-                        SizedBox(width: 2.w),
-                        Expanded(child: Text(district, maxLines: 1, overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500]))),
-                      ]),
-                      if (category.isNotEmpty) ...[
-                        SizedBox(height: 5.h),
-                        Container(
-                          padding: EdgeInsets.symmetric(horizontal: 7.w, vertical: 3.h),
-                          decoration: BoxDecoration(
-                            color: _terracotta.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(5.r),
-                          ),
-                          child: Text(category, style: GoogleFonts.dmSans(fontSize: 10.sp, color: _terracotta, fontWeight: FontWeight.w600)),
-                        ),
-                      ],
+                        style: GoogleFonts.playfairDisplay(fontSize: 13.sp, fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10), height: 1.25)),
+                    Row(children: [
+                      Icon(Icons.location_on_outlined, size: 11.sp, color: Colors.grey[500]),
+                      SizedBox(width: 2.w),
+                      Expanded(child: Text(cleanLocation, maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[500]))),
                     ]),
+                    // ← ADD THIS
+                    Text(
+                      (site.entryFeeNPR != null && site.entryFeeNPR! > 0)
+                          ? 'Rs. ${site.entryFeeNPR!.toStringAsFixed(0)}'
+                          : 'Free Entry',
+                      style: GoogleFonts.dmSans(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w700,
+                        color: (site.entryFeeNPR != null && site.entryFeeNPR! > 0)
+                            ? const Color(0xFFCD6E4E)
+                            : const Color(0xFF2D6A6A),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -491,19 +468,22 @@ class _SiteCard extends StatelessWidget {
   }
 }
 
-
 class _HomestayCard extends StatelessWidget {
   final Homestay homestay;
   final VoidCallback onTap;
   const _HomestayCard({required this.homestay, required this.onTap});
 
-
   @override
   Widget build(BuildContext context) {
-    final image    = homestay.imageUrls.isNotEmpty ? homestay.imageUrls.first : null;
-    final location = (homestay.nearCulturalSite?.name ?? '').isNotEmpty
-        ? 'Near ${homestay.nearCulturalSite!.name}'
-        : homestay.location;
+    final image = homestay.imageUrls.isNotEmpty ? homestay.imageUrls.first : null;
+
+    // UI Improvement: Simplified logic for location display
+    String displayLocation;
+    if ((homestay.nearCulturalSite?.name ?? '').isNotEmpty) {
+      displayLocation = 'Near ${homestay.nearCulturalSite!.name}';
+    } else {
+      displayLocation = _formatLocation(homestay.location);
+    }
 
     return GestureDetector(
       onTap: onTap,
@@ -528,8 +508,7 @@ class _HomestayCard extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Expanded(child: Text(homestay.name,
-                      style: GoogleFonts.playfairDisplay(fontSize: 18.sp, fontWeight: FontWeight.bold))),
+                  Expanded(child: Text(homestay.name, style: GoogleFonts.playfairDisplay(fontSize: 18.sp, fontWeight: FontWeight.bold))),
                   Row(children: [
                     Icon(Icons.star_rounded, color: Colors.amber[600], size: 18.sp),
                     SizedBox(width: 4.w),
@@ -538,20 +517,17 @@ class _HomestayCard extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 6.h),
-              Text(location, style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600])),
+              Text(displayLocation, style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600])),
               SizedBox(height: 12.h),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text('${homestay.numberOfRooms} Rooms • ${homestay.maxGuests} Guests',
                       style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[500])),
                   RichText(text: TextSpan(children: [
-                    TextSpan(
-                        text: 'Rs. ${homestay.pricePerNight.toStringAsFixed(0)}',
+                    TextSpan(text: 'Rs. ${homestay.pricePerNight.toStringAsFixed(0)}',
                         style: GoogleFonts.dmSans(fontSize: 18.sp, color: Colors.black87, fontWeight: FontWeight.w800)),
-                    TextSpan(text: ' / night',
-                        style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
+                    TextSpan(text: ' / night', style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
                   ])),
                 ],
               ),
@@ -562,5 +538,3 @@ class _HomestayCard extends StatelessWidget {
     );
   }
 }
-
-String getFirstImageUrl(List<String> urls) => urls.isNotEmpty ? urls.first : '';

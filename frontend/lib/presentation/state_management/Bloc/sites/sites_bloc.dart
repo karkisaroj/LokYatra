@@ -11,7 +11,6 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
   final SitesRemoteDatasource _remote = SitesRemoteDatasource();
   final SqliteService         _sqlite = SqliteService();
 
-  // In-memory cache so LoadSiteById can re-emit the list after detail load
   List<CulturalSite>? _memCache;
 
   SitesBloc() : super(SitesInitial()) {
@@ -23,12 +22,10 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
     on<DeleteSite>(_onDeleteSite);
   }
 
-  // ── Load sites — offline-first ────────────────────────────────────────────
 
   Future<void> _onLoadSites(LoadSites event, Emitter<SitesState> emit) async {
     emit(SitesLoading());
 
-    // 1. Show cached data immediately so UI is never empty
     final cached = await _sqlite.getCachedSites();
     if (cached.isNotEmpty) {
       final sites = _parseSites(cached);
@@ -60,7 +57,6 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
     }
   }
 
-  // ── Force refresh ─────────────────────────────────────────────────────────
 
   Future<void> _onRefreshSites(RefreshSites event, Emitter<SitesState> emit) async {
     emit(SitesLoading());

@@ -96,7 +96,6 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
     return SafeArea(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-        // ── Header ──────────────────────────────────────────────────────────
         Padding(
           padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 12.h),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -776,7 +775,6 @@ class _FilterSheetState extends State<_FilterSheet> {
   }
 }
 
-// ── Shared bottom-sheet widgets ───────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
   final String text;

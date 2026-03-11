@@ -69,7 +69,6 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
             CustomScrollView(
               slivers: [
 
-                // ── Full hero image — PageView in SliverToBoxAdapter ──────
                 SliverToBoxAdapter(
                   child: SizedBox(
                     height: 380.h,
@@ -231,13 +230,28 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                           Divider(color: Colors.grey[100]),
                           SizedBox(height: 14.h),
                           Row(children: [
-                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text('Entry Fee',
-                                  style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
-                              SizedBox(height: 2.h),
-                              Text('Rs. $entryFee', style: GoogleFonts.dmSans(
-                                  fontSize: 20.sp, color: _terracotta, fontWeight: FontWeight.bold)),
-                            ])),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Entry Fee',
+                                      style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
+                                  SizedBox(height: 2.h),
+                                  Text(
+                                    (site.entryFeeNPR != null && site.entryFeeNPR! > 0)
+                                        ? 'Rs. ${site.entryFeeNPR!.toStringAsFixed(0)}'
+                                        : 'Free Entry',
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 20.sp,
+                                      fontWeight: FontWeight.bold,
+                                      color: (site.entryFeeNPR != null && site.entryFeeNPR! > 0)
+                                          ? const Color(0xFFCD6E4E)
+                                          : const Color(0xFF2D6A6A),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                             SizedBox(width: 12.w),
                             ElevatedButton.icon(
                               onPressed: () async {

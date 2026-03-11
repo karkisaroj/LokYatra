@@ -88,14 +88,9 @@ class _TouristBookingsPageState extends State<TouristBookingsPage> {
 
             final lists  = [upcoming, completed, cancelled];
             final labels = ['Upcoming', 'Completed', 'Cancelled'];
-            final counts = [
-              upcoming.length,
-              completed.length,
-              cancelled.length
-            ];
+            final counts = [upcoming.length, completed.length, cancelled.length];
 
             return Column(children: [
-              // ── Tab bar ───────────────────────────────────────────────
               Container(
                 color: Colors.white,
                 padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 16.h),
@@ -106,72 +101,63 @@ class _TouristBookingsPageState extends State<TouristBookingsPage> {
                   ),
                   padding: EdgeInsets.all(4.w),
                   child: Row(
-                    children: List.generate(
-                      3,
-                          (i) => Expanded(
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedTab = i),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 220),
-                            padding: EdgeInsets.symmetric(vertical: 10.h),
-                            decoration: BoxDecoration(
-                              color: _selectedTab == i
-                                  ? Colors.white
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(10.r),
-                              boxShadow: _selectedTab == i
-                                  ? [
-                                BoxShadow(
-                                    color:
-                                    Colors.black.withValues(alpha: 0.06),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2))
-                              ]
-                                  : [],
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(labels[i],
-                                    style: GoogleFonts.dmSans(
-                                      fontSize: 13.sp,
-                                      fontWeight: _selectedTab == i
-                                          ? FontWeight.bold
-                                          : FontWeight.normal,
-                                      color: _selectedTab == i
-                                          ? _dark
-                                          : Colors.grey[500],
-                                    )),
-                                if (counts[i] > 0) ...[
-                                  SizedBox(width: 5.w),
-                                  Container(
-                                    padding: EdgeInsets.symmetric(
-                                        horizontal: 6.w, vertical: 2.h),
-                                    decoration: BoxDecoration(
-                                      color: _selectedTab == i
-                                          ? _terracotta
-                                          : Colors.grey[400],
-                                      borderRadius:
-                                      BorderRadius.circular(10.r),
-                                    ),
-                                    child: Text('${counts[i]}',
-                                        style: GoogleFonts.dmSans(
-                                            fontSize: 10.sp,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold)),
+                    children: List.generate(3, (i) => Expanded(
+                      child: GestureDetector(
+                        onTap: () => setState(() => _selectedTab = i),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 220),
+                          padding: EdgeInsets.symmetric(vertical: 10.h),
+                          decoration: BoxDecoration(
+                            color: _selectedTab == i
+                                ? Colors.white
+                                : Colors.transparent,
+                            borderRadius: BorderRadius.circular(10.r),
+                            boxShadow: _selectedTab == i
+                                ? [BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.06),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2))]
+                                : [],
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(labels[i],
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 13.sp,
+                                    fontWeight: _selectedTab == i
+                                        ? FontWeight.bold
+                                        : FontWeight.normal,
+                                    color: _selectedTab == i
+                                        ? _dark
+                                        : Colors.grey[500],
+                                  )),
+                              if (counts[i] > 0) ...[
+                                SizedBox(width: 5.w),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                      horizontal: 6.w, vertical: 2.h),
+                                  decoration: BoxDecoration(
+                                    color: _selectedTab == i
+                                        ? _terracotta
+                                        : Colors.grey[400],
+                                    borderRadius: BorderRadius.circular(10.r),
                                   ),
-                                ],
+                                  child: Text('${counts[i]}',
+                                      style: GoogleFonts.dmSans(
+                                          fontSize: 10.sp,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold)),
+                                ),
                               ],
-                            ),
+                            ],
                           ),
                         ),
                       ),
-                    ),
+                    )),
                   ),
                 ),
               ),
-
-              // ── List ──────────────────────────────────────────────────
               Expanded(
                 child: RefreshIndicator(
                   color: _terracotta,
@@ -180,8 +166,7 @@ class _TouristBookingsPageState extends State<TouristBookingsPage> {
                   child: lists[_selectedTab].isEmpty
                       ? _EmptyState(tab: _selectedTab)
                       : ListView.builder(
-                    padding: EdgeInsets.fromLTRB(
-                        16.w, 16.h, 16.w, 32.h),
+                    padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 32.h),
                     itemCount: lists[_selectedTab].length,
                     itemBuilder: (_, i) =>
                         _BookingCard(data: lists[_selectedTab][i]),
@@ -200,8 +185,6 @@ class _TouristBookingsPageState extends State<TouristBookingsPage> {
       (b['booking']?['status'] ?? '').toString();
 }
 
-// ── Booking card ──────────────────────────────────────────────────────────────
-
 class _BookingCard extends StatelessWidget {
   final Map<String, dynamic> data;
   const _BookingCard({required this.data});
@@ -213,27 +196,23 @@ class _BookingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final b            = (data['booking'] as Map<String, dynamic>?) ?? {};
     final id           = b['id']              as int?    ?? 0;
-    final homestayName = data['homestayName']?.toString() ?? 'Homestay';
+    final homestayName = data['homestayName']?.toString()     ?? 'Homestay';
     final location     = data['homestayLocation']?.toString() ?? '';
-    final imageUrl     = data['homestayImage']?.toString() ?? '';
-    final status       = b['status']?.toString()         ?? 'Pending';
+    final imageUrl     = data['homestayImage']?.toString()    ?? '';
+    final status       = b['status']?.toString()              ?? 'Pending';
     final checkIn      = _fmtDate(b['checkIn']);
     final checkOut     = _fmtDate(b['checkOut']);
-    final nights       = b['nights']          as int?    ?? 0;
-    final guests       = b['guests']          as int?    ?? 0;
-    final total        = (b['totalPrice'] as num?)?.toDouble() ?? 0;
+    final nights       = b['nights']       as int?    ?? 0;
+    final guests       = b['guests']       as int?    ?? 0;
+    final total        = (b['totalPrice']  as num?)?.toDouble() ?? 0;
     final payMethod    = b['paymentMethod']?.toString()  ?? '';
     final payStatus    = b['paymentStatus']?.toString()  ?? 'Unpaid';
     final isPaid       = payStatus == 'Paid';
     final specialReq   = b['specialRequests']?.toString() ?? '';
     final rejReason    = b['rejectionReason']?.toString() ?? '';
     final canCancel    = status == 'Pending' || status == 'Confirmed';
-    final canPayKhalti = status == 'Confirmed'
-        && payMethod == 'Khalti'
-        && !isPaid;
-
-    final bookingRef =
-        'LY-${DateTime.now().year}${id.toString().padLeft(6, '0')}';
+    final canPayKhalti = status == 'Confirmed' && payMethod == 'Khalti' && !isPaid;
+    final bookingRef   = 'LY-${DateTime.now().year}${id.toString().padLeft(6, '0')}';
 
     return Container(
       margin: EdgeInsets.only(bottom: 20.h),
@@ -249,7 +228,6 @@ class _BookingCard extends StatelessWidget {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-        // ── Photo header ──────────────────────────────────────────────
         ClipRRect(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
           child: Stack(children: [
@@ -259,7 +237,7 @@ class _BookingCard extends StatelessWidget {
               child: imageUrl.isNotEmpty
                   ? Image.network(imageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, _,_) => _fallbackImage())
+                  errorBuilder: (_, __, ___) => _fallbackImage())
                   : _fallbackImage(),
             ),
             Container(
@@ -293,10 +271,8 @@ class _BookingCard extends StatelessWidget {
 
         Padding(
           padding: EdgeInsets.all(16.w),
-          child:
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-            // Name + location
             Text(homestayName,
                 style: GoogleFonts.playfairDisplay(
                     fontSize: 18.sp,
@@ -305,51 +281,36 @@ class _BookingCard extends StatelessWidget {
             SizedBox(height: 4.h),
             if (location.isNotEmpty)
               Row(children: [
-                Icon(Icons.location_on_outlined,
-                    size: 13.sp, color: Colors.grey[500]),
+                Icon(Icons.location_on_outlined, size: 13.sp, color: Colors.grey[500]),
                 SizedBox(width: 3.w),
                 Text(location,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 12.sp, color: Colors.grey[500])),
+                    style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
               ]),
 
             SizedBox(height: 14.h),
 
-            // Check-in / out
             Row(children: [
-              Expanded(child: _DateBox(
-                  icon: Icons.login_rounded,
-                  label: 'Check-in',
-                  value: checkIn)),
+              Expanded(child: _DateBox(icon: Icons.login_rounded, label: 'Check-in', value: checkIn)),
               SizedBox(width: 10.w),
-              Expanded(child: _DateBox(
-                  icon: Icons.logout_rounded,
-                  label: 'Check-out',
-                  value: checkOut)),
+              Expanded(child: _DateBox(icon: Icons.logout_rounded, label: 'Check-out', value: checkOut)),
             ]),
 
             SizedBox(height: 12.h),
 
-            // Nights + guests
             Row(children: [
-              Icon(Icons.schedule_outlined,
-                  size: 15.sp, color: Colors.grey[500]),
+              Icon(Icons.schedule_outlined, size: 15.sp, color: Colors.grey[500]),
               SizedBox(width: 5.w),
               Text('$nights night${nights != 1 ? 's' : ''}',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13.sp, color: Colors.grey[600])),
+                  style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600])),
               SizedBox(width: 16.w),
-              Icon(Icons.people_outline_rounded,
-                  size: 15.sp, color: Colors.grey[500]),
+              Icon(Icons.people_outline_rounded, size: 15.sp, color: Colors.grey[500]),
               SizedBox(width: 5.w),
               Text('$guests guest${guests != 1 ? 's' : ''}',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13.sp, color: Colors.grey[600])),
+                  style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600])),
             ]),
 
             SizedBox(height: 14.h),
 
-            // Amount + payment status
             Container(
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
@@ -357,81 +318,64 @@ class _BookingCard extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12.r),
               ),
               child: Column(children: [
-                Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Total Amount',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 13.sp, color: Colors.grey[600])),
-                      Text('Rs. ${total.toStringAsFixed(0)}',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 18.sp,
-                              color: _terracotta,
-                              fontWeight: FontWeight.w800)),
-                    ]),
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Text('Total Amount',
+                      style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600])),
+                  Text('Rs. ${total.toStringAsFixed(0)}',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 18.sp,
+                          color: _terracotta,
+                          fontWeight: FontWeight.w800)),
+                ]),
                 SizedBox(height: 10.h),
-                Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(children: [
-                        Icon(
-                          payMethod == 'Khalti'
-                              ? Icons.phone_android_rounded
-                              : Icons.money_rounded,
-                          size: 13.sp,
+                Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                  Row(children: [
+                    Icon(
+                      payMethod == 'Khalti'
+                          ? Icons.phone_android_rounded
+                          : Icons.money_rounded,
+                      size: 13.sp,
+                      color: payMethod == 'Khalti'
+                          ? Colors.purple[700]
+                          : Colors.green[700],
+                    ),
+                    SizedBox(width: 4.w),
+                    Text(
+                      payMethod == 'Khalti' ? 'Khalti' : 'Cash on Arrival',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12.sp,
                           color: payMethod == 'Khalti'
                               ? Colors.purple[700]
                               : Colors.green[700],
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          payMethod == 'Khalti' ? 'Khalti' : 'Cash on Arrival',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 12.sp,
-                              color: payMethod == 'Khalti'
-                                  ? Colors.purple[700]
-                                  : Colors.green[700],
-                              fontWeight: FontWeight.w500),
-                        ),
-                      ]),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 10.w, vertical: 4.h),
-                        decoration: BoxDecoration(
-                          color: isPaid
-                              ? Colors.green.shade100
-                              : Colors.amber.shade100,
-                          borderRadius: BorderRadius.circular(20.r),
-                        ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(
-                            isPaid
-                                ? Icons.check_circle_rounded
-                                : Icons.hourglass_empty_rounded,
-                            size: 11.sp,
-                            color: isPaid
-                                ? Colors.green[800]
-                                : Colors.amber[800],
-                          ),
-                          SizedBox(width: 4.w),
-                          Text(
-                              isPaid
-                                  ? 'Payment Received'
-                                  : 'Payment Pending',
-                              style: GoogleFonts.dmSans(
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.bold,
-                                color: isPaid
-                                    ? Colors.green[800]
-                                    : Colors.amber[800],
-                              )),
-                        ]),
+                          fontWeight: FontWeight.w500),
+                    ),
+                  ]),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: isPaid ? Colors.green.shade100 : Colors.amber.shade100,
+                      borderRadius: BorderRadius.circular(20.r),
+                    ),
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      Icon(
+                        isPaid ? Icons.check_circle_rounded : Icons.hourglass_empty_rounded,
+                        size: 11.sp,
+                        color: isPaid ? Colors.green[800] : Colors.amber[800],
                       ),
+                      SizedBox(width: 4.w),
+                      Text(
+                          isPaid ? 'Payment Received' : 'Payment Pending',
+                          style: GoogleFonts.dmSans(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.bold,
+                            color: isPaid ? Colors.green[800] : Colors.amber[800],
+                          )),
                     ]),
+                  ),
+                ]),
               ]),
             ),
 
-            // Special requests
             if (specialReq.isNotEmpty) ...[
               SizedBox(height: 12.h),
               Container(
@@ -442,24 +386,16 @@ class _BookingCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10.r),
                   border: Border.all(color: Colors.amber.shade200),
                 ),
-                child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.sticky_note_2_outlined,
-                          size: 14.sp, color: Colors.amber[700]),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                          child: Text(specialReq,
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 12.sp,
-                                  color: Colors.amber[900]))),
-                    ]),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.sticky_note_2_outlined, size: 14.sp, color: Colors.amber[700]),
+                  SizedBox(width: 8.w),
+                  Expanded(child: Text(specialReq,
+                      style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.amber[900]))),
+                ]),
               ),
             ],
 
-            // Rejection / cancellation reason
-            if ((status == 'Rejected' || status == 'Cancelled') &&
-                rejReason.isNotEmpty) ...[
+            if ((status == 'Rejected' || status == 'Cancelled') && rejReason.isNotEmpty) ...[
               SizedBox(height: 12.h),
               Container(
                 width: double.infinity,
@@ -469,30 +405,22 @@ class _BookingCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10.r),
                   border: Border.all(color: Colors.red.shade200),
                 ),
-                child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.info_outline_rounded,
-                          size: 14.sp, color: Colors.red[700]),
-                      SizedBox(width: 8.w),
-                      Expanded(
-                          child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text('Reason:',
-                                    style: GoogleFonts.dmSans(
-                                        fontSize: 11.sp,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.red[800])),
-                                Text(rejReason,
-                                    style: GoogleFonts.dmSans(
-                                        fontSize: 12.sp, color: Colors.red[700])),
-                              ])),
-                    ]),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.info_outline_rounded, size: 14.sp, color: Colors.red[700]),
+                  SizedBox(width: 8.w),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text('Reason:',
+                        style: GoogleFonts.dmSans(
+                            fontSize: 11.sp,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.red[800])),
+                    Text(rejReason,
+                        style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.red[700])),
+                  ])),
+                ]),
               ),
             ],
 
-            // Pay with Khalti
             if (canPayKhalti) ...[
               SizedBox(height: 14.h),
               SizedBox(
@@ -512,8 +440,7 @@ class _BookingCard extends StatelessWidget {
                                 fontWeight: FontWeight.bold,
                                 color: Colors.white))),
                   ),
-                  label: Text(
-                      'Pay with Khalti — Rs. ${total.toStringAsFixed(0)}',
+                  label: Text('Pay with Khalti — Rs. ${total.toStringAsFixed(0)}',
                       style: GoogleFonts.dmSans(
                           fontWeight: FontWeight.bold, fontSize: 13.sp)),
                   onPressed: () async {
@@ -527,9 +454,7 @@ class _BookingCard extends StatelessWidget {
                           )),
                     );
                     if (paid == true && context.mounted) {
-                      context
-                          .read<BookingBloc>()
-                          .add(const LoadMyBookings());
+                      context.read<BookingBloc>().add(const LoadMyBookings());
                     }
                   },
                   style: ElevatedButton.styleFrom(
@@ -544,14 +469,12 @@ class _BookingCard extends StatelessWidget {
               ),
             ],
 
-            // Review button
             if (status == 'Completed') ...[
               SizedBox(height: 14.h),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  icon: Icon(Icons.rate_review_outlined,
-                      size: 16.sp, color: _terracotta),
+                  icon: Icon(Icons.rate_review_outlined, size: 16.sp, color: _terracotta),
                   label: Text('Write / Edit Review',
                       style: GoogleFonts.dmSans(
                           fontSize: 13.sp,
@@ -567,14 +490,11 @@ class _BookingCard extends StatelessWidget {
                       targetName: homestayName,
                     );
                     if (changed && context.mounted) {
-                      context
-                          .read<BookingBloc>()
-                          .add(const LoadMyBookings());
+                      context.read<BookingBloc>().add(const LoadMyBookings());
                     }
                   },
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(
-                        color: _terracotta.withValues(alpha: 0.4)),
+                    side: BorderSide(color: _terracotta.withValues(alpha: 0.4)),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r)),
                     padding: EdgeInsets.symmetric(vertical: 12.h),
@@ -583,7 +503,6 @@ class _BookingCard extends StatelessWidget {
               ),
             ],
 
-            // ── Cancel button with policy enforcement ─────────────────
             if (canCancel) ...[
               SizedBox(height: 14.h),
               _CancelButton(bookingData: b, bookingId: id),
@@ -596,27 +515,20 @@ class _BookingCard extends StatelessWidget {
 
   Widget _fallbackImage() => Container(
     color: Colors.grey.shade200,
-    child: Center(
-        child: Icon(Icons.hotel_outlined,
-            size: 48.sp, color: Colors.grey[400])),
+    child: Center(child: Icon(Icons.hotel_outlined, size: 48.sp, color: Colors.grey[400])),
   );
 
   String _fmtDate(dynamic raw) {
     if (raw == null) return '—';
     try {
       final d = DateTime.parse(raw.toString());
-      const m = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-      ];
+      const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       return '${m[d.month - 1]} ${d.day}, ${d.year}';
     } catch (_) {
       return raw.toString();
     }
   }
 }
-
-// ── Cancel button — contains all policy logic ─────────────────────────────────
 
 class _CancelButton extends StatelessWidget {
   final Map<String, dynamic> bookingData;
@@ -625,51 +537,26 @@ class _CancelButton extends StatelessWidget {
   const _CancelButton({required this.bookingData, required this.bookingId});
 
   void _handleCancel(BuildContext context) {
-    final createdAtRaw = bookingData['createdAt']   as String?;
-    final checkInRaw   = bookingData['checkIn']     as String?;
+    final checkInRaw = bookingData['checkIn'] as String?;
 
-    if (createdAtRaw != null && checkInRaw != null) {
-      final createdAt = DateTime.parse(createdAtRaw);
-      final checkIn   = DateTime.parse(checkInRaw);
-      final now       = DateTime.now();
+    if (checkInRaw != null) {
+      final hoursUntilCheckIn =
+          DateTime.parse(checkInRaw).difference(DateTime.now()).inHours;
 
-      final hoursSinceBooking = now.difference(createdAt).inHours;
-      final hoursUntilCheckIn = checkIn.difference(now).inHours;
-
-      // Block: check-in within 48 hours
-      if (hoursUntilCheckIn < 48) {
+      if (hoursUntilCheckIn < 24) {
         _showBlocked(
           context,
           reason: 'Check-in too soon',
           message:
-          'Your check-in is within 48 hours. Cancellations are not '
+          'Your check-in is within 24 hours. Cancellations are not '
               'allowed at this stage.\n\nPlease contact the homestay owner '
               'directly to discuss any changes.',
         );
         return;
       }
-
-      // Block: past 24hr grace period
-      if (hoursSinceBooking >= 24) {
-        _showBlocked(
-          context,
-          reason: 'Grace period expired',
-          message:
-          'The 24-hour free cancellation window has passed '
-              '(booked ${hoursSinceBooking}h ago).\n\nCancellations are no '
-              'longer permitted through the app. Please contact the homestay '
-              'owner directly for assistance.',
-        );
-        return;
-      }
-
-      // Within grace period — show how much time is left
-      final hoursLeft = 24 - hoursSinceBooking;
-      _showConfirm(context, hoursLeft: hoursLeft);
-    } else {
-      // No date info — show plain confirm
-      _showConfirm(context, hoursLeft: null);
     }
+
+    _showConfirm(context);
   }
 
   void _showBlocked(BuildContext context,
@@ -677,8 +564,7 @@ class _CancelButton extends StatelessWidget {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape:
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Row(children: [
           Container(
             padding: const EdgeInsets.all(8),
@@ -686,8 +572,7 @@ class _CancelButton extends StatelessWidget {
               color: Colors.red.shade50,
               borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(Icons.block_rounded,
-                color: Colors.red[700], size: 20),
+            child: Icon(Icons.block_rounded, color: Colors.red[700], size: 20),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -699,8 +584,7 @@ class _CancelButton extends StatelessWidget {
         content: Column(mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start, children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 5),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: Colors.red.shade50,
                   borderRadius: BorderRadius.circular(20),
@@ -714,11 +598,8 @@ class _CancelButton extends StatelessWidget {
               const SizedBox(height: 12),
               Text(message,
                   style: GoogleFonts.dmSans(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                      height: 1.6)),
+                      fontSize: 13, color: Colors.grey[600], height: 1.6)),
               const SizedBox(height: 14),
-              // Policy reminder
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -726,23 +607,17 @@ class _CancelButton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.grey.shade200),
                 ),
-                child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.info_outline_rounded,
-                          size: 14, color: Colors.grey[500]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'LokYatra policy: Free cancellation within 24 hours of '
-                              'booking, provided check-in is >48 hours away.',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 11,
-                              color: Colors.grey[500],
-                              height: 1.5),
-                        ),
-                      ),
-                    ]),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.info_outline_rounded, size: 14, color: Colors.grey[500]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'LokYatra policy: Cancellation is allowed up until 24 hours before check-in.',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 11, color: Colors.grey[500], height: 1.5),
+                    ),
+                  ),
+                ]),
               ),
             ]),
         actions: [
@@ -763,46 +638,18 @@ class _CancelButton extends StatelessWidget {
     );
   }
 
-  void _showConfirm(BuildContext context, {required int? hoursLeft}) {
+  void _showConfirm(BuildContext context) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        shape:
-        RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         title: Text('Cancel Booking?',
             style: GoogleFonts.playfairDisplay(
                 fontWeight: FontWeight.bold, fontSize: 18)),
         content: Column(mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Are you sure you want to cancel this booking?',
-                  style: GoogleFonts.dmSans(
-                      fontSize: 13, color: Colors.grey[600])),
-              if (hoursLeft != null) ...[
-                const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.green.shade200),
-                  ),
-                  child: Row(children: [
-                    Icon(Icons.check_circle_outline_rounded,
-                        size: 16, color: Colors.green[700]),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'You are within the free cancellation window.\n'
-                            '$hoursLeft hour${hoursLeft != 1 ? 's' : ''} remaining.',
-                        style: GoogleFonts.dmSans(
-                            fontSize: 12,
-                            color: Colors.green[700],
-                            height: 1.5),
-                      ),
-                    ),
-                  ]),
-                ),
-              ],
+                  style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[600])),
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.all(12),
@@ -811,31 +658,25 @@ class _CancelButton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: Colors.orange.shade200),
                 ),
-                child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(Icons.warning_amber_rounded,
-                          size: 15, color: Colors.orange[700]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'This action cannot be undone. The owner will be '
-                              'notified of your cancellation.',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 12,
-                              color: Colors.orange[800],
-                              height: 1.5),
-                        ),
-                      ),
-                    ]),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Icon(Icons.warning_amber_rounded, size: 15, color: Colors.orange[700]),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'This action cannot be undone. The owner will be notified of your cancellation.',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 12, color: Colors.orange[800], height: 1.5),
+                    ),
+                  ),
+                ]),
               ),
             ]),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('Keep Booking',
-                style: GoogleFonts.dmSans(color: Colors.grey[600],
-                    fontWeight: FontWeight.w600)),
+                style: GoogleFonts.dmSans(
+                    color: Colors.grey[600], fontWeight: FontWeight.w600)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -850,8 +691,7 @@ class _CancelButton extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10)),
             ),
             child: Text('Yes, Cancel',
-                style: GoogleFonts.dmSans(
-                    fontWeight: FontWeight.bold)),
+                style: GoogleFonts.dmSans(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -879,8 +719,6 @@ class _CancelButton extends StatelessWidget {
   }
 }
 
-// ── Supporting widgets ────────────────────────────────────────────────────────
-
 class _StatusPill extends StatelessWidget {
   final String status;
   const _StatusPill({required this.status});
@@ -896,15 +734,11 @@ class _StatusPill extends StatelessWidget {
       _           => (Colors.grey[600]!,  status),
     };
     return Container(
-      padding:
-      EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
-      decoration: BoxDecoration(
-          color: bg, borderRadius: BorderRadius.circular(20.r)),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20.r)),
       child: Text(text,
           style: GoogleFonts.dmSans(
-              fontSize: 12.sp,
-              fontWeight: FontWeight.bold,
-              color: Colors.white)),
+              fontSize: 12.sp, fontWeight: FontWeight.bold, color: Colors.white)),
     );
   }
 }
@@ -912,13 +746,11 @@ class _StatusPill extends StatelessWidget {
 class _DateBox extends StatelessWidget {
   final IconData icon;
   final String label, value;
-  const _DateBox(
-      {required this.icon, required this.label, required this.value});
+  const _DateBox({required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) => Container(
-    padding:
-    EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
     decoration: BoxDecoration(
       color: const Color(0xFFFAF7F2),
       borderRadius: BorderRadius.circular(10.r),
@@ -926,19 +758,14 @@ class _DateBox extends StatelessWidget {
     child: Row(children: [
       Icon(icon, size: 15.sp, color: const Color(0xFFCD6E4E)),
       SizedBox(width: 6.w),
-      Expanded(
-          child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(label,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 10.sp, color: Colors.grey[500])),
-                Text(value,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 13.sp,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF2D1B10))),
-              ])),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(label, style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[500])),
+        Text(value,
+            style: GoogleFonts.dmSans(
+                fontSize: 13.sp,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF2D1B10))),
+      ])),
     ]),
   );
 }
@@ -950,12 +777,9 @@ class _EmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final msgs = [
-      ('No upcoming bookings', 'Browse homestays and make a booking!',
-      Icons.calendar_today_outlined),
-      ('No completed stays', 'Your completed trips will appear here.',
-      Icons.done_all_rounded),
-      ('No cancelled bookings', 'All clear — nothing was cancelled.',
-      Icons.cancel_outlined),
+      ('No upcoming bookings', 'Browse homestays and make a booking!', Icons.calendar_today_outlined),
+      ('No completed stays',   'Your completed trips will appear here.', Icons.done_all_rounded),
+      ('No cancelled bookings','All clear — nothing was cancelled.',     Icons.cancel_outlined),
     ];
     final (title, sub, icon) = msgs[tab];
     return ListView(children: [
@@ -971,8 +795,7 @@ class _EmptyState extends StatelessWidget {
         SizedBox(height: 8.h),
         Text(sub,
             textAlign: TextAlign.center,
-            style: GoogleFonts.dmSans(
-                fontSize: 13.sp, color: Colors.grey[500])),
+            style: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[500])),
       ]),
     ]);
   }
@@ -988,8 +811,7 @@ class _ErrorView extends StatelessWidget {
       Icon(Icons.wifi_off_rounded, size: 48.sp, color: Colors.grey[300]),
       SizedBox(height: 12.h),
       Text('Could not load bookings',
-          style: GoogleFonts.dmSans(
-              fontSize: 14.sp, color: Colors.grey[500])),
+          style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey[500])),
       SizedBox(height: 16.h),
       ElevatedButton(
         onPressed: onRetry,
@@ -997,11 +819,9 @@ class _ErrorView extends StatelessWidget {
           backgroundColor: const Color(0xFFCD6E4E),
           foregroundColor: Colors.white,
           elevation: 0,
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10.r)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
         ),
-        child: Text('Retry',
-            style: GoogleFonts.dmSans(fontWeight: FontWeight.w600)),
+        child: Text('Retry', style: GoogleFonts.dmSans(fontWeight: FontWeight.w600)),
       ),
     ]),
   );

@@ -8,7 +8,7 @@ String getBaseUrl() {
   if (kIsWeb) {
     return "http://localhost:$_serverPort";
   } else if (Platform.isAndroid) {
-    return "http://$_serverIp:$_serverPort";
+    return "http://10.0.2.2:$_serverPort";
   } else {
     return "http://localhost:$_serverPort";
   }
