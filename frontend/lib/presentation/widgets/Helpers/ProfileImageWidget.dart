@@ -20,44 +20,45 @@ class ProfileImageWidget extends StatefulWidget {
   });
 
   @override
-  State<ProfileImageWidget> createState() => _ProfileImageWidgetState();
+  State<ProfileImageWidget> createState() => ProfileImageWidgetState();
 }
 
-class _ProfileImageWidgetState extends State<ProfileImageWidget> {
-  String? _url;
-  bool _busy = false;
+class ProfileImageWidgetState extends State<ProfileImageWidget> {
+  String? url;
+  bool busy = false;
 
   @override
   void initState() {
     super.initState();
-    _url = widget.initialImageUrl;
+    url = widget.initialImageUrl;
   }
 
   @override
   void didUpdateWidget(ProfileImageWidget old) {
     super.didUpdateWidget(old);
     if (old.initialImageUrl != widget.initialImageUrl) {
-      _url = widget.initialImageUrl;
+      setState(() => url = widget.initialImageUrl);
     }
   }
 
-  Future<void> _pick() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+  Future<void> pick() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true,
+    );
     if (result == null || result.files.isEmpty) return;
     final file = result.files.first;
-    if (file.path == null) return;
 
-    setState(() => _busy = true);
+    setState(() => busy = true);
     try {
       final res = await UserRemoteDatasource().updateProfile(
-        imagePath: file.path,
-        imageFileName: file.name,
+        imageFile: file,
       );
       if (res.statusCode == 200) {
         final newUrl = res.data['profileImage'] as String?;
         if (newUrl != null && newUrl.isNotEmpty) {
           await SqliteService().put('user_profile_image', newUrl);
-          if (mounted) setState(() => _url = newUrl);
+          if (mounted) setState(() => url = newUrl);
           widget.onUploaded?.call(newUrl);
         }
       }
@@ -68,32 +69,32 @@ class _ProfileImageWidgetState extends State<ProfileImageWidget> {
         );
       }
     } finally {
-      if (mounted) setState(() => _busy = false);
+      if (mounted) setState(() => busy = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final isWeb = MediaQuery.of(context).size.width > 600;
-    final r = isWeb ? widget.radius : widget.radius.r;
+    final r     = isWeb ? widget.radius : widget.radius.r;
 
     return GestureDetector(
-      onTap: _busy ? null : _pick,
+      onTap: busy ? null : pick,
       child: Stack(clipBehavior: Clip.none, children: [
         CircleAvatar(
           radius: r,
           backgroundColor: widget.accent.withValues(alpha: 0.1),
-          child: _busy
+          child: busy
               ? SizedBox(
             width: 28,
             height: 28,
             child: CircularProgressIndicator(
                 strokeWidth: 2, color: widget.accent),
           )
-              : (_url != null && _url!.isNotEmpty
+              : (url != null && url!.isNotEmpty
               ? ClipOval(
             child: ProxyImage(
-              imageUrl: _url,
+              imageUrl: url,
               width: r * 2,
               height: r * 2,
               borderRadiusValue: r,

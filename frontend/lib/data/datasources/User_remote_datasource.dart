@@ -1,9 +1,11 @@
 import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
 
 class UserRemoteDatasource {
-  final Dio _dio = Dio(
+  final Dio dio = Dio(
     BaseOptions(
       baseUrl: apiBaseUrl,
       connectTimeout: connectTimeout,
@@ -13,7 +15,7 @@ class UserRemoteDatasource {
     ),
   );
 
-  Future<Options> _authOptions() async {
+  Future<Options> authOptions() async {
     final token = await SecureStorageService.getAccessToken();
     if (token == null) throw Exception('Not authenticated — please log in again.');
     return Options(headers: {
@@ -23,50 +25,53 @@ class UserRemoteDatasource {
   }
 
   Future<Response> getCurrentUser() async =>
-      _dio.get('api/User/current-user', options: await _authOptions());
+      dio.get('api/User/current-user', options: await authOptions());
 
   Future<Response> getUsers() async =>
-      _dio.get(getUsersEndpoint, options: await _authOptions());
+      dio.get(getUsersEndpoint, options: await authOptions());
 
   Future<Response> deleteUser(int userId) async =>
-      _dio.delete('api/User/deleteUser/$userId', options: await _authOptions());
+      dio.delete('api/User/deleteUser/$userId', options: await authOptions());
 
   Future<Response> changePassword({
     required String currentPassword,
     required String newPassword,
   }) async =>
-      _dio.post('api/User/change-password',
+      dio.post('api/User/change-password',
           data: {
             'currentPassword': currentPassword,
-            'newPassword':     newPassword,
+            'newPassword': newPassword,
           },
-          options: await _authOptions());
+          options: await authOptions());
+
+  Future<MultipartFile> toMultipart(PlatformFile file) async {
+    if (kIsWeb) {
+      return MultipartFile.fromBytes(file.bytes!, filename: file.name);
+    }
+    return MultipartFile.fromFile(file.path!, filename: file.name);
+  }
 
   Future<Response> updateProfile({
     String? name,
     String? phoneNumber,
-    String? imagePath,
-    String? imageFileName,
+    PlatformFile? imageFile,
   }) async {
     final token = await SecureStorageService.getAccessToken();
     if (token == null) throw Exception('Not authenticated');
 
     final formData = FormData();
+
     if (name != null && name.isNotEmpty) {
       formData.fields.add(MapEntry('Name', name));
     }
-    if (phoneNumber != null ) {
+    if (phoneNumber != null) {
       formData.fields.add(MapEntry('PhoneNumber', phoneNumber));
     }
-    if (imagePath != null) {
-      formData.files.add(MapEntry(
-        'ProfileImageFile',
-        await MultipartFile.fromFile(imagePath,
-            filename: imageFileName ?? 'profile.jpg'),
-      ));
+    if (imageFile != null) {
+      formData.files.add(MapEntry('ProfileImageFile', await toMultipart(imageFile)));
     }
 
-    return _dio.patch(
+    return dio.patch(
       'api/User/update-profile',
       data: formData,
       options: Options(headers: {

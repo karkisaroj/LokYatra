@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -46,7 +47,7 @@ class HomestayAddPageState extends State<HomestayAddPage> {
   List<dynamic> sites     = [];
   final List<PlatformFile?> images = [null, null, null, null];
 
-  final categories  = ['homestay', 'guest_house', 'traditional'];
+  final categories   = ['homestay', 'guest_house', 'traditional'];
   final allAmenities = [
     'WiFi', 'Parking', 'Hot Water', 'Air Conditioning', 'Heating',
     'Kitchen', 'Breakfast Included', 'Laundry', 'Garden', 'Terrace',
@@ -83,7 +84,10 @@ class HomestayAddPageState extends State<HomestayAddPage> {
   }
 
   Future<void> pickImage(int i) async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.image);
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      withData: true, // required for web: loads bytes into memory
+    );
     if (result != null && mounted) setState(() => images[i] = result.files.first);
   }
 
@@ -96,10 +100,10 @@ class HomestayAddPageState extends State<HomestayAddPage> {
     final rooms  = int.tryParse(roomsCtrl.text.trim());
     final guests = int.tryParse(guestsCtrl.text.trim());
     final baths  = int.tryParse(bathsCtrl.text.trim());
-    if (price == null || price <= 0) { FormHelpers.showSnack(context, 'Enter a valid price'); return; }
-    if (rooms == null || rooms <= 0) { FormHelpers.showSnack(context, 'Enter valid number of rooms'); return; }
-    if (guests == null || guests <= 0) { FormHelpers.showSnack(context, 'Enter valid max guests'); return; }
-    if (baths == null || baths < 0) { FormHelpers.showSnack(context, 'Enter valid number of bathrooms'); return; }
+    if (price == null || price <= 0)  { FormHelpers.showSnack(context, 'Enter a valid price'); return; }
+    if (rooms == null || rooms <= 0)  { FormHelpers.showSnack(context, 'Enter valid number of rooms'); return; }
+    if (guests == null || guests <= 0){ FormHelpers.showSnack(context, 'Enter valid max guests'); return; }
+    if (baths == null || baths < 0)   { FormHelpers.showSnack(context, 'Enter valid number of bathrooms'); return; }
 
     setState(() { isLoading = true; uploadProgress = null; });
 
@@ -232,15 +236,15 @@ class HomestayAddPageState extends State<HomestayAddPage> {
     children: [
       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Expanded(child: Column(children: [
-          buildSection(wide, 'Basic Information',    Icons.home_outlined,         basicFields(wide)),
-          buildSection(wide, 'Pricing & Capacity',   Icons.payments_outlined,     pricingFields(wide)),
-          buildSection(wide, 'Near Cultural Site (Optional)', Icons.temple_hindu_outlined, [siteSelector(wide)]),
+          buildSection(wide, 'Basic Information',              Icons.home_outlined,          basicFields(wide)),
+          buildSection(wide, 'Pricing & Capacity',             Icons.payments_outlined,      pricingFields(wide)),
+          buildSection(wide, 'Near Cultural Site (Optional)',  Icons.temple_hindu_outlined,  [siteSelector(wide)]),
         ])),
         SizedBox(width: ffw(16, wide)),
         Expanded(child: Column(children: [
-          buildSection(wide, 'Cultural Heritage',    Icons.auto_stories_outlined, heritageFields(wide)),
-          buildSection(wide, 'Amenities',            Icons.checklist_outlined,    amenitySection(wide)),
-          buildSection(wide, 'Photos',               Icons.photo_library_outlined, photoSection(wide)),
+          buildSection(wide, 'Cultural Heritage',  Icons.auto_stories_outlined,  heritageFields(wide)),
+          buildSection(wide, 'Amenities',          Icons.checklist_outlined,     amenitySection(wide)),
+          buildSection(wide, 'Photos',             Icons.photo_library_outlined, photoSection(wide)),
         ])),
       ]),
       SizedBox(height: ffh(20, wide)),
@@ -254,12 +258,12 @@ class HomestayAddPageState extends State<HomestayAddPage> {
   );
 
   List<Widget> allSections(bool wide) => [
-    buildSection(wide, 'Basic Information',    Icons.home_outlined,         basicFields(wide)),
-    buildSection(wide, 'Pricing & Capacity',   Icons.payments_outlined,     pricingFields(wide)),
-    buildSection(wide, 'Near Cultural Site (Optional)', Icons.temple_hindu_outlined, [siteSelector(wide)]),
-    buildSection(wide, 'Cultural Heritage',    Icons.auto_stories_outlined, heritageFields(wide)),
-    buildSection(wide, 'Amenities',            Icons.checklist_outlined,    amenitySection(wide)),
-    buildSection(wide, 'Photos',               Icons.photo_library_outlined, photoSection(wide)),
+    buildSection(wide, 'Basic Information',             Icons.home_outlined,          basicFields(wide)),
+    buildSection(wide, 'Pricing & Capacity',            Icons.payments_outlined,      pricingFields(wide)),
+    buildSection(wide, 'Near Cultural Site (Optional)', Icons.temple_hindu_outlined,  [siteSelector(wide)]),
+    buildSection(wide, 'Cultural Heritage',             Icons.auto_stories_outlined,  heritageFields(wide)),
+    buildSection(wide, 'Amenities',                     Icons.checklist_outlined,     amenitySection(wide)),
+    buildSection(wide, 'Photos',                        Icons.photo_library_outlined, photoSection(wide)),
     SizedBox(height: ffh(20, wide)),
     SizedBox(
       width: double.infinity,
@@ -288,13 +292,13 @@ class HomestayAddPageState extends State<HomestayAddPage> {
   ];
 
   List<Widget> heritageFields(bool wide) => [
-    formField(wide, cultSigCtrl,  'Cultural Significance',  lines: 3, required: false, maxLength: 1600,
+    formField(wide, cultSigCtrl,  'Cultural Significance', lines: 3, required: false, maxLength: 1600,
         hint: 'e.g. Spiritual importance of the location'),
-    formField(wide, buildingCtrl, 'Building History',        lines: 4, maxLength: 1800,
+    formField(wide, buildingCtrl, 'Building History',       lines: 4, maxLength: 1800,
         hint: 'e.g. Built in 1890 by the Newar community'),
-    formField(wide, tradFeatCtrl, 'Traditional Features',    lines: 4, maxLength: 1500,
+    formField(wide, tradFeatCtrl, 'Traditional Features',   lines: 4, maxLength: 1500,
         hint: 'e.g. Carved wood windows, clay courtyard'),
-    formField(wide, cultExpCtrl,  'Cultural Experiences',    lines: 4, maxLength: 1500,
+    formField(wide, cultExpCtrl,  'Cultural Experiences',   lines: 4, maxLength: 1500,
         hint: 'e.g. Thangka painting, Mask dance'),
   ];
 
@@ -344,9 +348,9 @@ class HomestayAddPageState extends State<HomestayAddPage> {
       bool wide,
       TextEditingController ctrl,
       String label, {
-        int lines      = 1,
-        bool number    = false,
-        bool required  = true,
+        int lines     = 1,
+        bool number   = false,
+        bool required = true,
         String? hint,
         int? maxLength,
       }) =>
@@ -421,7 +425,8 @@ class HomestayAddPageState extends State<HomestayAddPage> {
 
   Widget siteSelector(bool wide) {
     if (sitesLoading) {
-      return const Center(child: Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator()));
+      return const Center(child: Padding(
+          padding: EdgeInsets.all(16), child: CircularProgressIndicator()));
     }
     if (sites.isEmpty) {
       return Text('No cultural sites available.',
@@ -431,7 +436,8 @@ class HomestayAddPageState extends State<HomestayAddPage> {
       if (selectedSiteId != null)
         Container(
           margin: EdgeInsets.only(bottom: ffh(8, wide)),
-          padding: EdgeInsets.symmetric(horizontal: ffw(12, wide), vertical: ffh(6, wide)),
+          padding: EdgeInsets.symmetric(
+              horizontal: ffw(12, wide), vertical: ffh(6, wide)),
           decoration: BoxDecoration(
             color: formBrown.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(ffr(8, wide)),
@@ -444,7 +450,9 @@ class HomestayAddPageState extends State<HomestayAddPage> {
               sites.firstWhere((s) => s['id'] == selectedSiteId,
                   orElse: () => {'name': 'Selected'})['name'],
               style: GoogleFonts.dmSans(
-                  fontSize: ffs(13, wide), fontWeight: FontWeight.w600, color: formBrown),
+                  fontSize: ffs(13, wide),
+                  fontWeight: FontWeight.w600,
+                  color: formBrown),
             ),
             const Spacer(),
             GestureDetector(
@@ -510,8 +518,8 @@ class HomestayAddPageState extends State<HomestayAddPage> {
   );
 
   Widget imageBox(bool wide, int i) {
-    final file   = images[i];
-    final boxSz  = wide ? 110.0 : 100.h;
+    final file  = images[i];
+    final boxSz = wide ? 110.0 : 100.h;
     return GestureDetector(
       onTap: isLoading ? null : () => pickImage(i),
       child: Container(
@@ -527,7 +535,14 @@ class HomestayAddPageState extends State<HomestayAddPage> {
             ? Stack(fit: StackFit.expand, children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(ffr(10, wide)),
-            child: Image.file(File(file.path!), fit: BoxFit.cover),
+            // web uses bytes, mobile/desktop uses file path
+            child: kIsWeb
+                ? (file.bytes != null
+                ? Image.memory(file.bytes!, fit: BoxFit.cover)
+                : Container(color: Colors.grey[200]))
+                : (file.path != null
+                ? Image.file(File(file.path!), fit: BoxFit.cover)
+                : Container(color: Colors.grey[200])),
           ),
           if (!isLoading)
             Positioned(
@@ -537,13 +552,15 @@ class HomestayAddPageState extends State<HomestayAddPage> {
                 child: CircleAvatar(
                   radius: ffr(11, wide),
                   backgroundColor: Colors.red,
-                  child: Icon(Icons.close, size: ffs(12, wide), color: Colors.white),
+                  child: Icon(Icons.close,
+                      size: ffs(12, wide), color: Colors.white),
                 ),
               ),
             ),
         ])
             : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-          Icon(Icons.add_photo_alternate, size: ffs(28, wide), color: Colors.grey[400]),
+          Icon(Icons.add_photo_alternate,
+              size: ffs(28, wide), color: Colors.grey[400]),
           SizedBox(height: ffh(4, wide)),
           Text('Photo ${i + 1}',
               style: GoogleFonts.dmSans(
@@ -557,10 +574,14 @@ class HomestayAddPageState extends State<HomestayAddPage> {
     onPressed: submit,
     icon: Icon(Icons.publish, size: ffs(18, wide)),
     label: Text('Upload Homestay',
-        style: GoogleFonts.dmSans(fontSize: ffs(15, wide), fontWeight: FontWeight.w600)),
+        style: GoogleFonts.dmSans(
+            fontSize: ffs(15, wide), fontWeight: FontWeight.w600)),
     style: ElevatedButton.styleFrom(
-      backgroundColor: formBrown, foregroundColor: Colors.white, elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(ffr(12, wide))),
+      backgroundColor: formBrown,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(ffr(12, wide))),
     ),
   );
 
@@ -572,19 +593,23 @@ class HomestayAddPageState extends State<HomestayAddPage> {
         : uploadProgress! < 1.0 ? 'Uploading images  $pct' : 'Saving to server...';
     return Container(
       decoration: BoxDecoration(
-          color: formBrown, borderRadius: BorderRadius.circular(ffr(12, wide))),
+          color: formBrown,
+          borderRadius: BorderRadius.circular(ffr(12, wide))),
       padding: EdgeInsets.symmetric(horizontal: ffw(20, wide)),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
           SizedBox(
             width: ffw(14, wide), height: ffh(14, wide),
             child: CircularProgressIndicator(
-                strokeWidth: 2, color: Colors.white.withValues(alpha: 0.8)),
+                strokeWidth: 2,
+                color: Colors.white.withValues(alpha: 0.8)),
           ),
           SizedBox(width: ffw(10, wide)),
           Text(label,
               style: GoogleFonts.dmSans(
-                  color: Colors.white, fontSize: ffs(13, wide), fontWeight: FontWeight.w600)),
+                  color: Colors.white,
+                  fontSize: ffs(13, wide),
+                  fontWeight: FontWeight.w600)),
         ]),
         if (hasProgress) ...[
           SizedBox(height: ffh(8, wide)),
