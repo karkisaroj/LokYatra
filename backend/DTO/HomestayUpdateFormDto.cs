@@ -25,7 +25,7 @@ namespace backend.DTO
 
         [Required]
         public int Bathrooms { get; set; }
-
+        public string? ExistingImages { get; set; }
         public int? NearCulturalSiteId { get; set; }
         public bool? IsVisible { get; set; }  // optional toggle
 

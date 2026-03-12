@@ -226,12 +226,17 @@ namespace backend.Controllers
                     .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
             }
 
+            var urlsToKeep = string.IsNullOrWhiteSpace(form.ExistingImages)
+                ? []
+                : form.ExistingImages
+                    .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
             var newFiles = Request.Form.Files;
-            if (newFiles.Count > 0)
-            {
-                var newUrls = await imageService.UploadFilesAsync("lokyatra/homestays", newFiles);
-                homestay.ImageUrls = homestay.ImageUrls.Concat(newUrls).ToArray();
-            }
+            var newUrls = newFiles.Count > 0
+                ? await imageService.UploadFilesAsync("lokyatra/homestays", newFiles)
+                : Enumerable.Empty<string>();
+
+            homestay.ImageUrls = [.. urlsToKeep, .. newUrls];
 
             homestay.UpdatedAt = DateTimeOffset.UtcNow;
             await db.SaveChangesAsync();
