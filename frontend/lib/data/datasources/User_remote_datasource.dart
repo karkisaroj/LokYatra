@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
 
+import '../../core/services/sqlite_service.dart';
+
 class UserRemoteDatasource {
   final Dio dio = Dio(
     BaseOptions(
@@ -24,6 +26,16 @@ class UserRemoteDatasource {
     });
   }
 
+  Future<void> refreshCurrentUser() async {
+    final token = await SecureStorageService.getAccessToken();
+    final res = await dio.get('api/User/current-user',
+        options: Options(headers: {'Authorization': 'Bearer $token'}));
+    if (res.statusCode == 200) {
+      final d = res.data as Map<String, dynamic>;
+      await SqliteService().put('user_image', d['profileImage'] as String? ?? '');
+      await SqliteService().put('user_name',  d['name'] as String? ?? '');
+    }
+  }
   Future<Response> getCurrentUser() async =>
       dio.get('api/User/current-user', options: await authOptions());
 

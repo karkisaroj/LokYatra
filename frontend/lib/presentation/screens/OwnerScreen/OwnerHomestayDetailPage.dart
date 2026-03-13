@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -57,18 +58,35 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
     finally { if (mounted) setState(() => siteLoading = false); }
   }
 
+  // On web: LaunchMode.externalApplication opens a blank tab.
+  // Fix: use platformDefault on web so the browser handles the URL normally.
   Future<void> openMap() async {
     final h = widget.homestay;
     final q = Uri.encodeComponent(
         [h.name, h.location, 'Nepal'].where((s) => s.isNotEmpty).join(', '));
+    final mapsUrl = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=$q');
+
+    if (kIsWeb) {
+      // On web, platformDefault tells the browser to open the URL itself
+      try {
+        await launchUrl(mapsUrl, mode: LaunchMode.platformDefault);
+      } catch (_) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Could not open Maps.')));
+        }
+      }
+      return;
+    }
+
+    // Mobile/desktop: try geo: first, fall back to https
     try {
       await launchUrl(Uri.parse('geo:0,0?q=$q'),
           mode: LaunchMode.externalApplication);
     } catch (_) {
       try {
-        await launchUrl(
-            Uri.parse('https://www.google.com/maps/search/?api=1&query=$q'),
-            mode: LaunchMode.externalApplication);
+        await launchUrl(mapsUrl, mode: LaunchMode.externalApplication);
       } catch (_) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -86,7 +104,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // WEB LAYOUT — full width, two-column body, uncropped hero
+  // WEB LAYOUT
   // ═══════════════════════════════════════════════════════════════════════════
   Widget buildWebLayout(BuildContext context) {
     final h    = widget.homestay;
@@ -98,14 +116,11 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Full-width hero: dark bg + BoxFit.contain = image never cropped
             SizedBox(
               height: 560,
               child: Stack(fit: StackFit.expand, children: [
-                // Dark letterbox background
                 Container(color: const Color(0xFF111111)),
 
-                // PageView
                 imgs.isEmpty
                     ? Container(
                     color: Colors.grey[200],
@@ -121,11 +136,10 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                     height: 560,
                     borderRadiusValue: 0,
                     thumb: false,
-                    fit: BoxFit.contain, // full image, no crop
+                    fit: BoxFit.contain,
                   ),
                 ),
 
-                // Bottom gradient for title readability
                 Positioned.fill(
                   child: IgnorePointer(
                     child: DecoratedBox(
@@ -145,41 +159,34 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                   ),
                 ),
 
-                // Left arrow
                 if (imgs.length > 1)
                   Positioned(
                     left: 20, top: 0, bottom: 0,
-                    child: Center(
-                      child: _NavBtn(
-                        icon: Icons.chevron_left_rounded,
-                        onTap: () {
-                          final prev = (imgIdx - 1 + imgs.length) % imgs.length;
-                          pageCtrl.animateToPage(prev,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut);
-                        },
-                      ),
-                    ),
+                    child: Center(child: _NavBtn(
+                      icon: Icons.chevron_left_rounded,
+                      onTap: () {
+                        final prev = (imgIdx - 1 + imgs.length) % imgs.length;
+                        pageCtrl.animateToPage(prev,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut);
+                      },
+                    )),
                   ),
 
-                // Right arrow
                 if (imgs.length > 1)
                   Positioned(
                     right: 20, top: 0, bottom: 0,
-                    child: Center(
-                      child: _NavBtn(
-                        icon: Icons.chevron_right_rounded,
-                        onTap: () {
-                          final next = (imgIdx + 1) % imgs.length;
-                          pageCtrl.animateToPage(next,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeInOut);
-                        },
-                      ),
-                    ),
+                    child: Center(child: _NavBtn(
+                      icon: Icons.chevron_right_rounded,
+                      onTap: () {
+                        final next = (imgIdx + 1) % imgs.length;
+                        pageCtrl.animateToPage(next,
+                            duration: const Duration(milliseconds: 300),
+                            curve: Curves.easeInOut);
+                      },
+                    )),
                   ),
 
-                // Counter
                 if (imgs.length > 1)
                   Positioned(
                     top: 24, right: 64,
@@ -202,7 +209,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                     ),
                   ),
 
-                // Dot indicators
                 if (imgs.length > 1)
                   Positioned(
                     bottom: 88, left: 0, right: 0,
@@ -216,8 +222,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                               height: 6,
                               width: imgIdx == i ? 22 : 6,
                               decoration: BoxDecoration(
-                                color: imgIdx == i
-                                    ? Colors.white : Colors.white54,
+                                color: imgIdx == i ? Colors.white : Colors.white54,
                                 borderRadius: BorderRadius.circular(3),
                               ),
                             )),
@@ -225,7 +230,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                     ),
                   ),
 
-                // Title block
                 Positioned(
                   bottom: 32, left: 56, right: 160,
                   child: IgnorePointer(
@@ -270,7 +274,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                   ),
                 ),
 
-                // Back button
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 16,
                   left: 20,
@@ -285,7 +288,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                   ),
                 ),
 
-                // Visibility toggle button
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 16,
                   right: 20,
@@ -296,8 +298,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                       decoration: const BoxDecoration(
                           color: Colors.white, shape: BoxShape.circle),
                       child: Icon(
-                        h.isVisible
-                            ? Icons.visibility : Icons.visibility_off,
+                        h.isVisible ? Icons.visibility : Icons.visibility_off,
                         size: 20,
                         color: h.isVisible ? accent : Colors.grey[500],
                       ),
@@ -307,23 +308,14 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
               ]),
             ),
 
-            // ── Two-column body — full width, 48px padding
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Left column — main content
-                  Expanded(
-                    flex: 5,
-                    child: webLeftColumn(h),
-                  ),
+                  Expanded(flex: 5, child: webLeftColumn(h)),
                   const SizedBox(width: 40),
-                  // Right sidebar — fixed 320px
-                  SizedBox(
-                    width: 320,
-                    child: webRightSidebar(h),
-                  ),
+                  SizedBox(width: 320, child: webRightSidebar(h)),
                 ],
               ),
             ),
@@ -337,7 +329,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Price + category row
         Row(children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -356,25 +347,20 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text('/ night',
-                style: GoogleFonts.dmSans(
-                    fontSize: 13, color: Colors.grey[500])),
+                style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[500])),
           ),
         ]),
 
         const SizedBox(height: 24),
 
-        // Stats bar
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4))
-            ],
+            boxShadow: [BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 10, offset: const Offset(0, 4))],
           ),
           child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
             StatCell(wide: true, icon: Icons.king_bed_outlined,
@@ -390,7 +376,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
 
         const SizedBox(height: 28),
 
-        // Description
         SectionTitle(wide: true, text: 'Description'),
         const SizedBox(height: 10),
         Text(h.description,
@@ -399,13 +384,11 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
 
         const SizedBox(height: 28),
 
-        // Amenities
         if (h.amenities.isNotEmpty) ...[
           SectionTitle(wide: true, text: 'Amenities'),
           const SizedBox(height: 12),
           Wrap(
-            spacing: 10,
-            runSpacing: 10,
+            spacing: 10, runSpacing: 10,
             children: h.amenities.map((a) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
               decoration: BoxDecoration(
@@ -413,14 +396,12 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(color: Colors.grey.shade200),
               ),
-              child: Text(a,
-                  style: GoogleFonts.dmSans(fontSize: 13, color: ink)),
+              child: Text(a, style: GoogleFonts.dmSans(fontSize: 13, color: ink)),
             )).toList(),
           ),
           const SizedBox(height: 28),
         ],
 
-        // Cultural significance
         if ((h.culturalSignificance ?? '').isNotEmpty) ...[
           SectionTitle(wide: true, text: 'Cultural Significance'),
           const SizedBox(height: 10),
@@ -438,7 +419,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
           const SizedBox(height: 28),
         ],
 
-        // Traditional features
         if ((h.traditionalFeatures ?? '').isNotEmpty) ...[
           SectionTitle(wide: true, text: 'Traditional Features'),
           const SizedBox(height: 10),
@@ -448,15 +428,13 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
           const SizedBox(height: 28),
         ],
 
-        // Cultural experiences
         if (h.culturalExperiences.isNotEmpty) ...[
           SectionTitle(wide: true, text: 'Cultural Experiences'),
           const SizedBox(height: 12),
           ...h.culturalExperiences.map((e) => Padding(
             padding: const EdgeInsets.only(bottom: 10),
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const Icon(Icons.emoji_events_outlined,
-                  size: 18, color: accent),
+              const Icon(Icons.emoji_events_outlined, size: 18, color: accent),
               const SizedBox(width: 10),
               Expanded(child: Text(e,
                   style: GoogleFonts.dmSans(
@@ -466,20 +444,17 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
           const SizedBox(height: 28),
         ],
 
-        // Nearby site
         if (h.nearCulturalSite != null) ...[
           SectionTitle(wide: true, text: 'Nearby Heritage Site'),
           const SizedBox(height: 12),
           if (siteLoading)
-            const Center(
-                child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: CircularProgressIndicator(color: accent)))
+            const Center(child: Padding(
+                padding: EdgeInsets.all(16),
+                child: CircularProgressIndicator(color: accent)))
           else if (nearbySite != null)
             GestureDetector(
-              onTap: () => Navigator.push(context,
-                  MaterialPageRoute(
-                      builder: (_) => OwnerSiteDetailPage(site: nearbySite!))),
+              onTap: () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => OwnerSiteDetailPage(site: nearbySite!))),
               child: Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -494,8 +469,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                         ? ProxyImage(
                         imageUrl: nearbySite!.imageUrls.first,
                         width: 80, height: 80,
-                        borderRadiusValue: 0,
-                        thumb: true)
+                        borderRadiusValue: 0, thumb: true)
                         : Container(
                         width: 80, height: 80,
                         color: Colors.grey[100],
@@ -506,12 +480,9 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                   Expanded(child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(nearbySite!.name ?? '',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2, overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.dmSans(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            color: ink)),
+                            fontSize: 15, fontWeight: FontWeight.bold, color: ink)),
                     if (nearbySite!.district != null) ...[
                       const SizedBox(height: 4),
                       Text(nearbySite!.district!,
@@ -527,14 +498,11 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
           const SizedBox(height: 28),
         ],
 
-        // Action buttons
         Row(children: [
           Expanded(child: OutlinedButton.icon(
             onPressed: () => showVisibilityDialog(true),
-            icon: Icon(
-                h.isVisible
-                    ? Icons.pause_circle_outline
-                    : Icons.play_circle_outline,
+            icon: Icon(h.isVisible
+                ? Icons.pause_circle_outline : Icons.play_circle_outline,
                 size: 18),
             label: Text(h.isVisible ? 'Pause Listing' : 'Activate Listing'),
             style: OutlinedButton.styleFrom(
@@ -572,7 +540,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Location card
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(22),
@@ -580,12 +547,9 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: Colors.grey.shade100),
-            boxShadow: [
-              BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4))
-            ],
+            boxShadow: [BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 12, offset: const Offset(0, 4))],
           ),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Row(children: [
@@ -623,8 +587,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
 
         const SizedBox(height: 20),
 
-        // Building history
-        if ((h.buildingHistory ?? '').isNotEmpty)
+        if ((h.buildingHistory ?? '').isNotEmpty) ...[
           _SideCard(
             title: 'Building History',
             icon: Icons.history_edu_outlined,
@@ -632,17 +595,15 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                 style: GoogleFonts.dmSans(
                     fontSize: 13, height: 1.65, color: Colors.grey[700])),
           ),
+          const SizedBox(height: 20),
+        ],
 
-        if ((h.buildingHistory ?? '').isNotEmpty) const SizedBox(height: 20),
-
-        // Photo strip if multiple images
         if (h.imageUrls.length > 1)
           _SideCard(
             title: 'All Photos',
             icon: Icons.photo_library_outlined,
             child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: 8, runSpacing: 8,
               children: h.imageUrls.map((url) => GestureDetector(
                 onTap: () {
                   final i = h.imageUrls.indexOf(url);
@@ -657,8 +618,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                     imageUrl: url,
                     width: 80, height: 80,
                     borderRadiusValue: 0,
-                    thumb: true,
-                    fit: BoxFit.cover,
+                    thumb: true, fit: BoxFit.cover,
                   ),
                 ),
               )).toList(),
@@ -742,19 +702,17 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                     bottom: 70.h, left: 0, right: 0,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(
-                        imgs.length,
-                            (i) => AnimatedContainer(
-                          duration: const Duration(milliseconds: 250),
-                          margin: EdgeInsets.symmetric(horizontal: 3.w),
-                          height: 6.h,
-                          width: imgIdx == i ? 20.w : 6.w,
-                          decoration: BoxDecoration(
-                            color: imgIdx == i ? Colors.white : Colors.white54,
-                            borderRadius: BorderRadius.circular(3.r),
-                          ),
-                        ),
-                      ),
+                      children: List.generate(imgs.length,
+                              (i) => AnimatedContainer(
+                            duration: const Duration(milliseconds: 250),
+                            margin: EdgeInsets.symmetric(horizontal: 3.w),
+                            height: 6.h,
+                            width: imgIdx == i ? 20.w : 6.w,
+                            decoration: BoxDecoration(
+                              color: imgIdx == i ? Colors.white : Colors.white54,
+                              borderRadius: BorderRadius.circular(3.r),
+                            ),
+                          )),
                     ),
                   ),
 
@@ -806,7 +764,8 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
             child: Container(
               decoration: BoxDecoration(
                 color: cream,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
+                borderRadius:
+                BorderRadius.vertical(top: Radius.circular(24.r)),
               ),
               transform: Matrix4.translationValues(0, -20, 0),
               child: Padding(
@@ -892,8 +851,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                 decoration: BoxDecoration(
                     color: teal.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8.r)),
-                child: Icon(Icons.location_on_outlined,
-                    size: 16.sp, color: teal),
+                child: Icon(Icons.location_on_outlined, size: 16.sp, color: teal),
               ),
               SizedBox(width: 10.w),
               Expanded(child: Column(
@@ -905,7 +863,9 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                   SizedBox(height: 2.h),
                   Text(h.location,
                       style: GoogleFonts.dmSans(
-                          fontSize: 13.sp, color: ink, fontWeight: FontWeight.w500)),
+                          fontSize: 13.sp,
+                          color: ink,
+                          fontWeight: FontWeight.w500)),
                 ],
               )),
             ],
@@ -938,8 +898,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
           borderRadius: BorderRadius.circular(16.r),
           boxShadow: [BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 10,
-              offset: const Offset(0, 4))],
+              blurRadius: 10, offset: const Offset(0, 4))],
         ),
         child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
           StatCell(wide: wide, icon: Icons.king_bed_outlined,
@@ -1018,15 +977,13 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
         SectionTitle(wide: wide, text: 'Nearby Heritage Site'),
         SizedBox(height: sh(8, wide)),
         if (siteLoading)
-          const Center(
-              child: Padding(
-                  padding: EdgeInsets.all(16),
-                  child: CircularProgressIndicator(color: accent)))
+          const Center(child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(color: accent)))
         else if (nearbySite != null)
           GestureDetector(
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(
-                    builder: (_) => OwnerSiteDetailPage(site: nearbySite!))),
+            onTap: () => Navigator.push(context, MaterialPageRoute(
+                builder: (_) => OwnerSiteDetailPage(site: nearbySite!))),
             child: Container(
               padding: EdgeInsets.all(10.w),
               decoration: BoxDecoration(
@@ -1053,8 +1010,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(nearbySite!.name ?? '',
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2, overflow: TextOverflow.ellipsis,
                         style: GoogleFonts.dmSans(
                             fontSize: 14.sp,
                             fontWeight: FontWeight.bold,
@@ -1079,8 +1035,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
           onPressed: () => showVisibilityDialog(wide),
           icon: Icon(
               h.isVisible
-                  ? Icons.pause_circle_outline
-                  : Icons.play_circle_outline,
+                  ? Icons.pause_circle_outline : Icons.play_circle_outline,
               size: 18.sp),
           label: Text(h.isVisible ? 'Pause' : 'Activate'),
           style: OutlinedButton.styleFrom(
@@ -1120,8 +1075,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
       title: Text(h.isVisible ? 'Pause Homestay?' : 'Activate Homestay?',
           style: GoogleFonts.playfairDisplay(
               fontWeight: FontWeight.bold,
-              fontSize: fs(18, wide),
-              color: ink)),
+              fontSize: fs(18, wide), color: ink)),
       content: Text(
           h.isVisible
               ? 'Pausing "${h.name}" will hide it from tourists until you activate it again.'
@@ -1174,8 +1128,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
         Expanded(child: Text('Delete Homestay?',
             style: GoogleFonts.playfairDisplay(
                 fontWeight: FontWeight.bold,
-                fontSize: fs(18, wide),
-                color: ink))),
+                fontSize: fs(18, wide), color: ink))),
       ]),
       content: Text(
           'Are you sure you want to permanently delete "${h.name}"? This action cannot be undone.',
@@ -1237,8 +1190,7 @@ class _SideCard extends StatelessWidget {
   final String title;
   final IconData icon;
   final Widget child;
-  const _SideCard(
-      {required this.title, required this.icon, required this.child});
+  const _SideCard({required this.title, required this.icon, required this.child});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -1248,20 +1200,16 @@ class _SideCard extends StatelessWidget {
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
       border: Border.all(color: Colors.grey.shade100),
-      boxShadow: [
-        BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4))
-      ],
+      boxShadow: [BoxShadow(
+          color: Colors.black.withValues(alpha: 0.04),
+          blurRadius: 12, offset: const Offset(0, 4))],
     ),
     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
       Row(children: [
         Icon(icon, size: 18, color: ink),
         const SizedBox(width: 8),
-        Text(title,
-            style: GoogleFonts.playfairDisplay(
-                fontSize: 18, fontWeight: FontWeight.bold, color: ink)),
+        Text(title, style: GoogleFonts.playfairDisplay(
+            fontSize: 18, fontWeight: FontWeight.bold, color: ink)),
       ]),
       const SizedBox(height: 14),
       child,
@@ -1273,22 +1221,17 @@ class StatCell extends StatelessWidget {
   final bool wide;
   final IconData icon;
   final String val, label;
-  const StatCell(
-      {super.key, required this.wide, required this.icon,
-        required this.val, required this.label});
+  const StatCell({super.key, required this.wide, required this.icon,
+    required this.val, required this.label});
 
   @override
   Widget build(BuildContext context) => Column(children: [
     Icon(icon, size: fs(24, wide), color: accent),
     SizedBox(height: sh(4, wide)),
-    Text(val,
-        style: GoogleFonts.dmSans(
-            fontSize: fs(16, wide),
-            fontWeight: FontWeight.bold,
-            color: ink)),
-    Text(label,
-        style: GoogleFonts.dmSans(
-            fontSize: fs(12, wide), color: Colors.grey[500])),
+    Text(val, style: GoogleFonts.dmSans(
+        fontSize: fs(16, wide), fontWeight: FontWeight.bold, color: ink)),
+    Text(label, style: GoogleFonts.dmSans(
+        fontSize: fs(12, wide), color: Colors.grey[500])),
   ]);
 }
 

@@ -85,11 +85,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
 
       final role = JwtDecoder.decode(accessToken)['role'] as String?;
+      final name = await SqliteService().get("user_name") ?? '';
+      final email2 = await SqliteService().get("user_email") ?? '';
+      final image = await SqliteService().get("user_image") ?? '';
+
       if (role == 'admin') {
+        emit(AuthAuthenticated(name: name, email: email2, profileImage: image.isEmpty ? null : image));
         emit(AdminLoginSuccess(accessToken));
       } else if (role == 'tourist') {
+        emit(AuthAuthenticated(name: name, email: email2, profileImage: image.isEmpty ? null : image));
         emit(TouristLoginSuccess(accessToken));
       } else if (role == 'owner') {
+        emit(AuthAuthenticated(name: name, email: email2, profileImage: image.isEmpty ? null : image));
         emit(OwnerLoginSuccess(accessToken));
       } else {
         emit(AuthError('Unknown role: $role'));

@@ -26,19 +26,70 @@ class _AdminDashboardState extends State<AdminDashboard> {
   int _selectedIndex = 0;
   final ValueNotifier<String?> subtitleNotifier = ValueNotifier(null);
 
-  late final List<PageConfig> _pages = [
-    PageConfig(icon: const Icon(Icons.dashboard), title: "Dashboard", subtitle: "Welcome to LokYatra Admin Panel", child: const Dashboard()),
-    PageConfig(icon: const Icon(Icons.people), title: "Users", child: UserManagementPage(subtitleNotifier: subtitleNotifier)),
-    PageConfig(icon: const Icon(Icons.map_outlined), title: "Sites", child: const AdminSites()),
-    PageConfig(icon: const Icon(Icons.menu_book_outlined), title: "Stories", child: const Stories()),
-    PageConfig(icon: const Icon(Icons.house), title: "Homestays", child: Homestays(subtitleNotifier: subtitleNotifier)),
-    PageConfig(icon: const Icon(Icons.calendar_month), title: "Bookings", child: const Bookings()),
-    PageConfig(icon: const Icon(Icons.payment), title: "Payments", child: const Payments()),
-    PageConfig(icon: const Icon(Icons.quiz), title: "Quizzes", child: const TouristAddQuizzes()),
-    PageConfig(icon: const Icon(Icons.reviews), title: "Reviews", child: const Reviews()),
-    PageConfig(icon: const Icon(Icons.report_sharp), title: "Reports", child: const Reports()),
-    PageConfig(icon: const Icon(Icons.settings), title: "Settings", child: const Settings()),
-  ];
+  late final List<PageConfig> _pages;
+
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      PageConfig(
+        icon: const Icon(Icons.dashboard),
+        title: 'Dashboard',
+        subtitle: 'Welcome to LokYatra Admin Panel',
+        child: const Dashboard(),
+      ),
+      PageConfig(
+        icon: const Icon(Icons.people),
+        title: 'Users',
+        child: UserManagementPage(subtitleNotifier: subtitleNotifier),
+      ),
+      PageConfig(
+        icon: const Icon(Icons.map_outlined),
+        title: 'Sites',
+        child: const AdminSites(),
+      ),
+      PageConfig(
+        icon: const Icon(Icons.menu_book_outlined),
+        title: 'Stories',
+        child: const Stories(),
+      ),
+      PageConfig(
+        icon: const Icon(Icons.house),
+        title: 'Homestays',
+        child: Homestays(subtitleNotifier: subtitleNotifier),
+      ),
+      PageConfig(
+        icon: const Icon(Icons.calendar_month),
+        title: 'Bookings',
+        child: const Bookings(),
+      ),
+      PageConfig(
+        icon: const Icon(Icons.payment),
+        title: 'Payments',
+        child: const Payments(),
+      ),
+      PageConfig(
+        icon: const Icon(Icons.quiz),
+        title: 'Quizzes',
+        child: const TouristAddQuizzes(),
+      ),
+      PageConfig(
+        icon: const Icon(Icons.reviews),
+        title: 'Reviews',
+        child: const Reviews(),
+      ),
+      PageConfig(
+        icon: const Icon(Icons.report_sharp),
+        title: 'Reports',
+        child: const Reports(),
+      ),
+      PageConfig(
+        icon: const Icon(Icons.settings),
+        title: 'Settings',
+        child: Settings(onNavigate: _onItemTapped),
+      ),
+    ];
+  }
 
   void _onItemTapped(int index) {
     subtitleNotifier.value = null;

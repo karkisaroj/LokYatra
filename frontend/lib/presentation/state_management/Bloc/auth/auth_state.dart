@@ -54,5 +54,15 @@ class AuthError extends AuthState{
   List<Object?> get props => [message];
 }
 
+class AuthAuthenticated extends AuthState {
+  final String name;
+  final String email;
+  final String? profileImage;
+
+  AuthAuthenticated({required this.name, required this.email, this.profileImage});
+
+  @override
+  List<Object?> get props => [name, email, profileImage];
+}
 
 class LogoutSuccess extends AuthState{}
