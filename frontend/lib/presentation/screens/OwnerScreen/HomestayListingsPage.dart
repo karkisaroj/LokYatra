@@ -232,7 +232,6 @@ class WebHomestayCard extends StatelessWidget {
                         : Icons.visibility_off_outlined,
                   ),
                 ),
-                // Category badge
                 if ((h.category ?? '').isNotEmpty)
                   Positioned(
                     top: 12, right: 12,

@@ -134,7 +134,7 @@ class _StoriesState extends State<Stories> {
       if (state is SitesLoading) return SizedBox(height: 42, child: const Center(child: CircularProgressIndicator(strokeWidth: 2)));
       if (state is SitesLoaded) {
         return DropdownButtonFormField<int>(
-          value: _selectedSiteId,
+          initialValue: _selectedSiteId,
           isExpanded: true,
           decoration: _inputDeco('Cultural Site'),
           items: [

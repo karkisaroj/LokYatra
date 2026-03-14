@@ -20,7 +20,7 @@ class _LoginPageState extends State<LoginPage> {
   bool _showPassword = false;
 
   static const ink     = Color(0xFF2D1B10);
-  static const accent  = Color(0xFFCD6E4E);
+  static const accent  = Color(0xFF4E4E4E);
   static const cream   = Color(0xFFFAF7F2);
   static const brown   = Color(0xFF22150A);
 
@@ -34,8 +34,7 @@ class _LoginPageState extends State<LoginPage> {
   void _submit(BuildContext context) {
     if (_formKey.currentState!.validate()) {
       context.read<AuthBloc>().add(
-        LoginButtonClicked(
-            emailController.text.trim(), passwordController.text.trim()),
+        LoginButtonClicked(emailController.text.trim(), passwordController.text.trim()),
       );
     }
   }

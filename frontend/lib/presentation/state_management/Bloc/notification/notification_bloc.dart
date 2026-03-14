@@ -25,7 +25,6 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
           : [];
 
   Future<void> _onLoad(LoadNotifications e, Emitter emit) async {
-    // Only show loading spinner on first load, not on silent poll
     if (state is NotificationInitial) emit(const NotificationLoading());
     try {
       final res = await _ds.getMyNotifications();
@@ -40,14 +39,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
         ));
       }
     } catch (_) {
-      // On poll failure, silently keep existing state
       if (state is NotificationInitial) emit(const NotificationError('Failed to load'));
     }
   }
 
   void _onStartPolling(StartNotificationPolling e, Emitter emit) {
     _pollTimer?.cancel();
-    // Fire immediately then every 30 seconds
     add(const LoadNotifications());
     _pollTimer = Timer.periodic(const Duration(seconds: 30), (_) {
       add(const LoadNotifications());

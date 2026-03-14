@@ -1,5 +1,3 @@
-// lib/presentation/state_management/Bloc/booking/booking_state.dart
-
 abstract class BookingState {
   const BookingState();
 }
@@ -8,14 +6,14 @@ class BookingInitial extends BookingState {}
 
 class BookingLoading extends BookingState {}
 
-// ── Tourist ───────────────────────────────────────────────────────────────────
+//Tourist
 
 class MyBookingsLoaded extends BookingState {
   final List<Map<String, dynamic>> bookings;
   const MyBookingsLoaded(this.bookings);
 }
 
-// ── Owner ─────────────────────────────────────────────────────────────────────
+// Owner
 
 class OwnerBookingsLoaded extends BookingState {
   final List<Map<String, dynamic>> bookings;
@@ -43,14 +41,14 @@ class OwnerRevenueLoaded extends BookingState {
   });
 }
 
-// ── Admin ─────────────────────────────────────────────────────────────────────
+// Admin
 
 class AllBookingsLoaded extends BookingState {
   final List<Map<String, dynamic>> bookings;
   const AllBookingsLoaded(this.bookings);
 }
 
-// ── Shared ────────────────────────────────────────────────────────────────────
+//Shared
 
 class BookingActionSuccess extends BookingState {
   final String message;

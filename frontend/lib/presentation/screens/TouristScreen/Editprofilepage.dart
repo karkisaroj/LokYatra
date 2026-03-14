@@ -13,8 +13,8 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  static const _brown      = Color(0xFF8B5E3C);
-  static const _terracotta = Color(0xFFCD6E4E);
+  static const _brown      = Color(0xFF424242);
+  static const _terracotta = Color(0xFF333333);
   static const _dark       = Color(0xFF2D1B10);
   static const _cream      = Color(0xFFFAF7F2);
 
@@ -193,7 +193,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                 SizedBox(height: 28.h),
 
-                // Email (read-only)
                 label('Email Address'),
                 SizedBox(height: 6.h),
                 Container(

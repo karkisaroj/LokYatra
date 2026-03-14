@@ -10,7 +10,6 @@ String cloudinaryThumb(String url, {int w = 300, int h = 300}) {
   return '${before}c_fill,w_$w,h_$h,q_auto,f_auto/$after';
 }
 
-// No transforms — fetch the original file exactly as stored
 String cloudinaryFull(String url) => url;
 
 String getProxyImageUrl(String originalUrl) =>

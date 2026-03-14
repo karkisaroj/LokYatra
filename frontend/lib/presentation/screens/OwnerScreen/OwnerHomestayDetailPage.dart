@@ -58,8 +58,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
     finally { if (mounted) setState(() => siteLoading = false); }
   }
 
-  // On web: LaunchMode.externalApplication opens a blank tab.
-  // Fix: use platformDefault on web so the browser handles the URL normally.
   Future<void> openMap() async {
     final h = widget.homestay;
     final q = Uri.encodeComponent(
@@ -68,7 +66,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
         'https://www.google.com/maps/search/?api=1&query=$q');
 
     if (kIsWeb) {
-      // On web, platformDefault tells the browser to open the URL itself
       try {
         await launchUrl(mapsUrl, mode: LaunchMode.platformDefault);
       } catch (_) {
@@ -80,7 +77,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
       return;
     }
 
-    // Mobile/desktop: try geo: first, fall back to https
     try {
       await launchUrl(Uri.parse('geo:0,0?q=$q'),
           mode: LaunchMode.externalApplication);
@@ -103,12 +99,9 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
     return buildMobileLayout(context);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // WEB LAYOUT
-  // ═══════════════════════════════════════════════════════════════════════════
   Widget buildWebLayout(BuildContext context) {
     final h    = widget.homestay;
-    final imgs = h.imageUrls;
+    final images = h.imageUrls;
 
     return Scaffold(
       backgroundColor: cream,
@@ -121,17 +114,17 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
               child: Stack(fit: StackFit.expand, children: [
                 Container(color: const Color(0xFF111111)),
 
-                imgs.isEmpty
+                images.isEmpty
                     ? Container(
                     color: Colors.grey[200],
                     child: Icon(Icons.home, size: 64, color: Colors.grey[400]))
                     : PageView.builder(
                   controller: pageCtrl,
-                  itemCount: imgs.length,
+                  itemCount: images.length,
                   physics: const ClampingScrollPhysics(),
                   onPageChanged: (i) => setState(() => imgIdx = i),
                   itemBuilder: (_, i) => ProxyImage(
-                    imageUrl: imgs[i],
+                    imageUrl: images[i],
                     width: double.infinity,
                     height: 560,
                     borderRadiusValue: 0,
@@ -159,13 +152,13 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                   ),
                 ),
 
-                if (imgs.length > 1)
+                if (images.length > 1)
                   Positioned(
                     left: 20, top: 0, bottom: 0,
                     child: Center(child: _NavBtn(
                       icon: Icons.chevron_left_rounded,
                       onTap: () {
-                        final prev = (imgIdx - 1 + imgs.length) % imgs.length;
+                        final prev = (imgIdx - 1 + images.length) % images.length;
                         pageCtrl.animateToPage(prev,
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut);
@@ -173,13 +166,13 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                     )),
                   ),
 
-                if (imgs.length > 1)
+                if (images.length > 1)
                   Positioned(
                     right: 20, top: 0, bottom: 0,
                     child: Center(child: _NavBtn(
                       icon: Icons.chevron_right_rounded,
                       onTap: () {
-                        final next = (imgIdx + 1) % imgs.length;
+                        final next = (imgIdx + 1) % images.length;
                         pageCtrl.animateToPage(next,
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeInOut);
@@ -187,7 +180,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                     )),
                   ),
 
-                if (imgs.length > 1)
+                if (images.length > 1)
                   Positioned(
                     top: 24, right: 64,
                     child: Container(
@@ -200,7 +193,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                         const Icon(Icons.photo_library_outlined,
                             size: 14, color: Colors.white),
                         const SizedBox(width: 6),
-                        Text('${imgIdx + 1} / ${imgs.length}',
+                        Text('${imgIdx + 1} / ${images.length}',
                             style: GoogleFonts.dmSans(
                                 color: Colors.white,
                                 fontSize: 13,
@@ -209,13 +202,13 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                     ),
                   ),
 
-                if (imgs.length > 1)
+                if (images.length > 1)
                   Positioned(
                     bottom: 88, left: 0, right: 0,
                     child: IgnorePointer(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(imgs.length,
+                        children: List.generate(images.length,
                                 (i) => AnimatedContainer(
                               duration: const Duration(milliseconds: 250),
                               margin: const EdgeInsets.symmetric(horizontal: 3),
@@ -628,12 +621,9 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // MOBILE LAYOUT — unchanged
-  // ═══════════════════════════════════════════════════════════════════════════
   Widget buildMobileLayout(BuildContext context) {
     final h     = widget.homestay;
-    final imgs  = h.imageUrls;
+    final images  = h.imageUrls;
     final heroH = 360.h;
 
     return Scaffold(
@@ -644,17 +634,17 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
             child: SizedBox(
               height: heroH,
               child: Stack(fit: StackFit.expand, children: [
-                imgs.isEmpty
+                images.isEmpty
                     ? Container(
                     color: Colors.grey[200],
                     child: Icon(Icons.home,
                         size: fs(60, false), color: Colors.grey[400]))
                     : PageView.builder(
                   controller: pageCtrl,
-                  itemCount: imgs.length,
+                  itemCount: images.length,
                   onPageChanged: (i) => setState(() => imgIdx = i),
                   itemBuilder: (_, i) => ProxyImage(
-                      imageUrl: imgs[i],
+                      imageUrl: images[i],
                       width: double.infinity,
                       height: heroH,
                       borderRadiusValue: 0,
@@ -680,7 +670,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                   ),
                 ),
 
-                if (imgs.length > 1)
+                if (images.length > 1)
                   Positioned(
                     top: 52.h, right: 16.w,
                     child: Container(
@@ -689,7 +679,7 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                       decoration: BoxDecoration(
                           color: Colors.black54,
                           borderRadius: BorderRadius.circular(20.r)),
-                      child: Text('${imgIdx + 1}/${imgs.length}',
+                      child: Text('${imgIdx + 1}/${images.length}',
                           style: GoogleFonts.dmSans(
                               color: Colors.white,
                               fontSize: 12.sp,
@@ -697,12 +687,12 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
                     ),
                   ),
 
-                if (imgs.length > 1)
+                if (images.length > 1)
                   Positioned(
                     bottom: 70.h, left: 0, right: 0,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: List.generate(imgs.length,
+                      children: List.generate(images.length,
                               (i) => AnimatedContainer(
                             duration: const Duration(milliseconds: 250),
                             margin: EdgeInsets.symmetric(horizontal: 3.w),
@@ -1164,8 +1154,6 @@ class OwnerHomestayDetailPageState extends State<OwnerHomestayDetailPage> {
     ));
   }
 }
-
-// ── Shared helpers ────────────────────────────────────────────────────────────
 
 class _NavBtn extends StatelessWidget {
   final IconData icon;

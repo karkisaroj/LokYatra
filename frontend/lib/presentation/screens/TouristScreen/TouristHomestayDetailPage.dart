@@ -26,8 +26,7 @@ class TouristHomestayDetailPage extends StatefulWidget {
 
 class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
   static const _cream      = Color(0xFFFAF7F2);
-  static const _dark       = Color(0xFF2D1B10);
-  static const _terracotta = Color(0xFFCD6E4E);
+  static const _dark       = Color(0xFF2B2A2A);
   static const _warmGrey   = Color(0xFF8B8B8B);
   static const _teal       = Color(0xFF4A707A);
 
@@ -118,7 +117,6 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
           children: [
             CustomScrollView(
               slivers: [
-
                 SliverToBoxAdapter(
                   child: SizedBox(
                     height: 380.h,
@@ -196,7 +194,6 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                   ),
                 ),
 
-                // ── Detail Body ───────────────────────────────────────────
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: EdgeInsets.all(20.w),
@@ -261,7 +258,6 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
 
                       SizedBox(height: 14.h),
 
-                      // ── Location + Map button card ─────────────────────
                       Container(
                         padding: EdgeInsets.all(14.w),
                         decoration: BoxDecoration(
@@ -273,7 +269,6 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                               blurRadius: 8, offset: const Offset(0, 3))],
                         ),
                         child: Row(children: [
-                          // Location icon + text
                           Expanded(child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -300,7 +295,6 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                             ],
                           )),
                           SizedBox(width: 10.w),
-                          // Map button
                           GestureDetector(
                             onTap: _openMap,
                             child: Container(
@@ -327,9 +321,9 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                         decoration: BoxDecoration(
-                          color: _terracotta.withValues(alpha: 0.07),
+                          color: _dark.withValues(alpha: 0.07),
                           borderRadius: BorderRadius.circular(14.r),
-                          border: Border.all(color: _terracotta.withValues(alpha: 0.2)),
+                          border: Border.all(color: _dark.withValues(alpha: 0.2)),
                         ),
                         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -338,7 +332,7 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                             SizedBox(height: 2.h),
                             Text('Rs. ${_model.pricePerNight.toStringAsFixed(0)}',
                                 style: GoogleFonts.dmSans(
-                                    fontSize: 26.sp, color: _terracotta,
+                                    fontSize: 26.sp, color: _dark,
                                     fontWeight: FontWeight.w800)),
                           ]),
                           Text('+13% VAT', style: GoogleFonts.dmSans(
@@ -348,7 +342,6 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
 
                       SizedBox(height: 20.h),
 
-                      // Quick stats
                       Row(children: [
                         Expanded(child: _StatTile(
                             icon: Icons.king_bed_outlined,
@@ -402,7 +395,7 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                           children: _model.culturalExperiences.map((e) => Padding(
                             padding: EdgeInsets.only(bottom: 8.h),
                             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Icon(Icons.emoji_events_outlined, size: 16.sp, color: _terracotta),
+                              Icon(Icons.emoji_events_outlined, size: 16.sp, color: _dark),
                               SizedBox(width: 8.w),
                               Expanded(child: Text(e, style: GoogleFonts.dmSans(
                                   fontSize: 14.sp, color: Colors.grey[700]))),
@@ -440,9 +433,9 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                                       ? ProxyImage(imageUrl: _nearbySite!.imageUrls.first,
                                       width: 90.w, height: 90.h, borderRadiusValue: 0)
                                       : Container(width: 90.w, height: 90.h,
-                                      color: _terracotta.withValues(alpha: 0.08),
+                                      color: _dark.withValues(alpha: 0.08),
                                       child: Icon(Icons.temple_hindu,
-                                          color: _terracotta, size: 32.sp)),
+                                          color: _dark, size: 32.sp)),
                                 ),
                                 SizedBox(width: 14.w),
                                 Expanded(child: Column(
@@ -454,7 +447,7 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                                         padding: EdgeInsets.symmetric(
                                             horizontal: 8.w, vertical: 2.h),
                                         decoration: BoxDecoration(
-                                            color: _terracotta,
+                                            color: _dark,
                                             borderRadius: BorderRadius.circular(4.r)),
                                         child: Text('UNESCO', style: GoogleFonts.dmSans(
                                             color: Colors.white, fontSize: 9.sp,
@@ -482,7 +475,7 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                                       SizedBox(width: 4.w),
                                       Text('View Heritage Site', style: GoogleFonts.dmSans(
                                           fontSize: 13.sp, fontWeight: FontWeight.w600,
-                                          color: _terracotta)),
+                                          color: _dark)),
                                     ]),
                                   ],
                                 )),
@@ -494,10 +487,10 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                             Container(
                               width: 48.w, height: 48.h,
                               decoration: BoxDecoration(
-                                color: _terracotta.withValues(alpha: 0.1),
+                                color: _dark.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10.r),
                               ),
-                              child: Icon(Icons.temple_hindu, color: _terracotta, size: 24.sp),
+                              child: Icon(Icons.temple_hindu, color: _dark, size: 24.sp),
                             ),
                             SizedBox(width: 12.w),
                             Expanded(child: Text(_model.nearCulturalSite!.name,
@@ -525,7 +518,7 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                           onPressed: () => Navigator.push(context, MaterialPageRoute(
                               builder: (_) => BookingFormPage(homestay: _model))),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _terracotta, foregroundColor: Colors.white,
+                            backgroundColor: _dark, foregroundColor: Colors.white,
                             elevation: 0,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(14.r)),
@@ -614,10 +607,10 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
           if (hasPhone) ...[
             SizedBox(height: 5.h),
             Row(children: [
-              Icon(Icons.phone_outlined, size: 13.sp, color: _terracotta),
+              Icon(Icons.phone_outlined, size: 13.sp, color: _dark),
               SizedBox(width: 4.w),
               Text(owner.phoneNumber!, style: GoogleFonts.dmSans(
-                  fontSize: 13.sp, color: _terracotta)),
+                  fontSize: 13.sp, color: _dark)),
             ]),
           ],
         ])),
@@ -627,11 +620,11 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
               final uri = Uri(scheme: 'tel', path: owner.phoneNumber);
               if (await canLaunchUrl(uri)) await launchUrl(uri);
             },
-            icon: Icon(Icons.phone_rounded, size: 14.sp, color: _terracotta),
+            icon: Icon(Icons.phone_rounded, size: 14.sp, color: _dark),
             label: Text('Call Host', style: GoogleFonts.dmSans(
-                fontSize: 13.sp, fontWeight: FontWeight.w600, color: _terracotta)),
+                fontSize: 13.sp, fontWeight: FontWeight.w600, color: _dark)),
             style: OutlinedButton.styleFrom(
-              side: BorderSide(color: _terracotta.withValues(alpha: 0.4)),
+              side: BorderSide(color: _dark.withValues(alpha: 0.4)),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.r)),
               padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
             ),
@@ -696,11 +689,11 @@ class _StatTile extends StatelessWidget {
       border: Border.all(color: Colors.grey.shade100),
     ),
     child: Column(children: [
-      Icon(icon, size: 22.sp, color: const Color(0xFFCD6E4E)),
+      Icon(icon, size: 22.sp, color: const Color(0xFF7A7979)),
       SizedBox(height: 6.h),
       Text(value, style: GoogleFonts.dmSans(
           fontSize: 15.sp, fontWeight: FontWeight.bold,
-          color: const Color(0xFF2D1B10))),
+          color: const Color(0xFF3C3C3C))),
       Text(label, style: GoogleFonts.dmSans(
           fontSize: 11.sp, color: const Color(0xFF8B8B8B))),
     ]),

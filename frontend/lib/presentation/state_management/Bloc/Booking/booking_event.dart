@@ -2,7 +2,6 @@ abstract class BookingEvent {
   const BookingEvent();
 }
 
-// ── Tourist ───────────────────────────────────────────────────────────────────
 
 class LoadMyBookings extends BookingEvent {
   const LoadMyBookings();
@@ -13,7 +12,6 @@ class CancelMyBooking extends BookingEvent {
   const CancelMyBooking(this.bookingId);
 }
 
-// ── Owner ─────────────────────────────────────────────────────────────────────
 
 class LoadOwnerBookings extends BookingEvent {
   const LoadOwnerBookings();
@@ -37,7 +35,7 @@ class LoadOwnerRevenue extends BookingEvent {
   const LoadOwnerRevenue();
 }
 
-// ── Admin ─────────────────────────────────────────────────────────────────────
+// Admin
 
 class LoadAllBookings extends BookingEvent {
   const LoadAllBookings();

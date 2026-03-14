@@ -125,7 +125,7 @@ class SqliteRepository {
     }
   }
 
-  // Private: Fetch sites from API and cache them
+  // Fetch sites from API and cache them
   Future<List<dynamic>> _fetchSitesFromApi(String? query) async {
     try {
       debugPrint('Fetching sites from API');
@@ -145,7 +145,7 @@ class SqliteRepository {
     return [];
   }
 
-  // Private: Refresh in background
+  // Refresh in background
   Future<void> _refreshSitesInBackground(String? query) async {
     try {
       final response = await _remote.getSites(q: query);
@@ -159,7 +159,7 @@ class SqliteRepository {
     }
   }
 
-  // Private: Filter sites by query
+  // Filter sites by query
   List<dynamic> _filterSitesByQuery(List<dynamic> sites, String? query) {
     if (query == null || query.isEmpty) return sites;
 

@@ -103,12 +103,9 @@ class _BookingsViewState extends State<_BookingsView> {
             child: ConstrainedBox(
               constraints: BoxConstraints(maxWidth: wide ? 900 : double.infinity),
               child: Column(children: [
-
-                // Revenue card
                 if (_revenue != null)
                   _RevenueCard(revenue: _revenue!, wide: wide),
 
-                // Tab bar
                 Container(
                   color: Colors.white,
                   padding: EdgeInsets.fromLTRB(
@@ -164,7 +161,6 @@ class _BookingsViewState extends State<_BookingsView> {
                   ),
                 ),
 
-                // Booking list
                 Expanded(
                   child: RefreshIndicator(
                     color: _terracotta,
@@ -376,7 +372,6 @@ class _BookingCard extends StatelessWidget {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-        // Header
         Container(
           padding: EdgeInsets.all(_w(14, wide)),
           decoration: BoxDecoration(
@@ -403,8 +398,6 @@ class _BookingCard extends StatelessWidget {
         Padding(
           padding: EdgeInsets.all(_w(14, wide)),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-
-            // Tourist
             Row(children: [
               Container(
                 width: wide ? 38 : 38.w,
@@ -426,7 +419,6 @@ class _BookingCard extends StatelessWidget {
 
             SizedBox(height: _h(12, wide)),
 
-            // Dates
             Row(children: [
               Expanded(child: _DateTile(wide: wide, label: 'Check-in',  value: checkIn,  icon: Icons.login_rounded)),
               SizedBox(width: _w(8, wide)),
@@ -435,7 +427,6 @@ class _BookingCard extends StatelessWidget {
 
             SizedBox(height: _h(12, wide)),
 
-            // Total + method
             Container(
               padding: EdgeInsets.all(_w(12, wide)),
               decoration: BoxDecoration(

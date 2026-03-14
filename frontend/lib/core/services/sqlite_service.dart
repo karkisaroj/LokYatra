@@ -12,7 +12,6 @@ class SqliteService {
 
   static Database? _database;
 
-  // Keys that must never be auto-deleted
   static const _permanentKeys = {
     'has_seen_onboarding',
     'sites_last_sync',

@@ -26,7 +26,7 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
   final List<PlatformFile> _newFiles = [];
   late final List<String> _existingImageUrls = _getExistingImageUrls();
 
-  /// Gets the existing image URLs from story data using a simple loop
+  //Gets the existing image URLs from story data using a simple loop
   List<String> _getExistingImageUrls() {
     List<String> urls = [];
     if (widget.story['imageUrls'] != null && widget.story['imageUrls'] is List) {
@@ -50,7 +50,6 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
     super.dispose();
   }
 
-  // ─── Pick files ───
 
   Future<void> _pickFiles() async {
     final result = await FilePicker.platform.pickFiles(
@@ -66,7 +65,6 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
     }
   }
 
-  // ─── Submit ───
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -127,8 +125,6 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
     }
   }
 
-  // ─── Build ───
-
   @override
   Widget build(BuildContext context) {
     double screenWidth = MediaQuery.of(context).size.width;
@@ -149,7 +145,6 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title and Type
                 Row(children: [
                   _buildTextField(_titleController, 'Title *', required: true),
                   const SizedBox(width: 12),
@@ -157,7 +152,6 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
                 ]),
                 const SizedBox(height: 8),
 
-                // Read time
                 TextFormField(
                   controller: _readTimeController,
                   keyboardType: TextInputType.number,
@@ -166,21 +160,17 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
                 ),
                 const SizedBox(height: 12),
 
-                // Full content
                 const Text('Story Content', style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 _buildTextArea(_contentController, 'Full Story Content *', maxLength: 5000, required: true),
                 const SizedBox(height: 12),
 
-                // Cultural context
                 const Text('Cultural Context', style: TextStyle(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
                 _buildTextArea(_historicalController, 'Historical Context', maxLength: 500),
                 const SizedBox(height: 8),
                 _buildTextArea(_culturalController, 'Moral Lesson / Cultural Significance', maxLength: 500),
                 const SizedBox(height: 12),
-
-                // Existing images
                 const Text('Existing Images (remove if needed)'),
                 const SizedBox(height: 8),
                 Wrap(
@@ -195,7 +185,6 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
                 ),
                 const SizedBox(height: 12),
 
-                // New images
                 const Text('Upload New Images (replaces existing)'),
                 const SizedBox(height: 8),
                 Wrap(
@@ -230,9 +219,6 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
     );
   }
 
-  // ─── Helper widgets ───
-
-  /// Text field inside a Row (uses Expanded)
   Widget _buildTextField(TextEditingController controller, String label, {bool required = false}) {
     return Expanded(
       child: TextFormField(
@@ -245,7 +231,6 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
     );
   }
 
-  /// Multi-line text area (full width)
   Widget _buildTextArea(TextEditingController controller, String label, {int maxLength = 500, bool required = false}) {
     return TextFormField(
       controller: controller,

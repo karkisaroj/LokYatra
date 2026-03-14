@@ -12,11 +12,7 @@ class PaymentOptionTile extends StatelessWidget {
   final IconData icon;
   final bool selected;
   final VoidCallback onTap;
-
-  /// Override the selected/border/icon colour (default = brown)
   final Color? accentColor;
-
-  /// Optional badge text shown in top-right corner e.g. "Online"
   final String? badge;
   final Color? badgeColor;
 

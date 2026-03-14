@@ -93,7 +93,6 @@ class _UserManagementPageState extends State<UserManagementPage>
           final filtered = _applyFilters(users);
 
           return Column(children: [
-            // Search bar
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
               child: TextField(
@@ -110,7 +109,6 @@ class _UserManagementPageState extends State<UserManagementPage>
               ),
             ),
 
-            // Role filter tabs
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
               child: Container(
@@ -135,7 +133,6 @@ class _UserManagementPageState extends State<UserManagementPage>
               ),
             ),
 
-            // User list
             Expanded(
               child: filtered.isEmpty
                   ? _EmptyState(query: _searchQuery, role: _activeRole)
@@ -268,7 +265,6 @@ class _UserManagementPageState extends State<UserManagementPage>
   }
 }
 
-// ── Stats Banner ──────────────────────────────────────────────────────────────
 class StatsBanner extends StatelessWidget {
   final int total, active, admins, owners, tourists;
   const StatsBanner({
@@ -292,15 +288,15 @@ class StatsBanner extends StatelessWidget {
     padding:
     const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
     child: Row(children: [
-      _Stat('Total',    total,    Colors.white),
+      _Stat('Total', total,Colors.white),
       _div(),
-      _Stat('Active',   active,   Colors.greenAccent.shade200),
+      _Stat('Active',active,Colors.greenAccent.shade200),
       _div(),
-      _Stat('Admins',   admins,   Colors.orangeAccent),
+      _Stat('Admins',admins,Colors.orangeAccent),
       _div(),
-      _Stat('Owners',   owners,   Colors.amber.shade300),
+      _Stat('Owners',owners,Colors.amber.shade300),
       _div(),
-      _Stat('Tourists', tourists, Colors.lightBlueAccent),
+      _Stat('Tourists',tourists, Colors.lightBlueAccent),
     ]),
   );
 
@@ -333,7 +329,6 @@ class _Stat extends StatelessWidget {
   );
 }
 
-// ── User Card ─────────────────────────────────────────────────────────────────
 class _UserCard extends StatelessWidget {
   final User user;
   final VoidCallback onDelete;
@@ -377,7 +372,6 @@ class _UserCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Avatar + active dot
             Stack(children: [
               CircleAvatar(
                 radius: 26,
@@ -477,7 +471,6 @@ class _UserCard extends StatelessWidget {
                   const SizedBox(height: 10),
 
                   Row(children: [
-                    // Active/Inactive chip
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 3),
@@ -595,7 +588,6 @@ class _InfoRow extends StatelessWidget {
   ]);
 }
 
-// ── Empty State ───────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   final String query;
   final String role;
@@ -617,7 +609,6 @@ class _EmptyState extends StatelessWidget {
   );
 }
 
-// ── Error View ────────────────────────────────────────────────────────────────
 class _ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;

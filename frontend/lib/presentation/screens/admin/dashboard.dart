@@ -57,8 +57,6 @@ class _DashboardState extends State<Dashboard> {
     final bookings = bookingState is AllBookingsLoaded
         ? bookingState.bookings
         : <Map<String, dynamic>>[];
-
-    // Owner model uses `userId` NOT `id`
     final homestays = homestayState is TouristAllHomestaysLoaded
         ? homestayState.homestays
         : (homestayState is OwnerHomestaysLoaded ? homestayState.homestays : []);
@@ -70,7 +68,6 @@ class _DashboardState extends State<Dashboard> {
     final pendingCount   = bookings.where((b) => _status(b) == 'pending').length;
     final confirmedCount = bookings.where((b) => _status(b) == 'confirmed').length;
 
-    // ✅ Owner.userId — the Owner model has `userId` not `id`
     final activeHosts = homestays
         .map((h) => h.owner?.userId)
         .where((id) => id != null)

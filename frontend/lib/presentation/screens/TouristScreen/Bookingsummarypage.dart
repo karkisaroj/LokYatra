@@ -30,9 +30,9 @@ class BookingSummaryPage extends StatefulWidget {
 
 class _BookingSummaryPageState extends State<BookingSummaryPage> {
   static const _cream        = Color(0xFFFAF7F2);
-  static const _brown        = Color(0xFF8B5E3C);
+  static const _brown        = Color(0xFF403F3F);
   static const _dark         = Color(0xFF2D1B10);
-  static const _khaltiPurple = Color(0xFF5C2D91);
+  static const _khaltiPurple = Color(0xFF2B2A2A);
 
   static const _breakfastPricePerDay = 600.0;
   static const _dinnerPricePerDay    = 1200.0;
@@ -265,12 +265,12 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
           _SummaryCard(
             title: 'Stay Details',
             child: Column(children: [
-              _SummaryRow('Homestay',  widget.homestay.name ?? ''),
-              _SummaryRow('Check-in',  _fmtDate(widget.checkIn)),
-              _SummaryRow('Check-out', _fmtDate(widget.checkOut)),
-              _SummaryRow('Nights',    '$_nights night${_nights != 1 ? 's' : ''}'),
-              _SummaryRow('Rooms',     '${widget.rooms} room${widget.rooms > 1 ? 's' : ''}'),
-              _SummaryRow('Guests',    '${widget.guests} guest${widget.guests > 1 ? 's' : ''}'),
+              _SummaryRow('Homestay',widget.homestay.name ?? ''),
+              _SummaryRow('Check-in',_fmtDate(widget.checkIn)),
+              _SummaryRow('Check-out',_fmtDate(widget.checkOut)),
+              _SummaryRow('Nights','$_nights night${_nights != 1 ? 's' : ''}'),
+              _SummaryRow('Rooms','${widget.rooms} room${widget.rooms > 1 ? 's' : ''}'),
+              _SummaryRow('Guests','${widget.guests} guest${widget.guests > 1 ? 's' : ''}'),
             ]),
           ),
 
@@ -280,18 +280,18 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
             title: 'Meals (optional)',
             child: Column(children: [
               _MealOption(
-                label:     'Breakfast ($_nights day${_nights != 1 ? 's' : ''})',
-                sublabel:  'Rs. ${_breakfastPricePerDay.toInt()} per day',
-                value:     _fmt(_breakfastPricePerDay * _nights),
-                checked:   _includeBreakfast,
+                label:'Breakfast ($_nights day${_nights != 1 ? 's' : ''})',
+                sublabel:'Rs. ${_breakfastPricePerDay.toInt()} per day',
+                value: _fmt(_breakfastPricePerDay * _nights),
+                checked: _includeBreakfast,
                 onChanged: (v) => setState(() => _includeBreakfast = v ?? false),
               ),
               SizedBox(height: 8.h),
               _MealOption(
-                label:     'Dinner ($_nights day${_nights != 1 ? 's' : ''})',
-                sublabel:  'Rs. ${_dinnerPricePerDay.toInt()} per day',
-                value:     _fmt(_dinnerPricePerDay * _nights),
-                checked:   _includeDinner,
+                label:'Dinner ($_nights day${_nights != 1 ? 's' : ''})',
+                sublabel:'Rs. ${_dinnerPricePerDay.toInt()} per day',
+                value:_fmt(_dinnerPricePerDay * _nights),
+                checked:_includeDinner,
                 onChanged: (v) => setState(() => _includeDinner = v ?? false),
               ),
             ]),
@@ -317,12 +317,12 @@ class _BookingSummaryPageState extends State<BookingSummaryPage> {
                 : Column(crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _MealOption(
-                    label:      'Use $_redeemablePoints pts  →  ${_fmt(_redeemablePoints / 2.0)} off',
-                    sublabel:   'Max 20% discount · 10 pts = Rs. 5',
-                    value:      '-${_fmt(_redeemablePoints / 2.0)}',
+                    label:'Use $_redeemablePoints pts  →  ${_fmt(_redeemablePoints / 2.0)} off',
+                    sublabel:'Max 20% discount · 10 pts = Rs. 5',
+                    value: '-${_fmt(_redeemablePoints / 2.0)}',
                     valueColor: Colors.green[700],
-                    checked:    _usePoints,
-                    onChanged:  (v) => setState(() => _usePoints = v ?? false),
+                    checked: _usePoints,
+                    onChanged: (v) => setState(() => _usePoints = v ?? false),
                   ),
                   SizedBox(height: 8.h),
                   Row(

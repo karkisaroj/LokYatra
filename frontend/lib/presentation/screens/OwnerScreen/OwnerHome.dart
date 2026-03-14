@@ -21,7 +21,6 @@ const _cardBg  = Color(0xFFFFFFFF);
 const _tagBg   = Color(0xFFEEEBE5);
 const _green   = Color(0xFF3D5A4F);
 
-// Web-safe sizing helpers — raw on web, ScreenUtil on mobile
 double _s(double v, bool wide) => wide ? v : v.sp;
 double _w(double v, bool wide) => wide ? v : v.w;
 double _h(double v, bool wide) => wide ? v : v.h;

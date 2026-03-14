@@ -97,7 +97,6 @@ class _AdminSitesState extends State<AdminSites> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(children: [
-          // ── Search + Add row ─────────────────────────────────────────────
           Row(children: [
             Expanded(
               child: TextField(
@@ -138,7 +137,6 @@ class _AdminSitesState extends State<AdminSites> {
           ]),
           const SizedBox(height: 12),
 
-          // ── List / Table ─────────────────────────────────────────────────
           Expanded(
             child: BlocConsumer<SitesBloc, SitesState>(
               listener: (context, state) {
@@ -203,7 +201,6 @@ class _AdminSitesState extends State<AdminSites> {
     );
   }
 
-  // ── Web full-width card table ──────────────────────────────────────────────
   Widget _buildWebTable(List<CulturalSite> sites) {
     return Container(
       decoration: BoxDecoration(
@@ -223,7 +220,7 @@ class _AdminSitesState extends State<AdminSites> {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(children: [
-              const SizedBox(width: 72), // image col
+              const SizedBox(width: 72),
               const SizedBox(width: 12),
               Expanded(flex: 3, child: Text('Name',     style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey[600]))),
               Expanded(flex: 2, child: Text('Category', style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey[600]))),
@@ -284,7 +281,6 @@ class _AdminSitesState extends State<AdminSites> {
     );
   }
 
-  // ── Mobile card list ───────────────────────────────────────────────────────
   Widget _buildMobileList(List<CulturalSite> sites) {
     return ListView.separated(
       itemCount: sites.length,

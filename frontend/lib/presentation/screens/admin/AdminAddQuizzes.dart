@@ -111,9 +111,9 @@ class _TouristAddQuizzesState extends State<TouristAddQuizzes> {
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 32),
               itemCount: _filtered.length,
               itemBuilder: (_, i) {
-                final q          = _filtered[i];
-                final options    = (q['options'] as List?)?.cast<String>() ?? [];
-                final correctIdx = q['correctIndex'] ?? 0;
+                final q = _filtered[i];
+                final options = (q['options'] as List?)?.cast<String>() ?? [];
+                final correctIdx= q['correctIndex'] ?? 0;
 
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
@@ -216,8 +216,7 @@ class _QuestionFormPageState extends State<_QuestionFormPage> {
   final _formKey      = GlobalKey<FormState>();
   final _questionCtrl = TextEditingController();
   final _categoryCtrl = TextEditingController();
-  final List<TextEditingController> _optionCtrls =
-  List.generate(4, (_) => TextEditingController());
+  final List<TextEditingController> _optionCtrls = List.generate(4, (_) => TextEditingController());
 
   int  _correctIndex = 0;
   bool _loading      = false;

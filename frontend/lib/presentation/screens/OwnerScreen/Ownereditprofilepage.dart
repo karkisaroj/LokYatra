@@ -44,7 +44,6 @@ class OwnerEditProfilePageState extends State<OwnerEditProfilePage> {
   Future<void> loadProfile() async {
     setState(() => loadingProfile = true);
     try {
-      // Always try API first — it is the source of truth
       final res = await UserRemoteDatasource().getCurrentUser();
       if (res.statusCode == 200 && mounted) {
         final data   = res.data as Map<String, dynamic>;
@@ -92,24 +91,21 @@ class OwnerEditProfilePageState extends State<OwnerEditProfilePage> {
     setState(() => busy = true);
     try {
       final newName  = nameCtrl.text.trim();
-      final newPhone = phoneCtrl.text.trim(); // empty string = user cleared it
+      final newPhone = phoneCtrl.text.trim();
 
       final res = await UserRemoteDatasource().updateProfile(
         name:        newName,
-        phoneNumber: newPhone, // always sent even if empty
+        phoneNumber: newPhone,
       );
 
       if (!mounted) return;
 
       if (res.statusCode == 200) {
         final data = res.data as Map<String, dynamic>;
-
-        // Use server-confirmed values
         final savedName  = data['name']?.toString()        ?? newName;
         final savedPhone = data['phoneNumber']?.toString() ?? newPhone;
         final savedImg   = data['profileImage']?.toString() ?? '';
 
-        // Update SQLite with what server confirmed
         final db = SqliteService();
         await db.put('user_name',  savedName);
         await db.put('user_phone', savedPhone);

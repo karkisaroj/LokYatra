@@ -39,7 +39,7 @@ class Owner {
     };
   }
 
-  // Helper to get initials (e.g., "Ram Karki" -> "RK")
+  // Helper to get initials (e.g., "Saroj Karki" -> "SK")
   String get initials {
     if (name.isEmpty) return "H";
     final parts = name.trim().split(' ');

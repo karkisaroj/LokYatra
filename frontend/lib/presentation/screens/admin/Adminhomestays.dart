@@ -422,7 +422,6 @@ class WebCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Fixed-height image section — no more cropping
           SizedBox(
             height: 180,
             child: Stack(children: [

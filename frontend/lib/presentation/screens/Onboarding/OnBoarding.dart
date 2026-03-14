@@ -21,7 +21,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   static const _brown      = Color(0xFF8B5E3C);
   static const _dark       = Color(0xFF2D1B10);
   static const _cream      = Color(0xFFFAF7F2);
-  static const _terracotta = Color(0xFFCD6E4E);
 
   final List<Onboarding> pages = [
     Onboarding(
@@ -102,7 +101,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 },
                 child: Stack(fit: StackFit.expand, children: [
                   Image.asset(pages[index].image, fit: BoxFit.cover, alignment: Alignment.bottomCenter,
-                      errorBuilder: (_, __, ___) => Container(color: _cream,
+                      errorBuilder: (_, _, _) => Container(color: _cream,
                           child: const Icon(Icons.image_not_supported, size: 48, color: Colors.grey))),
                   Positioned(
                     left: 0, right: 0, bottom: 0,
@@ -147,7 +146,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             )),
             const SizedBox(width: 16),
             Expanded(child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent,
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.grey,
                   elevation: 6, padding: EdgeInsets.symmetric(vertical: 12.h),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
               onPressed: _next,
@@ -256,7 +255,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget _webNarrow(Size size) {
     return SingleChildScrollView(
       child: Column(children: [
-        // Image banner
         Stack(children: [
           SizedBox(
             width: double.infinity,
@@ -366,7 +364,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             flex: 2,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: _terracotta, foregroundColor: Colors.white,
+                backgroundColor: _dark, foregroundColor: Colors.white,
                 elevation: 0, padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
@@ -388,7 +386,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 }
 
-// ── Arrow button for image slideshow ─────────────────────────────────────────
 
 class _ArrowBtn extends StatelessWidget {
   final IconData icon;
@@ -414,7 +411,6 @@ class _ArrowBtn extends StatelessWidget {
   );
 }
 
-// ── Feature chips per page ────────────────────────────────────────────────────
 
 class _FeatureChips extends StatelessWidget {
   final int pageIndex;

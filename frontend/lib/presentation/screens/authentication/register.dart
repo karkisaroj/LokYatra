@@ -24,7 +24,7 @@ class _RegisterState extends State<Register> {
 
   static const ink    = Color(0xFF2D1B10);
   static const brown  = Color(0xFF22150A);
-  static const accent = Color(0xFFCD6E4E);
+  static const accent = Color(0xFF595858);
   static const cream  = Color(0xFFFAF7F2);
 
   final _nameController     = TextEditingController();
@@ -469,8 +469,9 @@ class _RegisterState extends State<Register> {
     decoration: _inputDeco('you@example.com', Icons.email_outlined),
     validator: (v) {
       if (v == null || v.trim().isEmpty) return 'Email is required';
-      if (!v.contains('@') || !v.contains('.'))
+      if (!v.contains('@') || !v.contains('.')) {
         return 'Enter a valid email';
+      }
       return null;
     },
   );
@@ -478,10 +479,11 @@ class _RegisterState extends State<Register> {
   Widget _phoneField() => TextFormField(
     controller: _phoneController,
     keyboardType: TextInputType.phone,
-    decoration: _inputDeco('+977 XXXXXXXXXX', Icons.phone_outlined),
+    decoration: _inputDeco('+977- 97XXXXXXXX', Icons.phone_outlined),
     validator: (v) {
-      if (v != null && v.isNotEmpty && v.length != 10)
+      if (v != null && v.isNotEmpty && v.length != 10) {
         return 'Enter a valid 10-digit number';
+      }
       return null;
     },
   );

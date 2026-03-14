@@ -17,14 +17,13 @@ class TouristSitesPage extends StatefulWidget {
 }
 
 class _TouristSitesPageState extends State<TouristSitesPage> {
-  static const ink    = Color(0xFF2D1B10);
-  static const accent = Color(0xFFCD6E4E);
+  static const dark = Color(0xFF0B0B0B);
 
-  String  _search       = '';
-  String? _category;         // null = all
-  String? _district;         // null = all
-  bool    _unescoOnly   = false;
-  String  _sortBy       = 'default'; // 'default' | 'fee_asc' | 'fee_desc'
+  String  _search = '';
+  String? _category;
+  String? _district;
+  bool    _unescoOnly = false;
+  String  _sortBy = 'default';
 
   int get _activeFilters =>
       (_category != null ? 1 : 0) +
@@ -103,10 +102,9 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                 style: GoogleFonts.playfairDisplay(
                     fontSize: 24.sp,
                     fontWeight: FontWeight.bold,
-                    color: ink)),
+                    color: dark)),
             SizedBox(height: 12.h),
 
-            // Search + Filter row
             Row(children: [
               Expanded(
                 child: Container(
@@ -125,7 +123,7 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                       hintStyle: GoogleFonts.dmSans(
                           fontSize: 14.sp, color: Colors.grey[400]),
                       prefixIcon:
-                      Icon(Icons.search, color: accent, size: 20.sp),
+                      Icon(Icons.search, color: dark, size: 20.sp),
                       suffixIcon: _search.isNotEmpty
                           ? IconButton(
                         icon: Icon(Icons.close,
@@ -142,7 +140,6 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
               ),
               SizedBox(width: 10.w),
 
-              // Filter button + badge
               BlocBuilder<SitesBloc, SitesState>(
                 builder: (context, state) {
                   final sites =
@@ -153,7 +150,7 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                       Container(
                         padding: EdgeInsets.all(12.w),
                         decoration: BoxDecoration(
-                          color: _activeFilters > 0 ? accent : Colors.white,
+                          color: _activeFilters > 0 ? dark : Colors.white,
                           borderRadius: BorderRadius.circular(12.r),
                           boxShadow: [BoxShadow(
                               color: Colors.black.withValues(alpha: 0.05),
@@ -161,7 +158,7 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                         ),
                         child: Icon(Icons.tune_rounded,
                             size: 20.sp,
-                            color: _activeFilters > 0 ? Colors.white : ink),
+                            color: _activeFilters > 0 ? Colors.white : dark),
                       ),
                       if (_activeFilters > 0)
                         Positioned(
@@ -169,7 +166,7 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                           child: Container(
                             width: 18.w, height: 18.h,
                             decoration: BoxDecoration(
-                              color: ink, shape: BoxShape.circle,
+                              color: dark, shape: BoxShape.circle,
                               border: Border.all(
                                   color: Colors.white, width: 1.5),
                             ),
@@ -190,7 +187,6 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
           ]),
         ),
 
-        // ── Active filter chips ──────────────────────────────────────────────
         if (_activeFilters > 0)
           Padding(
             padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 8.h),
@@ -218,15 +214,13 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
             ]),
           ),
 
-        // ── List ─────────────────────────────────────────────────────────────
         Expanded(
           child: BlocBuilder<SitesBloc, SitesState>(
             builder: (context, state) {
               if (state is SitesLoading) {
                 return Center(
-                    child: CircularProgressIndicator(color: accent));
+                    child: CircularProgressIndicator(color: dark));
               }
-
               if (state is SitesLoaded) {
                 final filtered = _applyFilters(state.sites);
 
@@ -246,7 +240,7 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                             onPressed: _clearAll,
                             child: Text('Clear all filters',
                                 style: GoogleFonts.dmSans(
-                                    color: accent,
+                                    color: dark,
                                     fontWeight: FontWeight.w600)),
                           ),
                         ]),
@@ -313,7 +307,6 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
   }
 }
 
-// ── Site card ─────────────────────────────────────────────────────────────────
 
 class _SiteCard extends StatelessWidget {
   final String imageUrl, name, category, district, feeNPR, feeSAARC;
@@ -345,7 +338,6 @@ class _SiteCard extends StatelessWidget {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-        // ── Image ──────────────────────────────────────────────────────────
         Stack(children: [
           ClipRRect(
             borderRadius: BorderRadius.vertical(top: Radius.circular(20.r)),
@@ -358,7 +350,6 @@ class _SiteCard extends StatelessWidget {
             ),
           ),
 
-          // Dark gradient at bottom of image
           Positioned(
             left: 0, right: 0, bottom: 0,
             child: Container(
@@ -378,7 +369,6 @@ class _SiteCard extends StatelessWidget {
             ),
           ),
 
-          // UNESCO badge (top-left)
           if (isUnesco)
             Positioned(
               top: 12.h, left: 12.w,
@@ -402,7 +392,6 @@ class _SiteCard extends StatelessWidget {
               ),
             ),
 
-          // Category badge (top-right)
           if (category.isNotEmpty)
             Positioned(
               top: 12.h, right: 12.w,
@@ -421,7 +410,6 @@ class _SiteCard extends StatelessWidget {
               ),
             ),
 
-          // District pill pinned to gradient (bottom-left)
           if (district.isNotEmpty)
             Positioned(
               bottom: 10.h, left: 12.w,
@@ -438,7 +426,6 @@ class _SiteCard extends StatelessWidget {
             ),
         ]),
 
-        // ── Info row ───────────────────────────────────────────────────────
         Padding(
           padding: EdgeInsets.fromLTRB(16.w, 14.h, 16.w, 14.h),
           child: Row(
@@ -473,11 +460,11 @@ class _SiteCard extends StatelessWidget {
                               style: GoogleFonts.dmSans(
                                   fontSize: 13.sp,
                                   fontWeight: FontWeight.w700,
-                                  color: accent)),
+                                  color: Colors.black87)),
                           Text('SAARC Rs. $feeSAARC',
                               style: GoogleFonts.dmSans(
                                   fontSize: 10.sp,
-                                  color: Colors.grey[500])),
+                                  color: Colors.black45)),
                         ]),
                   ),
                 ]),
@@ -488,7 +475,6 @@ class _SiteCard extends StatelessWidget {
   }
 }
 
-// ── Active filter chip ────────────────────────────────────────────────────────
 
 class _ActiveChip extends StatelessWidget {
   final String label;
@@ -522,7 +508,6 @@ class _ActiveChip extends StatelessWidget {
   }
 }
 
-// ── Filter bottom sheet ───────────────────────────────────────────────────────
 
 class _FilterSheet extends StatefulWidget {
   final List<dynamic> sites;
@@ -564,8 +549,6 @@ class _FilterSheetState extends State<_FilterSheet> {
     _district   = widget.district;
     _unescoOnly = widget.unescoOnly;
     _sortBy     = widget.sortBy;
-
-    // derive unique values from data
     _categories = widget.sites
         .map((s) => (s.category ?? '').toString())
         .where((c) => c.isNotEmpty)
@@ -610,7 +593,6 @@ class _FilterSheetState extends State<_FilterSheet> {
             ),
           ),
 
-          // Title + Reset
           Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
             Text('Filter Sites',
                 style: GoogleFonts.playfairDisplay(
@@ -627,7 +609,6 @@ class _FilterSheetState extends State<_FilterSheet> {
 
           SizedBox(height: 24.h),
 
-          // ── UNESCO toggle ────────────────────────────────────────────────
           _SectionLabel('Special'),
           SizedBox(height: 10.h),
           GestureDetector(
@@ -689,7 +670,6 @@ class _FilterSheetState extends State<_FilterSheet> {
 
           SizedBox(height: 24.h),
 
-          // ── Category ────────────────────────────────────────────────────
           if (_categories.isNotEmpty) ...[
             _SectionLabel('Category'),
             SizedBox(height: 10.h),
@@ -708,7 +688,6 @@ class _FilterSheetState extends State<_FilterSheet> {
             SizedBox(height: 24.h),
           ],
 
-          // ── District ─────────────────────────────────────────────────────
           if (_districts.isNotEmpty) ...[
             _SectionLabel('District'),
             SizedBox(height: 10.h),
@@ -727,7 +706,6 @@ class _FilterSheetState extends State<_FilterSheet> {
             SizedBox(height: 24.h),
           ],
 
-          // ── Sort by ───────────────────────────────────────────────────────
           _SectionLabel('Sort By Entry Fee'),
           SizedBox(height: 10.h),
           Row(children: [
@@ -749,7 +727,6 @@ class _FilterSheetState extends State<_FilterSheet> {
 
           SizedBox(height: 32.h),
 
-          // ── Apply ─────────────────────────────────────────────────────────
           SizedBox(
             width: double.infinity, height: 52.h,
             child: ElevatedButton(

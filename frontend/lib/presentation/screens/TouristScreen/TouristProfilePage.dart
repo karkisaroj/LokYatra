@@ -22,7 +22,7 @@ import 'HelpSupportPage.dart';
 import 'AboutLokyatraPage.dart';
 import 'ChangePasswordPage.dart';
 
-const Color brownColor   = Color(0xFFCD6E4E);
+const Color brownColor   = Color(0xFF474545);
 const Color darkColor    = Color(0xFF2D1B10);
 const Color pageBg       = Color(0xFFF7F3EF);
 
@@ -35,7 +35,7 @@ const Color cardWhite    = Colors.white;
 const Color accentGreen  = Color(0xFF22C55E);
 const Color accentBlue   = Color(0xFF3B82F6);
 const Color accentAmber  = Color(0xFFF59E0B);
-const Color accentRed    = Color(0xFFEF4444);
+const Color accentBlack    = Color(0xFF0E0E0E);
 const Color accentTeal   = Color(0xFF14B8A6);
 const Color accentPurple = Color(0xFFA855F7);
 const Color accentSlate  = Color(0xFF94A3B8);
@@ -73,10 +73,10 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
 
     if (mounted) {
       setState(() {
-        name            = savedName  ?? '';
-        email           = savedEmail ?? '';
-        phone           = savedPhone ?? '';
-        quizPoints      = int.tryParse(savedPoints ?? '0') ?? 0;
+        name= savedName  ?? '';
+        email= savedEmail ?? '';
+        phone= savedPhone ?? '';
+        quizPoints= int.tryParse(savedPoints ?? '0') ?? 0;
         profileImageUrl = (savedImage != null && savedImage.isNotEmpty) ? savedImage : null;
       });
     }
@@ -100,9 +100,9 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
 
         if (mounted) {
           setState(() {
-            name            = serverName;
-            email           = serverEmail;
-            phone           = serverPhone;
+            name = serverName;
+            email= serverEmail;
+            phone= serverPhone;
             profileImageUrl = serverImage.isNotEmpty ? serverImage : null;
           });
         }
@@ -110,15 +110,15 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
 
       final quizRes = await QuizRemoteDatasource().getHistory();
       if (quizRes.statusCode == 200 && mounted) {
-        final d          = quizRes.data as Map<String, dynamic>;
-        final history    = (d['history'] as List? ?? []);
+        final d= quizRes.data as Map<String, dynamic>;
+        final history= (d['history'] as List? ?? []);
         final sumFromHistory = history.fold<int>(
           0, (s, h) => s + ((h as Map)['pointsEarned'] as int? ?? 0),
         );
-        final apiTotal  = d['totalPoints']  as int? ?? 0;
+        final apiTotal= d['totalPoints']  as int? ?? 0;
         final apiUsable = d['usablePoints'] as int?
             ?? d['remainingPoints'] as int?;
-        final usable    = apiUsable ?? (apiTotal > 0 ? apiTotal : sumFromHistory);
+        final usable= apiUsable ?? (apiTotal > 0 ? apiTotal : sumFromHistory);
 
         await SqliteService().put('user_quiz_points', usable.toString());
         if (mounted) setState(() => quizPoints = usable);
@@ -262,7 +262,6 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Profile image — NO ClipOval so camera badge is visible
                           Stack(
                             clipBehavior: Clip.none,
                             children: [
@@ -279,7 +278,6 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                                     ),
                                   ],
                                 ),
-                                // No ClipOval — lets ProfileImageWidget's camera badge show
                                 child: ProfileImageWidget(
                                   initialImageUrl: profileImageUrl,
                                   accent: brownColor,
@@ -290,7 +288,6 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
                                 ),
                               ),
 
-                              // Verified tick — top left, away from camera (bottom right)
                               if (isVerified)
                                 Positioned(
                                   top: 0,
@@ -526,7 +523,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
             rowDivider(),
             ActivityTile(
               icon: Icons.favorite_outline_rounded,
-              iconColor: accentRed,
+              iconColor: accentBlack,
               label: 'Your Saved',
               sublabel: 'Saved homestays',
               onTap: () => Navigator.push(context,
@@ -637,8 +634,8 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
         label: Text('Logout',
             style: GoogleFonts.dmSans(fontSize: 14.sp, fontWeight: FontWeight.w600)),
         style: OutlinedButton.styleFrom(
-          foregroundColor: accentRed,
-          side: BorderSide(color: accentRed.withValues(alpha: 0.5)),
+          foregroundColor: accentBlack,
+          side: BorderSide(color: accentBlack.withValues(alpha: 0.5)),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14.r)),
         ),
       ),
@@ -697,7 +694,6 @@ class PillBadge extends StatelessWidget {
   }
 }
 
-// Fixed: removed Expanded wrapper so spaceEvenly works correctly
 class MiniStat extends StatelessWidget {
   final IconData icon;
   final String value;

@@ -1,23 +1,16 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 
 const String _serverIp = "192.168.1.67";
 const int _serverPort = 5257;
 
 String getBaseUrl() {
-  if (kIsWeb) {
-    return "http://localhost:$_serverPort";
-  } else if (Platform.isAndroid) {
-    return "http://10.0.2.2:$_serverPort";
-  } else {
-    return "http://localhost:$_serverPort";
-  }
+  if (kIsWeb) return "http://localhost:$_serverPort";
+  return "http://$_serverIp:$_serverPort";
 }
 
 String get apiBaseUrl => "${getBaseUrl()}/";
 String get imageBaseUrl => getBaseUrl();
 
-// Standard timeouts for normal API calls
 const Duration connectTimeout = Duration(seconds: 30);
 const Duration receiveTimeout = Duration(seconds: 60);
 const Duration sendTimeout    = Duration(seconds: 60);

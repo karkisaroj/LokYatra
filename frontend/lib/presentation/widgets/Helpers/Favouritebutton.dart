@@ -63,7 +63,6 @@ class _FavouriteButtonState extends State<FavouriteButton>
   Future<void> _toggle() async {
     if (_loading) return;
 
-    // Optimistic update
     setState(() => _isSaved = !_isSaved);
     _ctrl.forward(from: 0);
 
@@ -75,7 +74,6 @@ class _FavouriteButtonState extends State<FavouriteButton>
         });
       }
     } catch (_) {
-      // Revert on error
       if (mounted) setState(() => _isSaved = !_isSaved);
     }
   }

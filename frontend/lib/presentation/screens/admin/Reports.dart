@@ -42,9 +42,6 @@ class _ReportsState extends State<Reports> {
     context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
   }
 
-  // API response shape per item:
-  // { "booking": { "status": "Pending", "totalPrice": 4500, "createdAt": "..." }, "touristName": "Ram", "homestayName": "Boudha" }
-  // So all booking fields are nested under b['booking']
 
   Map<String, dynamic> _inner(Map<String, dynamic> b) =>
       (b['booking'] as Map?)?.cast<String, dynamic>() ?? b;

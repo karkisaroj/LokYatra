@@ -15,8 +15,8 @@ class BookingFormPage extends StatefulWidget {
 
 class _BookingFormPageState extends State<BookingFormPage> {
   static const _cream = Color(0xFFFAF7F2);
-  static const _brown = Color(0xFF8B5E3C);
-  static const _dark  = Color(0xFF2D1B10);
+  static const _brown = Color(0xFF30302F);
+  static const _dark  = Color(0xFF3A3A3A);
 
   DateTime? _checkIn;
   DateTime? _checkOut;
@@ -52,7 +52,6 @@ class _BookingFormPageState extends State<BookingFormPage> {
     setState(() {
       if (isCheckIn) {
         _checkIn = picked;
-        // Reset checkout if it's before new checkin
         if (_checkOut != null && !_checkOut!.isAfter(picked)) {
           _checkOut = null;
         }
@@ -132,8 +131,6 @@ class _BookingFormPageState extends State<BookingFormPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-
-            // Homestay summary card
             Container(
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
@@ -301,7 +298,6 @@ class _BookingFormPageState extends State<BookingFormPage> {
   }
 }
 
-// ── Sub-widgets ───────────────────────────────────────────────────────────────
 
 class _FormLabel extends StatelessWidget {
   final String label;
@@ -398,7 +394,6 @@ class _StepperCard extends StatelessWidget {
               ],
             ),
           ),
-          // Stepper controls
           Row(
             children: [
               _StepBtn(

@@ -8,7 +8,7 @@ import 'HomestayState.dart';
 
 class HomestayBloc extends Bloc<HomestayEvent, HomestayState> {
   final HomestaysRemoteDatasource _datasource = HomestaysRemoteDatasource();
-  final SqliteService             _sqlite     = SqliteService();
+  final SqliteService _sqlite     = SqliteService();
 
   HomestayBloc() : super(const HomestayInitial()) {
     on<OwnerLoadMyHomestays>(_onOwnerLoadMyHomestays);
@@ -20,7 +20,6 @@ class HomestayBloc extends Bloc<HomestayEvent, HomestayState> {
     on<AdminToggleHomestayVisibility>(_onAdminToggleHomestayVisibility);
   }
 
-  // ── Tourist: load all — offline-first
 
   Future<void> _onTouristLoadAllHomestays(
       TouristLoadAllHomestays event, Emitter<HomestayState> emit) async {
@@ -54,7 +53,6 @@ class HomestayBloc extends Bloc<HomestayEvent, HomestayState> {
     }
   }
 
-  // ── Tourist: homestays near a site ───────────────────────────────────────
 
   Future<void> _onTouristLoadHomestaysNearSite(
       TouristLoadHomestaysNearSite event, Emitter<HomestayState> emit) async {
@@ -69,7 +67,6 @@ class HomestayBloc extends Bloc<HomestayEvent, HomestayState> {
       }).toList();
     }
 
-    // Try cache first
     final cached = await _sqlite.getCachedHomestays();
     if (cached.isNotEmpty) {
       emit(TouristNearbyHomestaysLoaded(await filterNearby(cached), event.siteName));
@@ -90,7 +87,6 @@ class HomestayBloc extends Bloc<HomestayEvent, HomestayState> {
     }
   }
 
-  // ── Owner: my homestays (requires auth — online only) ─────────────────────
 
   Future<void> _onOwnerLoadMyHomestays(
       OwnerLoadMyHomestays event, Emitter<HomestayState> emit) async {
@@ -124,7 +120,6 @@ class HomestayBloc extends Bloc<HomestayEvent, HomestayState> {
     }
   }
 
-  // ── Admin ─────────────────────────────────────────────────────────────────
 
   Future<void> _onAdminDeleteHomestay(
       AdminDeleteHomestay event, Emitter<HomestayState> emit) async {
@@ -165,7 +160,6 @@ class HomestayBloc extends Bloc<HomestayEvent, HomestayState> {
     emit(const HomestayInitial());
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
 
   List<Homestay> _parseHomestays(List<dynamic> raw) =>
       raw.map((j) => Homestay.fromJson(j as Map<String, dynamic>)).toList();

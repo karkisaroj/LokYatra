@@ -194,25 +194,25 @@ class _BookingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final b            = (data['booking'] as Map<String, dynamic>?) ?? {};
-    final id           = b['id']              as int?    ?? 0;
-    final homestayName = data['homestayName']?.toString()     ?? 'Homestay';
-    final location     = data['homestayLocation']?.toString() ?? '';
-    final imageUrl     = data['homestayImage']?.toString()    ?? '';
-    final status       = b['status']?.toString()              ?? 'Pending';
-    final checkIn      = _fmtDate(b['checkIn']);
-    final checkOut     = _fmtDate(b['checkOut']);
-    final nights       = b['nights']       as int?    ?? 0;
-    final guests       = b['guests']       as int?    ?? 0;
-    final total        = (b['totalPrice']  as num?)?.toDouble() ?? 0;
-    final payMethod    = b['paymentMethod']?.toString()  ?? '';
-    final payStatus    = b['paymentStatus']?.toString()  ?? 'Unpaid';
-    final isPaid       = payStatus == 'Paid';
-    final specialReq   = b['specialRequests']?.toString() ?? '';
-    final rejReason    = b['rejectionReason']?.toString() ?? '';
-    final canCancel    = status == 'Pending' || status == 'Confirmed';
-    final canPayKhalti = status == 'Confirmed' && payMethod == 'Khalti' && !isPaid;
-    final bookingRef   = 'LY-${DateTime.now().year}${id.toString().padLeft(6, '0')}';
+    final b = (data['booking'] as Map<String, dynamic>?) ?? {};
+    final id= b['id']              as int?    ?? 0;
+    final homestayName = data['homestayName']?.toString() ?? 'Homestay';
+    final location= data['homestayLocation']?.toString() ?? '';
+    final imageUrl= data['homestayImage']?.toString() ?? '';
+    final status= b['status']?.toString()?? 'Pending';
+    final checkIn= _fmtDate(b['checkIn']);
+    final checkOut = _fmtDate(b['checkOut']);
+    final nights= b['nights'] as int?  ?? 0;
+    final guests= b['guests'] as int?    ?? 0;
+    final total = (b['totalPrice']  as num?)?.toDouble() ?? 0;
+    final payMethod = b['paymentMethod']?.toString()  ?? '';
+    final payStatus= b['paymentStatus']?.toString()  ?? 'Unpaid';
+    final isPaid= payStatus == 'Paid';
+    final specialReq = b['specialRequests']?.toString() ?? '';
+    final rejReason= b['rejectionReason']?.toString() ?? '';
+    final canCancel= status == 'Pending' || status == 'Confirmed';
+    final canPayKhalti= status == 'Confirmed' && payMethod == 'Khalti' && !isPaid;
+    final bookingRef = 'LY-${DateTime.now().year}${id.toString().padLeft(6, '0')}';
 
     return Container(
       margin: EdgeInsets.only(bottom: 20.h),
@@ -237,7 +237,7 @@ class _BookingCard extends StatelessWidget {
               child: imageUrl.isNotEmpty
                   ? Image.network(imageUrl,
                   fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _fallbackImage())
+                  errorBuilder: (_, _, _) => _fallbackImage())
                   : _fallbackImage(),
             ),
             Container(

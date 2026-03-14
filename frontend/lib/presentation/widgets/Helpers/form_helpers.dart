@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class FormHelpers {
-  // Section title
   static Widget sectionTitle(String title) {
     return Text(
       title,
@@ -10,7 +9,6 @@ class FormHelpers {
     );
   }
 
-  // Required text field
   static Widget requiredField(
       TextEditingController controller,
       String label, {
@@ -86,7 +84,7 @@ class FormHelpers {
     );
   }
 
-  // Phone number — exactly 10 digits, optional
+  // Phone number -optional
   static Widget phoneField(TextEditingController controller) {
     return TextFormField(
       controller: controller,
@@ -108,7 +106,7 @@ class FormHelpers {
     );
   }
 
-  // Name field — min 3 chars
+  // Name field
   static Widget nameField(TextEditingController controller) {
     return TextFormField(
       controller: controller,

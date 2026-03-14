@@ -1,10 +1,4 @@
-// lib/presentation/screens/TouristScreen/KhaltiPaymentPage.dart
-//
-// Add to pubspec.yaml:
-//   webview_flutter: ^4.10.0
-
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -31,7 +25,6 @@ class _KhaltiPaymentPageState extends State<KhaltiPaymentPage> {
   static const _terracotta = Color(0xFFCD6E4E);
   static const _khaltiPurple = Color(0xFF5C2D91);
 
-  // Must match the domain in ReturnUrl in appsettings.json
   static const _returnHost = 'lokyatra.app';
 
   WebViewController? _webController;
@@ -46,7 +39,6 @@ class _KhaltiPaymentPageState extends State<KhaltiPaymentPage> {
     _initiatePayment();
   }
 
-  // ── Initiate ───────────────────────────────────────────────────────────────
 
   Future<void> _initiatePayment() async {
     setState(() { _initiating = true; _error = null; });
@@ -80,7 +72,6 @@ class _KhaltiPaymentPageState extends State<KhaltiPaymentPage> {
     }
   }
 
-  // ── WebView ────────────────────────────────────────────────────────────────
 
   void _setupWebView(String url) {
     _webController = WebViewController()
@@ -116,7 +107,6 @@ class _KhaltiPaymentPageState extends State<KhaltiPaymentPage> {
     if (pidxToVerify != null) _verifyPayment(pidxToVerify);
   }
 
-  // ── Verify ─────────────────────────────────────────────────────────────────
 
   Future<void> _verifyPayment(String pidx) async {
     if (_verifying) return;
@@ -138,7 +128,6 @@ class _KhaltiPaymentPageState extends State<KhaltiPaymentPage> {
     }
   }
 
-  // ── Dialogs ────────────────────────────────────────────────────────────────
 
   void _showSuccess(dynamic amount) {
     showDialog(
@@ -171,7 +160,7 @@ class _KhaltiPaymentPageState extends State<KhaltiPaymentPage> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.pop(context); // close dialog
+                Navigator.pop(context);
                 Navigator.pop(context, true); // return paid=true to bookings page
               },
               style: ElevatedButton.styleFrom(
@@ -232,7 +221,6 @@ class _KhaltiPaymentPageState extends State<KhaltiPaymentPage> {
     );
   }
 
-  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +257,6 @@ class _KhaltiPaymentPageState extends State<KhaltiPaymentPage> {
       ),
       body: Stack(children: [
 
-        // ── Loading: initiating ──────────────────────────────────────────────
         if (_initiating)
           Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
             CircularProgressIndicator(color: _khaltiPurple),
@@ -278,7 +265,6 @@ class _KhaltiPaymentPageState extends State<KhaltiPaymentPage> {
                 style: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey[600])),
           ])),
 
-        // ── Error state ──────────────────────────────────────────────────────
         if (_error != null && !_initiating && !_verifying)
           Center(child: Padding(
             padding: EdgeInsets.all(24.w),
@@ -305,11 +291,9 @@ class _KhaltiPaymentPageState extends State<KhaltiPaymentPage> {
             ]),
           )),
 
-        // ── WebView ──────────────────────────────────────────────────────────
         if (!_initiating && _error == null && _webController != null)
           WebViewWidget(controller: _webController!),
 
-        // ── Verifying overlay ────────────────────────────────────────────────
         if (_verifying)
           Container(
             color: Colors.black54,

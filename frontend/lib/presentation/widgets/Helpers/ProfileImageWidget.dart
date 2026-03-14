@@ -14,7 +14,7 @@ class ProfileImageWidget extends StatefulWidget {
   const ProfileImageWidget({
     super.key,
     this.initialImageUrl,
-    this.accent = const Color(0xFFCD6E4E),
+    this.accent = const Color(0xFF4E4C4C),
     this.radius = 50,
     this.onUploaded,
   });
@@ -34,9 +34,9 @@ class ProfileImageWidgetState extends State<ProfileImageWidget> {
   }
 
   @override
-  void didUpdateWidget(ProfileImageWidget old) {
-    super.didUpdateWidget(old);
-    if (old.initialImageUrl != widget.initialImageUrl) {
+  void didUpdateWidget(ProfileImageWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialImageUrl != widget.initialImageUrl) {
       setState(() => url = widget.initialImageUrl);
     }
   }

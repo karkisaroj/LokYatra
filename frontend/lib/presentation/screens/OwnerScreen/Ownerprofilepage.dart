@@ -548,7 +548,7 @@ class _PerformanceCard extends StatelessWidget {
       return s == 'Confirmed' || s == 'Completed';
     }).length;
     final rate      = total > 0 ? (conf / total * 100).round() : 0;
-    final superhost = rate >= 90 && total >= 10;
+    final superhost = rate >= 70 && total >= 10;
 
     return Container(
       padding: EdgeInsets.all(_w(18, wide)),
@@ -570,7 +570,7 @@ class _PerformanceCard extends StatelessWidget {
           wide: wide,
           icon: Icons.star_rounded, iconBg: _green.withValues(alpha: 0.1), iconColor: _green,
           title: 'Superhost Status',
-          sub: superhost ? 'Top-rated host' : 'Reach 90% acceptance to unlock',
+          sub: superhost ? 'Top-rated host' : 'Reach 70% acceptance to unlock',
           trailing: Container(
             padding: EdgeInsets.symmetric(horizontal: _w(10, wide), vertical: _h(4, wide)),
             decoration: BoxDecoration(

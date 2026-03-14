@@ -1,5 +1,3 @@
-// lib/presentation/screens/TouristScreen/StoryDetailPage.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -23,7 +21,6 @@ class StoryDetailPage extends StatelessWidget {
       backgroundColor: _cream,
       body: CustomScrollView(
         slivers: [
-          // ── Hero Image ────────────────────────────────────────────
           SliverAppBar(
             expandedHeight: hasImage ? 280.h : 0,
             pinned: true,
@@ -59,7 +56,6 @@ class StoryDetailPage extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Story type badge bottom-left
                 Positioned(
                   bottom: 20.h, left: 20.w,
                   child: Container(
@@ -78,14 +74,12 @@ class StoryDetailPage extends StatelessWidget {
                 : null,
           ),
 
-          // ── Content ───────────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.all(20.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Story type badge (when no image)
                   if (!hasImage) ...[
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),

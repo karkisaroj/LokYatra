@@ -18,8 +18,6 @@ const int kPageReviews   = 8;
 const int kPageReports   = 9;
 
 class Settings extends StatelessWidget {
-  /// Called when the user taps an Admin Tools / Content tile.
-  /// The int is the target page index in AdminDashboard._pages.
   final void Function(int pageIndex)? onNavigate;
 
   const Settings({super.key, this.onNavigate});
@@ -196,10 +194,6 @@ class Settings extends StatelessWidget {
   ];
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Profile card — reads from SQLite; uses imageKey to bust ProxyImage cache
-// after a new photo is uploaded so the new image shows immediately.
-// ─────────────────────────────────────────────────────────────────────────────
 class _ProfileCard extends StatefulWidget {
   const _ProfileCard();
 
@@ -212,7 +206,6 @@ class _ProfileCardState extends State<_ProfileCard> {
   String? email;
   String? profileImage;
   bool uploading = false;
-  // Incremented after each upload to force ProxyImage to fetch fresh bytes
   int imageKey = 0;
 
   @override
@@ -313,9 +306,6 @@ class _ProfileCardState extends State<_ProfileCard> {
                               strokeWidth: 2,
                               color: Color(0xFFCD6E4E)))))
                   : profileImage != null
-              // Key forces Flutter to rebuild the widget tree,
-              // which makes ProxyImage/CachedNetworkImage discard
-              // its in-memory cache entry and reload from network.
                   ? KeyedSubtree(
                 key: ValueKey('avatar_$imageKey'),
                 child: ProxyImage(
@@ -359,7 +349,6 @@ class _ProfileCardState extends State<_ProfileCard> {
   }
 }
 
-// ── Admin badge card ──────────────────────────────────────────────────────────
 class _AdminBadgeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
@@ -412,7 +401,6 @@ class _AdminBadgeCard extends StatelessWidget {
   );
 }
 
-// ── Logout tile ───────────────────────────────────────────────────────────────
 class _LogoutTile extends StatelessWidget {
   const _LogoutTile();
 
@@ -484,7 +472,6 @@ class _LogoutTile extends StatelessWidget {
   );
 }
 
-// ── Change Password page ──────────────────────────────────────────────────────
 class AdminChangePasswordPage extends StatefulWidget {
   const AdminChangePasswordPage({super.key});
   @override
@@ -626,7 +613,6 @@ class _AdminChangePasswordPageState extends State<AdminChangePasswordPage> {
   }
 }
 
-// ── Shared helpers ────────────────────────────────────────────────────────────
 class _PwField extends StatelessWidget {
   final TextEditingController ctrl;
   final String label;

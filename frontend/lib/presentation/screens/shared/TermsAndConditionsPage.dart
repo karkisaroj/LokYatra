@@ -259,8 +259,6 @@ class _TermsAndConditionsPageState extends State<TermsAndConditionsPage> {
                       SizedBox(height: isWide ? 32 : 24),
 
                       _Footer(),
-
-                      // Extra bottom padding so last content clears the button bar
                       if (widget.isRegistration) const SizedBox(height: 16),
                     ]),
               ),
@@ -555,7 +553,7 @@ class _AcceptBar extends StatelessWidget {
     required this.onAccept,
   });
 
-  static const _dark       = Color(0xFF2D1B10);
+  static const _dark = Color(0xFF2D1B10);
 
   @override
   Widget build(BuildContext context) {

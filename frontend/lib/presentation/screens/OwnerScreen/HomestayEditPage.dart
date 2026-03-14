@@ -530,8 +530,6 @@ class HomestayEditPageState extends State<HomestayEditPage> {
 
     Widget imageContent;
     if (newFile != null) {
-      // Web must use Image.memory(bytes) — Image.file uses dart:io which
-      // is not available on web. bytes is only populated when withData:true.
       if (kIsWeb && newFile.bytes != null) {
         imageContent = Image.memory(
           newFile.bytes!,

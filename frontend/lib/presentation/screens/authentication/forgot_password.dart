@@ -12,7 +12,7 @@ class ForgotPassword extends StatefulWidget {
 
 class _ForgotPasswordState extends State<ForgotPassword> {
   static const ink    = Color(0xFF2D1B10);
-  static const accent = Color(0xFFCD6E4E);
+  static const accent = Color(0xFF474646);
 
   final _emailCtrl = TextEditingController();
   final _formKey   = GlobalKey<FormState>();
@@ -141,10 +141,12 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               vertical: 16, horizontal: 16),
                         ),
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty)
+                          if (v == null || v.trim().isEmpty) {
                             return 'Email is required';
-                          if (!v.contains('@') || !v.contains('.'))
+                          }
+                          if (!v.contains('@') || !v.contains('.')) {
                             return 'Enter a valid email';
+                          }
                           return null;
                         },
                       ),

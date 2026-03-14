@@ -17,7 +17,7 @@ class _PaymentsState extends State<Payments> {
   static const _bg         = Color(0xFFF4F6F9);
 
   String _filter = 'All'; // All | Khalti | Cash
-  String _status = 'All'; // All | Completed | Pending | ...
+  String _status = 'All'; // All | Completed | Pending
   String _search = '';
 
   Map<String, dynamic> _inner(Map<String, dynamic> b) =>
@@ -90,7 +90,6 @@ class _PaymentsState extends State<Payments> {
         return Container(
           color: _bg,
           child: Column(children: [
-            // ── Stats strip ────────────────────────────────────────────────
             Container(
               color: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -110,7 +109,7 @@ class _PaymentsState extends State<Payments> {
               }),
             ),
 
-            // ── Filters ────────────────────────────────────────────────────
+            // Filters
             Container(
               color: Colors.white,
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
@@ -174,7 +173,7 @@ class _PaymentsState extends State<Payments> {
               ]),
             ),
 
-            // ── List ───────────────────────────────────────────────────────
+            // List
             Expanded(
               child: filtered.isEmpty
                   ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -221,7 +220,6 @@ class _PaymentsState extends State<Payments> {
   };
 }
 
-// ── Payment card — plain pixel values ─────────────────────────────────────────
 
 class _PaymentCard extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -331,7 +329,6 @@ class _PaymentCard extends StatelessWidget {
   }
 }
 
-// ── Stat tile — plain pixel values ────────────────────────────────────────────
 
 class _StatTile extends StatelessWidget {
   final String label, value;
@@ -369,7 +366,6 @@ class _StatTile extends StatelessWidget {
   );
 }
 
-// ── Filter chip — plain pixel values ──────────────────────────────────────────
 
 class _FilterChip extends StatelessWidget {
   final String label;

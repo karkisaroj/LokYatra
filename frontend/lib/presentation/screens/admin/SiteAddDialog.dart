@@ -209,7 +209,6 @@ class _SiteAddPageState extends State<SiteAddPage> {
   }
 }
 
-// ── SiteEditPage ──────────────────────────────────────────────────────────────
 
 class SiteEditPage extends StatefulWidget {
   final CulturalSite site;
@@ -445,7 +444,6 @@ class _SiteEditPageState extends State<SiteEditPage> {
   }
 }
 
-// ── Shared form widgets (plain pixel values — no screenutil) ──────────────────
 
 class _Section extends StatelessWidget {
   final String title;

@@ -30,7 +30,7 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
     final str = date.toString().trim();
     if (str.isEmpty) return '—';
     DateTime? d = DateTime.tryParse(str);
-    d ??= DateTime.tryParse(str.replaceAll(RegExp(r'[Z\+].*$'), '').trim());
+    d ??= DateTime.tryParse(str.replaceAll(RegExp(r'[Z+].*$'), '').trim());
     if (d == null) return str;
     final l = d.toLocal();
     const m = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -208,17 +208,17 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
     ]);
   }
 
-  Widget _mobile(List<String> imgs, String title, String type, dynamic readTime,
+  Widget _mobile(List<String> images, String title, String type, dynamic readTime,
       String content, String hist, String cultural, String created, String updated) {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (imgs.isNotEmpty)
+        if (images.isNotEmpty)
           ClipRRect(
             borderRadius: BorderRadius.circular(14),
             child: CachedNetworkImage(
-              imageUrl: getProxyImageUrl(imgs.first),
-              cacheKey: 'full_${imgs.first}',
+              imageUrl: getProxyImageUrl(images.first),
+              cacheKey: 'full_${images.first}',
               width: double.infinity, height: 220,
               fit: BoxFit.contain,
               filterQuality: FilterQuality.high,

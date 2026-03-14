@@ -14,7 +14,7 @@ class ResetPasswordPage extends StatefulWidget {
 
 class _ResetPasswordPageState extends State<ResetPasswordPage> {
   static const ink    = Color(0xFF2D1B10);
-  static const accent = Color(0xFFCD6E4E);
+  static const accent = Color(0xFF3C3B3B);
 
   final _formKey      = GlobalKey<FormState>();
   final _tokenCtrl    = TextEditingController();
@@ -176,10 +176,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                       const EdgeInsets.symmetric(vertical: 16),
                     ),
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty)
+                      if (v == null || v.trim().isEmpty) {
                         return 'Enter the 6-digit code';
-                      if (v.trim().length != 6)
+                      }
+                      if (v.trim().length != 6) {
                         return 'Code must be exactly 6 digits';
+                      }
                       return null;
                     },
                   ),
@@ -197,8 +199,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     onToggle: () =>
                         setState(() => _showPassword = !_showPassword),
                     validator: (v) {
-                      if (v == null || v.isEmpty)
+                      if (v == null || v.isEmpty) {
                         return 'Password is required';
+                      }
                       if (v.length < 6) return 'Minimum 6 characters';
                       return null;
                     },
@@ -217,10 +220,12 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                     onToggle: () =>
                         setState(() => _showConfirm = !_showConfirm),
                     validator: (v) {
-                      if (v == null || v.isEmpty)
+                      if (v == null || v.isEmpty) {
                         return 'Please confirm your password';
-                      if (v != _passwordCtrl.text)
+                      }
+                      if (v != _passwordCtrl.text) {
                         return 'Passwords do not match';
+                      }
                       return null;
                     },
                   ),

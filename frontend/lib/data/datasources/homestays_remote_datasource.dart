@@ -30,8 +30,6 @@ class HomestaysRemoteDatasource {
   }
 
   Future<MultipartFile> toMultipart(PlatformFile file) async {
-    // On web, dart:io is unavailable — always use bytes
-    // On mobile/desktop, path is a real file path — use fromFile
     if (kIsWeb) {
       return MultipartFile.fromBytes(file.bytes!, filename: file.name);
     } else {
@@ -76,8 +74,7 @@ class HomestaysRemoteDatasource {
       onSendProgress: (sent, total) {
         onSendProgress?.call(sent, total);
         if (total > 0) {
-          final pct = (sent / total * 100).toStringAsFixed(0);
-          print('[Upload] $pct% ($sent/$total bytes)');
+          (sent / total * 100).toStringAsFixed(0);
         }
       },
     );
@@ -109,8 +106,7 @@ class HomestaysRemoteDatasource {
       onSendProgress: (sent, total) {
         onSendProgress?.call(sent, total);
         if (total > 0) {
-          final pct = (sent / total * 100).toStringAsFixed(0);
-          print('[Upload] $pct% ($sent/$total bytes)');
+          (sent / total * 100).toStringAsFixed(0);
         }
       },
     );

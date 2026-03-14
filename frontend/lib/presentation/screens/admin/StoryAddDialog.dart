@@ -130,11 +130,9 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Basic info section
                           _SectionLabel('Basic Information'),
                           SizedBox(height: 10.h),
 
-                          // Title + Read time row
                           isWide
                               ? Row(children: [
                             Expanded(

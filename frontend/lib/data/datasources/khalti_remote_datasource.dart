@@ -1,5 +1,3 @@
-// lib/data/datasources/khalti_remote_datasource.dart
-
 import 'package:dio/dio.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
@@ -23,16 +21,12 @@ class KhaltiRemoteDatasource {
     });
   }
 
-  /// Initiates Khalti payment for a confirmed booking.
-  /// Returns: { pidx, paymentUrl, bookingId, amount }
   Future<Response> initiatePayment(int bookingId) async =>
       _dio.post(
         'api/Khalti/initiate/$bookingId',
         options: await _authOptions(),
       );
 
-  /// Verifies payment after WebView redirects back.
-  /// Body: { "pidx": "..." }
   Future<Response> verifyPayment(String pidx) async =>
       _dio.post(
         'api/Khalti/verify',

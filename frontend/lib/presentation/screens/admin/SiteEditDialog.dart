@@ -119,14 +119,6 @@ class _SiteEditPageState extends State<SiteEditPage> {
       'BestTimeToVisit': _bestTime.text.trim().isEmpty ? null : _bestTime.text.trim(),
       'IsUNESCO': _isUnesco,
       // We might need to handle existing images if the backend supports partial updates or expects the full list of URLs to keep.
-      // Assuming the backend handles "files" as NEW images and doesn't delete existing unless specified.
-      // If the backend replaces all images, we need a way to tell it which existing ones to keep.
-      // For now, let's assume standard behavior: new files are added.
-      // If we need to delete specific images, that's usually a separate API or a field 'imagesToDelete'.
-      // Based on the user's provided code, it seems they just send fields and files.
-      // The user's code had logic: "If user removed images but didn't add new ones, warn them".
-      // This implies the backend might REPLACE images if new ones are sent, or maybe it doesn't support deleting individual images yet?
-      // Let's stick to the provided pattern: update fields and send new files.
     };
     fields.removeWhere((key, value) => value == null);
 
@@ -209,7 +201,7 @@ class _SiteEditPageState extends State<SiteEditPage> {
                             title: Text('UNESCO Site', style: GoogleFonts.dmSans()),
                             value: _isUnesco,
                             onChanged: (val) => setState(() => _isUnesco = val),
-                            activeColor: _brown,
+                            activeThumbColor: _brown,
                             contentPadding: EdgeInsets.zero,
                           ),
                         ]),

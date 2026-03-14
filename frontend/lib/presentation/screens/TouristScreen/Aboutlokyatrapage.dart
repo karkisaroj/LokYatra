@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AboutLokyatraPage extends StatelessWidget {
   const AboutLokyatraPage({super.key});
 
-  static const _terracotta = Color(0xFFCD6E4E);
+  static const _terracotta = Color(0xFF474646);
   static const _dark       = Color(0xFF2D1B10);
   static const _cream      = Color(0xFFFAF7F2);
 
@@ -37,7 +37,7 @@ class AboutLokyatraPage extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 28.w, vertical: 40.h),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF2D1B10), Color(0xFF8B5E3C)],
+                colors: [Color(0xFF686868), Color(0xFF0B0B0B)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -82,8 +82,6 @@ class AboutLokyatraPage extends StatelessWidget {
             padding: EdgeInsets.all(20.w),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
-                  // Mission
                   _Section(
                     icon: Icons.flag_rounded,
                     iconColor: _terracotta,
@@ -97,8 +95,6 @@ class AboutLokyatraPage extends StatelessWidget {
                   ),
 
                   SizedBox(height: 16.h),
-
-                  // What we offer
                   _Section(
                     icon: Icons.star_rounded,
                     iconColor: Colors.amber[700]!,
@@ -119,7 +115,6 @@ class AboutLokyatraPage extends StatelessWidget {
 
                   SizedBox(height: 16.h),
 
-                  // Stats
                   _Section(
                     icon: Icons.bar_chart_rounded,
                     iconColor: Colors.blue[700]!,
@@ -135,7 +130,6 @@ class AboutLokyatraPage extends StatelessWidget {
 
                   SizedBox(height: 16.h),
 
-                  // How it works
                   _Section(
                     icon: Icons.route_rounded,
                     iconColor: Colors.green[700]!,
@@ -151,7 +145,6 @@ class AboutLokyatraPage extends StatelessWidget {
 
                   SizedBox(height: 16.h),
 
-                  // Values
                   _Section(
                     icon: Icons.favorite_rounded,
                     iconColor: Colors.red[500]!,
@@ -173,7 +166,6 @@ class AboutLokyatraPage extends StatelessWidget {
 
                   SizedBox(height: 16.h),
 
-                  // Contact / links
                   _Section(
                     icon: Icons.link_rounded,
                     iconColor: Colors.purple[700]!,
@@ -189,7 +181,6 @@ class AboutLokyatraPage extends StatelessWidget {
 
                   SizedBox(height: 24.h),
 
-                  // Footer
                   Center(child: Column(children: [
                     Container(
                       width: 40.w, height: 2.h,
@@ -199,7 +190,7 @@ class AboutLokyatraPage extends StatelessWidget {
                       ),
                     ),
                     SizedBox(height: 16.h),
-                    Text('Made with ❤️ in Nepal',
+                    Text('Made with love for Nepal',
                         style: GoogleFonts.dmSans(
                             fontSize: 13.sp, color: Colors.grey[500])),
                     SizedBox(height: 4.h),
@@ -207,7 +198,7 @@ class AboutLokyatraPage extends StatelessWidget {
                         style: GoogleFonts.dmSans(
                             fontSize: 11.sp, color: Colors.grey[400])),
                     SizedBox(height: 4.h),
-                    Text('FYP Project · Tribhuvan University',
+                    Text('FYP Project · Islington College',
                         style: GoogleFonts.dmSans(
                             fontSize: 11.sp, color: Colors.grey[400])),
                   ])),

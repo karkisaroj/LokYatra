@@ -13,7 +13,7 @@ class ChangePasswordPage extends StatefulWidget {
 }
 
 class _ChangePasswordPageState extends State<ChangePasswordPage> {
-  static const _brown = Color(0xFF8B5E3C);
+  static const _brown = Color(0xFF393838);
   static const _dark  = Color(0xFF2D1B10);
   static const _cream = Color(0xFFFAF7F2);
 

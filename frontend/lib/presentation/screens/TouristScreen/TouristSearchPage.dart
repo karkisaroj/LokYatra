@@ -23,7 +23,6 @@ class _TouristSearchPageState extends State<TouristSearchPage> {
   static const _dark = Color(0xFF2D1B10);
   static const _cream = Color(0xFFFAF7F2);
 
-  // Mock data for recent/popular searches
   final List<String> _recentSearches = [
     'Pashupatinath',
     'Homestay Boudha',

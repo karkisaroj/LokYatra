@@ -50,10 +50,9 @@ class UserBloc extends Bloc<UserEvent, UserState> {
         emit(UserDeleted(message: msg, homestaysDeleted: homestaysCount));
         emit(UserLoaded(updated));
       } else {
-        // 400 / 403 — show the backend's block reason
         final msg = (res.data as Map?)?['message'] ?? 'Could not delete user';
         emit(UserError(msg.toString()));
-        emit(UserLoaded(current)); // restore list
+        emit(UserLoaded(current));
       }
     } on DioException catch (e) {
       final msg = (e.response?.data as Map?)?['message']

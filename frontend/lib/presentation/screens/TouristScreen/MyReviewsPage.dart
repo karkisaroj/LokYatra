@@ -104,7 +104,6 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
   }
 }
 
-// ── Individual card ───────────────────────────────────────────────────────────
 
 class _MyReviewCard extends StatelessWidget {
   final Review review;
@@ -135,7 +134,6 @@ class _MyReviewCard extends StatelessWidget {
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-        // ── Header: target name + type badge ───────────────────────────
         Row(children: [
           Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(targetName,
@@ -193,7 +191,6 @@ class _MyReviewCard extends StatelessWidget {
 
         SizedBox(height: 14.h),
 
-        // ── Star rating + date ──────────────────────────────────────────
         Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Row(children: List.generate(5, (i) => Icon(
             i < review.rating ? Icons.star_rounded : Icons.star_outline_rounded,
@@ -204,7 +201,6 @@ class _MyReviewCard extends StatelessWidget {
               style: GoogleFonts.dmSans(fontSize: 11.sp, color: Colors.grey[400])),
         ]),
 
-        // ── Comment ─────────────────────────────────────────────────────
         if (review.comment != null && review.comment!.isNotEmpty) ...[
           SizedBox(height: 10.h),
           Container(
@@ -229,7 +225,6 @@ class _MyReviewCard extends StatelessWidget {
                   fontStyle: FontStyle.italic)),
         ],
 
-        // ── Updated indicator ────────────────────────────────────────────
         if (review.updatedAt.isAfter(
             review.createdAt.add(const Duration(minutes: 1)))) ...[
           SizedBox(height: 8.h),

@@ -33,7 +33,6 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
       emit(SitesLoaded(sites));
     }
 
-    // 2. Try network
     final isOnline = await _sqlite.isOnline();
     if (!isOnline) {
       if (cached.isEmpty) emit(const SitesError('No internet connection and no cached data.'));
@@ -113,7 +112,6 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
         if (raw is String) raw = jsonDecode(raw);
         final site = CulturalSite.fromJson(raw as Map<String, dynamic>);
 
-        // Update this site in SQLite cache
         await _upsertSiteInCache(raw);
 
         emit(SiteDetailLoaded(site));
@@ -137,7 +135,7 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
     if (_memCache != null) emit(SitesLoaded(_memCache!));
   }
 
-  // ── Admin CRUD ────────────────────────────────────────────────────────────
+  //Admin CRUD
 
   Future<void> _onCreateSite(CreateSite event, Emitter<SitesState> emit) async {
     emit(SitesLoading());
@@ -184,8 +182,7 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
     }
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
-
+//helper methods
   List<CulturalSite> _parseSites(List<dynamic> raw) =>
       raw.map((e) => CulturalSite.fromJson(e as Map<String, dynamic>)).toList();
 

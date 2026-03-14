@@ -67,9 +67,6 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
     return buildMobileLayout(context, site, images);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // WEB LAYOUT
-  // ═══════════════════════════════════════════════════════════════════════════
   Widget buildWebLayout(BuildContext context, CulturalSite site, List<String> images) {
     return Scaffold(
       backgroundColor: cream,
@@ -77,10 +74,8 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Full-width hero ──────────────────────────────────────────────
             webHero(context, site, images),
 
-            // ── Main body: full width two-column ────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 48, vertical: 40),
               child: Row(
@@ -113,10 +108,8 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          // Dark bg for contain mode
           Container(color: const Color(0xFF111111)),
 
-          // PageView — physics adjusted for web mouse drag
           images.isEmpty
               ? Container(
               color: Colors.grey[300],
@@ -137,7 +130,6 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
             ),
           ),
 
-          // Gradient — only bottom portion for title
           Positioned.fill(
             child: IgnorePointer(
               child: DecoratedBox(
@@ -309,7 +301,6 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Info chips full row
         Wrap(
           spacing: 12,
           runSpacing: 12,
@@ -365,7 +356,6 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
           const SizedBox(height: 32),
         ],
 
-        // Gallery full width in left column if multiple images
         if (images.length > 1) ...[
           SiteSecHeader('Photo Gallery',
               Icons.photo_library_outlined, dark, true),
@@ -499,7 +489,6 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
 
         const SizedBox(height: 24),
 
-        // Quick stats card
         Container(
           width: double.infinity,
           padding: const EdgeInsets.all(24),
@@ -554,9 +543,6 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════════════════════
-  // MOBILE LAYOUT — unchanged
-  // ═══════════════════════════════════════════════════════════════════════════
   Widget buildMobileLayout(BuildContext context, CulturalSite site, List<String> images) {
     final double headerHeight = 340.h;
 
@@ -791,10 +777,10 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
             Icons.history_edu_outlined, teal, wide),
         SizedBox(height: 10.h),
         SiteContentCard(
+            wide: wide,
             child: Text(site.historicalSignificance!,
                 style: GoogleFonts.dmSans(
-                    fontSize: 14.sp, height: 1.65, color: warmGrey)),
-            wide: wide),
+                    fontSize: 14.sp, height: 1.65, color: warmGrey))),
         SizedBox(height: 20.h),
       ],
       if ((site.culturalImportance ?? '').isNotEmpty) ...[
@@ -802,10 +788,10 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
             Icons.temple_hindu_outlined, terracotta, wide),
         SizedBox(height: 10.h),
         SiteContentCard(
+            wide: wide,
             child: Text(site.culturalImportance!,
                 style: GoogleFonts.dmSans(
-                    fontSize: 14.sp, height: 1.65, color: warmGrey)),
-            wide: wide),
+                    fontSize: 14.sp, height: 1.65, color: warmGrey))),
         SizedBox(height: 20.h),
       ],
       if (images.length > 1) ...[
@@ -861,6 +847,7 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
       SiteSecHeader('Site Details', Icons.info_outline_rounded, dark, wide),
       SizedBox(height: 10.h),
       SiteContentCard(
+        wide: wide,
         child: Column(children: [
           SiteDetailRow(Icons.calendar_today_outlined, 'Added On',
               formatDate(site.createdAt), wide),
@@ -872,14 +859,12 @@ class OwnerSiteDetailPageState extends State<OwnerSiteDetailPage> {
             SiteDetailRow(Icons.map_outlined, 'Address', site.address!, wide),
           ],
         ]),
-        wide: wide,
       ),
       SizedBox(height: 32.h),
     ]);
   }
 }
 
-// ── Nav arrow button (web only) ─────────────────────────────────────────────
 class _NavArrow extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -932,14 +917,13 @@ class _SidebarDetailRow extends StatelessWidget {
       ]);
 }
 
-// ── Shared helpers ──────────────────────────────────────────────────────────
 
 class SiteSecHeader extends StatelessWidget {
   final String title;
   final IconData icon;
   final Color color;
   final bool wide;
-  const SiteSecHeader(this.title, this.icon, this.color, this.wide);
+  const SiteSecHeader(this.title, this.icon, this.color, this.wide, {super.key});
 
   @override
   Widget build(BuildContext context) => Row(children: [

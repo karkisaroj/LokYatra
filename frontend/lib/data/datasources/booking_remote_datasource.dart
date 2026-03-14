@@ -1,5 +1,3 @@
-// lib/data/datasources/booking_remote_datasource.dart
-
 import 'package:dio/dio.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
@@ -24,7 +22,6 @@ class BookingRemoteDatasource {
     });
   }
 
-  // ── Tourist ──────────────────────────────────────────────────────────────
 
   Future<Response> createBooking({
     required int homestayId,
@@ -58,7 +55,6 @@ class BookingRemoteDatasource {
   Future<Response> cancelBooking(int id) async =>
       _dio.patch('api/Booking/$id/cancel', options: await _authOptions());
 
-  // ── Owner ─────────────────────────────────────────────────────────────────
 
   Future<Response> getOwnerBookings() async =>
       _dio.get('api/Booking/owner-bookings', options: await _authOptions());
@@ -82,12 +78,12 @@ class BookingRemoteDatasource {
   Future<Response> getOwnerRevenue() async =>
       _dio.get('api/Booking/owner-revenue', options: await _authOptions());
 
-  // ── Admin ─────────────────────────────────────────────────────────────────
+  //Admin
 
   Future<Response> getAllBookings() async =>
       _dio.get('api/Booking/all', options: await _authOptions());
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  //Helpers
 
   String _fmtDate(DateTime d) =>
       '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';

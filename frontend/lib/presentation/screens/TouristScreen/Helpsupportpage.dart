@@ -11,7 +11,7 @@ class HelpSupportPage extends StatefulWidget {
 }
 
 class _HelpSupportPageState extends State<HelpSupportPage> {
-  static const _brown  = Color(0xFF8B5E3C);
+  static const _brown  = Color(0xFF4A4A4A);
   static const _cream  = Color(0xFFFAF7F2);
   static const _dark   = Color(0xFF2D1B10);
 
@@ -81,7 +81,7 @@ class _HelpSupportPageState extends State<HelpSupportPage> {
             padding: EdgeInsets.all(24.w),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF8B5E3C), Color(0xFFCD6E4E)],
+                colors: [Color(0xFF817F7F), Color(0xFF0C0C0C)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),

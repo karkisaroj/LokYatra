@@ -106,7 +106,7 @@ class NotificationsPage extends StatelessWidget {
                     padding: EdgeInsets.symmetric(
                         vertical: _h(12, wide), horizontal: _w(16, wide)),
                     itemCount: state.notifications.length,
-                    separatorBuilder: (_, __) => SizedBox(height: _h(8, wide)),
+                    separatorBuilder: (_, _) => SizedBox(height: _h(8, wide)),
                     itemBuilder: (context, i) => _NotificationCard(
                         notification: state.notifications[i], wide: wide),
                   ),
@@ -268,13 +268,13 @@ class _NotificationCard extends StatelessWidget {
 
   ({IconData icon, Color color, Color tint}) _typeInfo(String type) {
     return switch (type) {
-      'booking_created'   => (icon: Icons.calendar_month_outlined,       color: const Color(0xFF2C3A4A),  tint: const Color(0xFFF0F4F8)),
-      'booking_confirmed' => (icon: Icons.check_circle_outline_rounded,  color: const Color(0xFF3D5A4F),  tint: const Color(0xFFF0F7F4)),
-      'booking_rejected'  => (icon: Icons.cancel_outlined,               color: Colors.red.shade700,      tint: Colors.red.shade50),
-      'booking_completed' => (icon: Icons.done_all_rounded,              color: const Color(0xFF8B7355),  tint: const Color(0xFFFAF7F2)),
-      'payment_received'  => (icon: Icons.payments_outlined,             color: const Color(0xFF5C35AA),  tint: const Color(0xFFF5F0FF)),
-      'booking_cancelled' => (icon: Icons.event_busy_outlined,           color: Colors.orange.shade700,   tint: Colors.orange.shade50),
-      _                   => (icon: Icons.notifications_outlined,        color: const Color(0xFFCD6E4E),  tint: const Color(0xFFFDF3EE)),
+      'booking_created'   => (icon: Icons.calendar_month_outlined,color: const Color(0xFF2C3A4A),tint: const Color(0xFFF0F4F8)),
+      'booking_confirmed' => (icon: Icons.check_circle_outline_rounded,color: const Color(0xFF3D5A4F),tint: const Color(0xFFF0F7F4)),
+      'booking_rejected'  => (icon: Icons.cancel_outlined,color: Colors.red.shade700,tint:Colors.red.shade50),
+      'booking_completed' => (icon: Icons.done_all_rounded,color: const Color(0xFF8B7355),tint: const Color(0xFFFAF7F2)),
+      'payment_received'  => (icon: Icons.payments_outlined,color: const Color(0xFF5C35AA),tint: const Color(0xFFF5F0FF)),
+      'booking_cancelled' => (icon: Icons.event_busy_outlined,color: Colors.orange.shade700,tint: Colors.orange.shade50),
+      _ => (icon: Icons.notifications_outlined,color: const Color(0xFFCD6E4E),tint: const Color(0xFFFDF3EE)),
     };
   }
 

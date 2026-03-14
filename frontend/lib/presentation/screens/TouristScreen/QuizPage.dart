@@ -16,7 +16,7 @@ class TouristQuizPage extends StatefulWidget {
 
 class _TouristQuizPageState extends State<TouristQuizPage> {
   static const ink    = Color(0xFF2D1B10);
-  static const accent = Color(0xFFCD6E4E);
+  static const accent = Color(0xFF3A3A3A);
   static const bg     = Color(0xFFFAF7F2);
   static const green  = Color(0xFF2E7D52);
 
@@ -463,9 +463,9 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
           ...recent.take(3).map((a) {
             final score = a['score']          as int? ?? 0;
             final total = a['totalQuestions'] as int? ?? 10;
-            final pts   = a['pointsEarned']   as int? ?? 0;
-            final pct   = total > 0 ? score / total : 0.0;
-            final c     = pct >= 0.7 ? green : accent;
+            final pts = a['pointsEarned']   as int? ?? 0;
+            final pct= total > 0 ? score / total : 0.0;
+            final c= pct >= 0.7 ? green : accent;
             return Container(
               margin: EdgeInsets.only(bottom: 8.h),
               padding: EdgeInsets.all(14.w),
@@ -684,18 +684,18 @@ class _TouristQuizPageState extends State<TouristQuizPage> {
 
   Widget buildResults() {
     if (result == null) return const SizedBox.shrink();
-    final score  = result!['score']        as int? ?? 0;
-    final total  = result!['total']        as int? ?? 10;
+    final score  = result!['score'] as int? ?? 0;
+    final total  = result!['total'] as int? ?? 10;
     final pts    = result!['pointsEarned'] as int? ?? 0;
-    final allPts = result!['totalPoints']  as int? ?? 0;
+    final allPts = result!['totalPoints'] as int? ?? 0;
     final left   = result!['attemptsLeft'] as int? ?? 0;
     final list   = (result!['results'] as List? ?? [])
         .map((e) => Map<String, dynamic>.from(e as Map)).toList();
     final pct  = total > 0 ? score / total : 0.0;
     final c    = pct >= 0.8 ? green : pct >= 0.5 ? accent : Colors.red[600]!;
-    final msg  = pct >= 0.8 ? 'Excellent! 🎉'
-        : pct >= 0.5 ? 'Good job! 👍'
-        : 'Keep trying! 💪';
+    final msg  = pct >= 0.8 ? 'Excellent!'
+        : pct >= 0.5 ? 'Good job! '
+        : 'Keep trying!';
 
     return SingleChildScrollView(
       key: const ValueKey('results'),

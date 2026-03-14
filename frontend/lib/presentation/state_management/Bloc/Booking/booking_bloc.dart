@@ -1,5 +1,3 @@
-// lib/presentation/state_management/Bloc/booking/booking_bloc.dart
-
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../data/datasources/booking_remote_datasource.dart';
 import 'booking_event.dart';
@@ -8,7 +6,6 @@ import 'booking_state.dart';
 class BookingBloc extends Bloc<BookingEvent, BookingState> {
   final BookingRemoteDatasource _remote = BookingRemoteDatasource();
 
-  // Cache bookings so we can re-emit them when revenue loads
   List<Map<String, dynamic>> _cachedOwnerBookings = [];
 
   BookingBloc() : super(BookingInitial()) {
@@ -21,7 +18,6 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     on<LoadAllBookings>(_onLoadAllBookings);
   }
 
-  // ── Tourist ─────────────────────────────────────────────────────────────────
 
   Future<void> _onLoadMyBookings(
       LoadMyBookings event, Emitter<BookingState> emit) async {
@@ -55,7 +51,6 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
     }
   }
 
-  // ── Owner ────────────────────────────────────────────────────────────────────
 
   Future<void> _onLoadOwnerBookings(
       LoadOwnerBookings event, Emitter<BookingState> emit) async {
@@ -66,7 +61,6 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
         final raw = resp.data as List<dynamic>;
         _cachedOwnerBookings = raw.cast<Map<String, dynamic>>();
         emit(OwnerBookingsLoaded(_cachedOwnerBookings));
-        // Also reload revenue whenever bookings refresh
         add(const LoadOwnerRevenue());
       } else {
         emit(BookingError('Failed to load: ${resp.statusCode}'));
@@ -110,7 +104,7 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
       final resp = await _remote.markPaymentReceived(event.bookingId);
       if (resp.statusCode == 200) {
         emit(const BookingActionSuccess('Payment recorded successfully!'));
-        add(const LoadOwnerBookings()); // refresh list + revenue
+        add(const LoadOwnerBookings());
       } else {
         emit(BookingError('Failed to record payment: ${resp.statusCode}'));
       }
@@ -134,12 +128,12 @@ class BookingBloc extends Bloc<BookingEvent, BookingState> {
           paidBookings:   (d['paidBookings']   as int?)            ?? 0,
           totalBookings:  (d['totalBookings']  as int?)            ?? 0,
         ));
+      } else {
+        emit(BookingError('Failed to load revenue: ${resp.statusCode}'));
       }
-      // silently ignore revenue errors — bookings are still shown
     } catch (_) {}
   }
 
-  // ── Admin ────────────────────────────────────────────────────────────────────
 
   Future<void> _onLoadAllBookings(
       LoadAllBookings event, Emitter<BookingState> emit) async {

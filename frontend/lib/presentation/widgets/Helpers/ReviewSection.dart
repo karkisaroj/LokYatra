@@ -5,10 +5,6 @@ import '../../../data/datasources/review_remote_datasource.dart';
 import '../../../data/models/Review.dart';
 import 'ReviewDialog.dart';
 
-/// Drop-in reviews section for homestay and site detail pages.
-/// Pass [homestayId] for homestay reviews, [siteId] for site reviews.
-/// Pass [completedBookingId] + [homestayId] to allow tourist to write a review.
-/// Pass [canReviewSite] = true to allow tourist to write a site review.
 class ReviewsSection extends StatefulWidget {
   final int? homestayId;
   final int? siteId;
@@ -51,9 +47,7 @@ class _ReviewsSectionState extends State<ReviewsSection> {
           : await _datasource.getSiteReviews(widget.siteId!);
       if (resp.statusCode == 200 && mounted) {
         setState(() {
-          _reviews = (resp.data as List<dynamic>)
-              .map((j) => Review.fromJson(j as Map<String, dynamic>))
-              .toList();
+          _reviews = (resp.data as List<dynamic>).map((j) => Review.fromJson(j as Map<String, dynamic>)).toList();
         });
       }
     } catch (_) {
@@ -62,9 +56,7 @@ class _ReviewsSectionState extends State<ReviewsSection> {
     }
   }
 
-  double get _average => _reviews.isEmpty
-      ? 0.0
-      : _reviews.fold(0.0, (s, r) => s + r.rating) / _reviews.length;
+  double get _average => _reviews.isEmpty ? 0.0 : _reviews.fold(0.0, (s, r) => s + r.rating) / _reviews.length;
 
   Widget _stars(double avg, {double size = 16}) {
     return Row(mainAxisSize: MainAxisSize.min, children: List.generate(5, (i) {
@@ -85,7 +77,6 @@ class _ReviewsSectionState extends State<ReviewsSection> {
 
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
-      // ── Section header ──────────────────────────────────────────────────
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
         Text('Reviews',
             style: GoogleFonts.playfairDisplay(
@@ -122,7 +113,6 @@ class _ReviewsSectionState extends State<ReviewsSection> {
 
       SizedBox(height: 10.h),
 
-      // ── Average rating summary bar ──────────────────────────────────────
       if (_reviews.isNotEmpty) ...[
         Container(
           padding: EdgeInsets.all(16.w),
@@ -183,11 +173,9 @@ class _ReviewsSectionState extends State<ReviewsSection> {
         SizedBox(height: 14.h),
       ],
 
-      // ── Loading ─────────────────────────────────────────────────────────
       if (_loading)
         const Center(child: Padding(padding: EdgeInsets.all(24), child: CircularProgressIndicator()))
 
-      // ── Empty state ─────────────────────────────────────────────────────
       else if (_reviews.isEmpty)
         Container(
           padding: EdgeInsets.all(24.w),
@@ -209,7 +197,6 @@ class _ReviewsSectionState extends State<ReviewsSection> {
           ])),
         )
 
-      // ── Review cards ────────────────────────────────────────────────────
       else
         Column(children: [
           ...displayed.map((r) => _ReviewCard(review: r)),
@@ -231,7 +218,6 @@ class _ReviewsSectionState extends State<ReviewsSection> {
   }
 }
 
-// ── Individual review card ────────────────────────────────────────────────────
 
 class _ReviewCard extends StatelessWidget {
   final Review review;

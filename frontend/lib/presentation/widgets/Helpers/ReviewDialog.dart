@@ -173,19 +173,14 @@ class _ReviewDialogState extends State<ReviewDialog> {
           ? const SizedBox(height: 120, child: Center(child: CircularProgressIndicator()))
           : SingleChildScrollView(
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            
-                    // Handle bar
-                    Center(child: Container(
+              Center(child: Container(
             width: 40, height: 4,
             decoration: BoxDecoration(
               color: Colors.grey[300],
               borderRadius: BorderRadius.circular(2),
-            ),
-                    )),
+            ),) ),
                     const SizedBox(height: 20),
-            
-                    // Title
-                    Row(children: [
+            Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(
                 _existing != null ? 'Edit Your Review' : 'Leave a Review',
@@ -203,23 +198,21 @@ class _ReviewDialogState extends State<ReviewDialog> {
                 tooltip: 'Delete review',
               ),
                     ]),
-            
-                    const SizedBox(height: 24),
-            
-                    // Star rating picker
-                    Text('Your Rating *',
+              const SizedBox(height: 24),
+
+              Text('Your Rating *',
               style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: _dark)),
-                    const SizedBox(height: 10),
-                    Row(children: List.generate(5, (i) {
-            final star = i + 1;
-            return GestureDetector(
-              onTap: () => setState(() => _rating = star),
-              child: Padding(
-                padding: const EdgeInsets.only(right: 8),
-                child: Icon(
-                  star <= _rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                  size: 36,
-                  color: star <= _rating ? const Color(0xFFC7A26B) : Colors.grey[300],
+              const SizedBox(height: 10),
+              Row(children: List.generate(5, (i) {
+                final star = i + 1;
+                return GestureDetector(
+                  onTap: () => setState(() => _rating = star),
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: Icon(
+                      star <= _rating ? Icons.star_rounded : Icons.star_outline_rounded,
+                      size: 36,
+                      color: star <= _rating ? const Color(0xFFC7A26B) : Colors.grey[300],
                 ),
               ),
             );
@@ -230,20 +223,16 @@ class _ReviewDialogState extends State<ReviewDialog> {
               ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'][_rating],
               style: GoogleFonts.dmSans(
                   fontSize: 12, color: _terracotta, fontWeight: FontWeight.w600),
-            ),
-                    ],
-            
-                    const SizedBox(height: 20),
-            
-                    // Comment field
-                    Text('Comment (optional)',
+            ),],
+              const SizedBox(height: 20),
+              Text('Comment (optional)',
               style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: _dark)),
-                    const SizedBox(height: 8),
-                    Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFFAF7F2),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Colors.grey.shade200),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFAF7F2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
             ),
             child: TextField(
               controller: _commentCtrl,
@@ -257,22 +246,18 @@ class _ReviewDialogState extends State<ReviewDialog> {
                 contentPadding: const EdgeInsets.all(14),
                 counterStyle: GoogleFonts.dmSans(fontSize: 11, color: Colors.grey[400]),
               ),
-            ),
-                    ),
-            
-                    const SizedBox(height: 20),
-            
-                    // Submit button
-                    SizedBox(
-            width: double.infinity,
-            height: 50,
-            child: ElevatedButton(
-              onPressed: _submitting ? null : _submit,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _terracotta,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),),
+              const SizedBox(height: 20),
+              SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _submitting ? null : _submit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _terracotta,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               child: _submitting
                   ? const SizedBox(width: 20, height: 20,
@@ -282,14 +267,13 @@ class _ReviewDialogState extends State<ReviewDialog> {
                 style: GoogleFonts.dmSans(fontSize: 15, fontWeight: FontWeight.bold),
               ),
             ),
-                    ),
-                  ]),
+              ),
+            ]),
           ),
     );
   }
 }
 
-// ── Static helper to open the dialog ─────────────────────────────────────────
 
 Future<bool> showReviewDialog(
     BuildContext context, {
