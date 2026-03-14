@@ -1,8 +1,7 @@
-﻿using backend.Models;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace backend.Entities
+namespace backend.Models
 {
     [Table("User")]
     public class User

@@ -3,7 +3,6 @@
 // Then add DbSet<SavedHomestay> SavedHomestays in AppDbContext.
 // Run: dotnet ef migrations add AddSavedHomestays && dotnet ef database update
 
-using backend.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 

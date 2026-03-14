@@ -1,5 +1,4 @@
 ﻿using backend.Database;
-using backend.Entities;
 using backend.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
