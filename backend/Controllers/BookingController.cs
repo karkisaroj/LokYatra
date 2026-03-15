@@ -68,9 +68,6 @@ namespace backend.Controllers
 
             if (alreadyBookedRooms + dto.Rooms > homestay.NumberOfRooms)
             {
-                Console.WriteLine($"[AVAILABILITY] Homestay {dto.HomestayId} | " +
-                                  $"Already booked: {alreadyBookedRooms} | Requested: {dto.Rooms} | " +
-                                  $"Total rooms: {homestay.NumberOfRooms}");
                 return Conflict("Selected dates are not available");
             }
 
