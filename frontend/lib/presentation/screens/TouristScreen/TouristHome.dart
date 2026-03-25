@@ -150,8 +150,9 @@ class _HomeTabState extends State<_HomeTab> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted)
+      if (mounted) {
         context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
+      }
     });
   }
 
