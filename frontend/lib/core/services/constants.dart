@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 
-const String _serverIp = "192.168.1.70";
+const String _serverIp = "100.64.230.119";
 const int _serverPort = 5257;
 
 String getBaseUrl() {
