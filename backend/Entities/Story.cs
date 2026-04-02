@@ -12,7 +12,7 @@ namespace backend.Models
         public string? FullContent { get; set; }
         public string? HistoricalContext { get; set; }
         public string? CulturalSignificance { get; set; }
-        public string[] ImageUrls { get; set; } = Array.Empty<string>();
+        public string[] ImageUrls { get; set; } = [];
 
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
