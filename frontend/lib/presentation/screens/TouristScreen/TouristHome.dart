@@ -305,13 +305,13 @@ class _HomeTabState extends State<_HomeTab> {
                   builder: (context, state) {
                     if (state is SitesLoading) {
                       return SizedBox(
-                          height: 210.h,
+                          height: 214.h,
                           child: const Center(
                               child: CircularProgressIndicator()));
                     }
                     if (state is SitesLoaded) {
                       return SizedBox(
-                        height: 210.h,
+                        height: 214.h,
                         child: ListView.separated(
                           padding:
                           EdgeInsets.symmetric(horizontal: 20.w),
@@ -504,6 +504,7 @@ class _SiteCard extends StatelessWidget {
       onTap: onTap,
       child: Container(
         width: 160.w,
+        clipBehavior: Clip.hardEdge,
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16.r),
