@@ -22,7 +22,7 @@ import 'HelpSupportPage.dart';
 import 'AboutLokyatraPage.dart';
 import 'ChangePasswordPage.dart';
 
-const Color brownColor   = Color(0xFF474545);
+const Color brownColor   = Color(0xFFCD6E4E);
 const Color darkColor    = Color(0xFF2D1B10);
 const Color pageBg       = Color(0xFFF7F3EF);
 
@@ -35,7 +35,7 @@ const Color cardWhite    = Colors.white;
 const Color accentGreen  = Color(0xFF22C55E);
 const Color accentBlue   = Color(0xFF3B82F6);
 const Color accentAmber  = Color(0xFFF59E0B);
-const Color accentBlack    = Color(0xFF0E0E0E);
+const Color accentBlack    = Color(0xFF2D1B10);
 const Color accentTeal   = Color(0xFF14B8A6);
 const Color accentPurple = Color(0xFFA855F7);
 const Color accentSlate  = Color(0xFF94A3B8);
@@ -157,7 +157,7 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
     return Scaffold(
       backgroundColor: pageBg,
       body: loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator(color: Color(0xFFCD6E4E)))
           : SingleChildScrollView(
         child: Column(children: [
           buildHeader(),

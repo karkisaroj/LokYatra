@@ -26,9 +26,10 @@ class TouristHomestayDetailPage extends StatefulWidget {
 
 class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
   static const _cream      = Color(0xFFFAF7F2);
-  static const _dark       = Color(0xFF2B2A2A);
+  static const _dark       = Color(0xFF2D1B10);
+  static const _accent     = Color(0xFFCD6E4E);
   static const _warmGrey   = Color(0xFF8B8B8B);
-  static const _teal       = Color(0xFF4A707A);
+  static const _teal       = Color(0xFF2D6A6A);
 
   int _currentImageIndex = 0;
   final PageController _pageController = PageController();
@@ -321,9 +322,9 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                       Container(
                         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
                         decoration: BoxDecoration(
-                          color: _dark.withValues(alpha: 0.07),
+                          color: _accent.withValues(alpha: 0.06),
                           borderRadius: BorderRadius.circular(14.r),
-                          border: Border.all(color: _dark.withValues(alpha: 0.2)),
+                          border: Border.all(color: _accent.withValues(alpha: 0.25)),
                         ),
                         child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                           Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -332,7 +333,7 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                             SizedBox(height: 2.h),
                             Text('Rs. ${_model.pricePerNight.toStringAsFixed(0)}',
                                 style: GoogleFonts.dmSans(
-                                    fontSize: 26.sp, color: _dark,
+                                    fontSize: 26.sp, color: _accent,
                                     fontWeight: FontWeight.w800)),
                           ]),
                           Text('+13% VAT', style: GoogleFonts.dmSans(
@@ -447,7 +448,7 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                                         padding: EdgeInsets.symmetric(
                                             horizontal: 8.w, vertical: 2.h),
                                         decoration: BoxDecoration(
-                                            color: _dark,
+                                            color: _teal,
                                             borderRadius: BorderRadius.circular(4.r)),
                                         child: Text('UNESCO', style: GoogleFonts.dmSans(
                                             color: Colors.white, fontSize: 9.sp,
@@ -471,11 +472,11 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
                                     SizedBox(height: 8.h),
                                     Row(children: [
                                       Icon(Icons.arrow_forward_ios_rounded,
-                                          size: 14.sp, color: Colors.grey[400]),
+                                          size: 14.sp, color: _accent),
                                       SizedBox(width: 4.w),
                                       Text('View Heritage Site', style: GoogleFonts.dmSans(
                                           fontSize: 13.sp, fontWeight: FontWeight.w600,
-                                          color: _dark)),
+                                          color: _accent)),
                                     ]),
                                   ],
                                 )),
@@ -657,7 +658,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) => Text(title,
       style: GoogleFonts.playfairDisplay(
           fontSize: 18.sp, fontWeight: FontWeight.bold,
-          color: const Color(0xFF958A8A)));
+          color: const Color(0xFF2D1B10)));
 }
 
 class _InfoCard extends StatelessWidget {
@@ -689,11 +690,11 @@ class _StatTile extends StatelessWidget {
       border: Border.all(color: Colors.grey.shade100),
     ),
     child: Column(children: [
-      Icon(icon, size: 22.sp, color: const Color(0xFF7A7979)),
+      Icon(icon, size: 22.sp, color: const Color(0xFFCD6E4E)),
       SizedBox(height: 6.h),
       Text(value, style: GoogleFonts.dmSans(
           fontSize: 15.sp, fontWeight: FontWeight.bold,
-          color: const Color(0xFF3C3C3C))),
+          color: const Color(0xFF2D1B10))),
       Text(label, style: GoogleFonts.dmSans(
           fontSize: 11.sp, color: const Color(0xFF8B8B8B))),
     ]),

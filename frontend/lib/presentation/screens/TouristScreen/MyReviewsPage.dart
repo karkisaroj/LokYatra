@@ -143,7 +143,7 @@ class _MyReviewCard extends StatelessWidget {
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
               decoration: BoxDecoration(
-                color: (isHomestay ? _terracotta : const Color(0xFF4A707A))
+                color: (isHomestay ? _terracotta : const Color(0xFF2D6A6A))
                     .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(6.r),
               ),
@@ -152,7 +152,7 @@ class _MyReviewCard extends StatelessWidget {
                 style: GoogleFonts.dmSans(
                     fontSize: 10.sp,
                     fontWeight: FontWeight.bold,
-                    color: isHomestay ? _terracotta : const Color(0xFF4A707A)),
+                    color: isHomestay ? _terracotta : const Color(0xFF2D6A6A)),
               ),
             ),
           ])),

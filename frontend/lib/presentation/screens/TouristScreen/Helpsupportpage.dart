@@ -11,7 +11,7 @@ class HelpSupportPage extends StatefulWidget {
 }
 
 class _HelpSupportPageState extends State<HelpSupportPage> {
-  static const _brown  = Color(0xFF4A4A4A);
+  static const _brown  = Color(0xFFCD6E4E);
   static const _cream  = Color(0xFFFAF7F2);
   static const _dark   = Color(0xFF2D1B10);
 

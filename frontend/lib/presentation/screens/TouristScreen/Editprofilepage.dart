@@ -13,8 +13,8 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  static const _brown      = Color(0xFF424242);
-  static const _terracotta = Color(0xFF333333);
+  static const _brown      = Color(0xFFCD6E4E);
+  static const _terracotta = Color(0xFFCD6E4E);
   static const _dark       = Color(0xFF2D1B10);
   static const _cream      = Color(0xFFFAF7F2);
 

@@ -181,12 +181,12 @@ class _ListHeader extends StatelessWidget {
         Container(
           padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
           decoration: BoxDecoration(
-            color: const Color(0xFF3D5A80).withValues(alpha: 0.1),
+            color: const Color(0xFFCD6E4E).withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(10.r),
           ),
           child: Text('$count',
               style: GoogleFonts.dmSans(
-                  fontSize: 12.sp, color: const Color(0xFF3D5A80), fontWeight: FontWeight.bold)),
+                  fontSize: 12.sp, color: const Color(0xFFCD6E4E), fontWeight: FontWeight.bold)),
         ),
       ]),
     );
@@ -277,7 +277,7 @@ class _SiteCard extends StatelessWidget {
                 SizedBox(width: 10.w),
                 Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                   Text('Rs. ${feeNpr.toStringAsFixed(0)}',
-                      style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.w700, color: _dark)),
+                      style: GoogleFonts.dmSans(fontSize: 13.sp, fontWeight: FontWeight.w700, color: const Color(0xFFCD6E4E))),
                   Text('Entry fee',
                       style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[400])),
                 ]),
@@ -356,7 +356,7 @@ class _HomestayCard extends StatelessWidget {
                   RichText(text: TextSpan(children: [
                     TextSpan(
                       text: 'Rs. ${homestay.pricePerNight.toStringAsFixed(0)}',
-                      style: GoogleFonts.dmSans(fontSize: 16.sp, fontWeight: FontWeight.w800, color: _dark),
+                      style: GoogleFonts.dmSans(fontSize: 16.sp, fontWeight: FontWeight.w800, color: const Color(0xFFCD6E4E)),
                     ),
                     TextSpan(
                       text: ' / night',

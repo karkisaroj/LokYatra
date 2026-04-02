@@ -47,7 +47,8 @@ class _TouristHomeState extends State<TouristHome> {
   int _tab = 0;
   late final BookingBloc _bookingBloc;
 
-  static const _dark = Color(0xFF1E1C1C);
+  static const _dark   = Color(0xFF1E1C1C);
+  static const _accent = Color(0xFFCD6E4E);
 
   @override
   void initState() {
@@ -91,7 +92,7 @@ class _TouristHomeState extends State<TouristHome> {
         currentIndex: _tab,
         onTap: _goToTab,
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: _dark,
+        selectedItemColor: _accent,
         unselectedItemColor: Colors.grey[400],
         backgroundColor: Colors.white,
         selectedLabelStyle: GoogleFonts.dmSans(
@@ -426,7 +427,7 @@ class _SectionHeader extends StatelessWidget {
             child: Text('See All',
                 style: GoogleFonts.dmSans(
                     fontSize: 13.sp,
-                    color: Colors.black54,
+                    color: const Color(0xFFCD6E4E),
                     fontWeight: FontWeight.bold)),
           ),
         ],
@@ -583,11 +584,7 @@ class _SiteCard extends StatelessWidget {
                       style: GoogleFonts.dmSans(
                         fontSize: 12.sp,
                         fontWeight: FontWeight.w700,
-                        color:
-                        (site.entryFeeNPR != null &&
-                            site.entryFeeNPR! > 0)
-                            ? const Color(0xFF070707)
-                            : const Color(0xFF434242),
+                        color: const Color(0xFFCD6E4E),
                       ),
                     ),
                   ],
@@ -638,12 +635,46 @@ class _HomestayCard extends StatelessWidget {
             ClipRRect(
               borderRadius:
               BorderRadius.vertical(top: Radius.circular(20.r)),
-              child: ProxyImage(
-                  imageUrl: image,
-                  width: double.infinity,
-                  height: 200.h,
-                  borderRadiusValue: 0,
-                  thumb: true),
+              child: Stack(children: [
+                ProxyImage(
+                    imageUrl: image,
+                    width: double.infinity,
+                    height: 200.h,
+                    borderRadiusValue: 0,
+                    thumb: true),
+                Positioned.fill(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: const [0.5, 1.0],
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withValues(alpha: 0.45),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                if ((homestay.category ?? '').isNotEmpty)
+                  Positioned(
+                    bottom: 12.h, left: 12.w,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: 9.w, vertical: 4.h),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFCD6E4E).withValues(alpha: 0.92),
+                        borderRadius: BorderRadius.circular(6.r),
+                      ),
+                      child: Text(homestay.category ?? '',
+                          style: GoogleFonts.dmSans(
+                              fontSize: 10.sp,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+              ]),
             ),
             Positioned(
                 top: 12.h,
@@ -665,11 +696,12 @@ class _HomestayCard extends StatelessWidget {
                   SizedBox(height: 12.h),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                          '${homestay.numberOfRooms} Rooms • ${homestay.maxGuests} Guests',
+                          '${homestay.numberOfRooms} rooms · ${homestay.maxGuests} guests',
                           style: GoogleFonts.dmSans(
-                              fontSize: 13.sp, color: Colors.grey[500])),
+                              fontSize: 12.sp, color: Colors.grey[500])),
                       RichText(
                           text: TextSpan(children: [
                             TextSpan(
@@ -677,7 +709,7 @@ class _HomestayCard extends StatelessWidget {
                                 'Rs. ${homestay.pricePerNight.toStringAsFixed(0)}',
                                 style: GoogleFonts.dmSans(
                                     fontSize: 18.sp,
-                                    color: Colors.black87,
+                                    color: const Color(0xFFCD6E4E),
                                     fontWeight: FontWeight.w800)),
                             TextSpan(
                                 text: ' / night',

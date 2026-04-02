@@ -30,9 +30,9 @@ class BookingSummaryPage extends StatefulWidget {
 
 class _BookingSummaryPageState extends State<BookingSummaryPage> {
   static const _cream        = Color(0xFFFAF7F2);
-  static const _brown        = Color(0xFF403F3F);
+  static const _brown        = Color(0xFFCD6E4E);
   static const _dark         = Color(0xFF2D1B10);
-  static const _khaltiPurple = Color(0xFF2B2A2A);
+  static const _khaltiPurple = Color(0xFF5C2D91);
 
   static const _breakfastPricePerDay = 600.0;
   static const _dinnerPricePerDay    = 1200.0;

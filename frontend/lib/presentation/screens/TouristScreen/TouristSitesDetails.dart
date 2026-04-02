@@ -30,8 +30,8 @@ class TouristSiteDetailPage extends StatefulWidget {
 
 class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
   static const _terracotta = Color(0xFFCD6E4E);
-  static const _darkTeal   = Color(0xFF4A707A);
-  static const _dark       = Color(0xFF494848);
+  static const _darkTeal   = Color(0xFF2D6A6A);
+  static const _dark       = Color(0xFF2D1B10);
   static const _cream      = Color(0xFFFAF7F2);
 
   int _currentImageIndex = 0;
@@ -175,7 +175,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                     padding: EdgeInsets.symmetric(
                                         horizontal: 10.w, vertical: 4.h),
                                     decoration: BoxDecoration(
-                                        color: _terracotta,
+                                        color: _darkTeal,
                                         borderRadius:
                                         BorderRadius.circular(4.r)),
                                     child: Text('UNESCO World Heritage',
@@ -331,13 +331,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                                                 style: GoogleFonts.dmSans(
                                                   fontSize: 20.sp,
                                                   fontWeight: FontWeight.bold,
-                                                  color: (site.entryFeeNPR !=
-                                                      null &&
-                                                      site.entryFeeNPR! > 0)
-                                                      ? const Color(
-                                                      0xFF0B0B0B)
-                                                      : const Color(
-                                                      0xFF4D4E4E),
+                                                  color: _terracotta,
                                                 ),
                                               ),
                                             ],
@@ -805,7 +799,7 @@ class _NearbyHomestayCard extends StatelessWidget {
   const _NearbyHomestayCard(
       {required this.homestay, required this.onTap});
 
-  static const _dark = Color(0xFF222222);
+  static const _dark = Color(0xFF2D1B10);
 
   @override
   Widget build(BuildContext context) {
@@ -882,7 +876,7 @@ class _NearbyHomestayCard extends StatelessWidget {
                                     'Rs. ${price.toStringAsFixed(0)}',
                                     style: GoogleFonts.dmSans(
                                         fontSize: 16.sp,
-                                        color: _dark,
+                                        color: Colors.deepOrangeAccent,
                                         fontWeight: FontWeight.w800)),
                                 TextSpan(
                                     text: ' / night',

@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -215,6 +216,28 @@ class _ProfileCardState extends State<_ProfileCard> {
   }
 
   Future<void> _loadUser() async {
+    if (kIsWeb) {
+      try {
+        final res = await UserRemoteDatasource().getCurrentUser();
+        if (res.statusCode == 200 && mounted) {
+          final d = res.data as Map<String, dynamic>;
+          setState(() {
+            name = (d['name'] as String?)?.isNotEmpty == true
+                ? d['name'] as String
+                : 'Admin';
+            email = d['email'] as String?;
+            profileImage =
+                (d['profileImage'] as String?)?.isNotEmpty == true
+                    ? d['profileImage'] as String
+                    : null;
+          });
+        }
+      } catch (_) {
+        if (mounted) setState(() => name = 'Admin');
+      }
+      return;
+    }
+    // Mobile: read from SQLite cache
     final n   = await SqliteService().get('user_name');
     final e   = await SqliteService().get('user_email');
     final img = await SqliteService().get('user_image');
@@ -237,13 +260,32 @@ class _ProfileCardState extends State<_ProfileCard> {
     try {
       await UserRemoteDatasource().updateProfile(imageFile: result.files.first);
 
+      // Fetch fresh user data directly from API (SQLite silently fails on web)
       try {
-        await UserRemoteDatasource().refreshCurrentUser();
-      } catch (_) {}
-
-      await _loadUser();
-
-      if (mounted) setState(() => imageKey++);
+        final res = await UserRemoteDatasource().getCurrentUser();
+        if (res.statusCode == 200) {
+          final d = res.data as Map<String, dynamic>;
+          final newImg = (d['profileImage'] as String?) ?? '';
+          // Best-effort SQLite update for mobile
+          try {
+            await SqliteService().put('user_image', newImg);
+            await SqliteService().put('user_name', (d['name'] as String?) ?? '');
+          } catch (_) {}
+          if (mounted) {
+            setState(() {
+              profileImage = newImg.isNotEmpty ? newImg : null;
+              name = (d['name'] as String?)?.isNotEmpty == true
+                  ? d['name'] as String
+                  : name;
+              imageKey++;
+            });
+          }
+        }
+      } catch (_) {
+        // Fallback to SQLite path on mobile if API call fails
+        await _loadUser();
+        if (mounted) setState(() => imageKey++);
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(

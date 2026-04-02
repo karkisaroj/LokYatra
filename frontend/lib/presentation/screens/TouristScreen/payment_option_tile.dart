@@ -30,7 +30,7 @@ class PaymentOptionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accent = accentColor ?? const Color(0xFF8B5E3C);
+    final accent = accentColor ?? const Color(0xFFCD6E4E);
 
     return GestureDetector(
       onTap: onTap,

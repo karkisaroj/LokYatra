@@ -5,7 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 class AboutLokyatraPage extends StatelessWidget {
   const AboutLokyatraPage({super.key});
 
-  static const _terracotta = Color(0xFF474646);
+  static const _terracotta = Color(0xFFCD6E4E);
   static const _dark       = Color(0xFF2D1B10);
   static const _cream      = Color(0xFFFAF7F2);
 

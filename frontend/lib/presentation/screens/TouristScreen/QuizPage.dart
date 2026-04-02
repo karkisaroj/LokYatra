@@ -16,7 +16,7 @@ class TouristQuizPage extends StatefulWidget {
 
 class _TouristQuizPageState extends State<TouristQuizPage> {
   static const ink    = Color(0xFF2D1B10);
-  static const accent = Color(0xFF3A3A3A);
+  static const accent = Color(0xFFCD6E4E);
   static const bg     = Color(0xFFFAF7F2);
   static const green  = Color(0xFF2E7D52);
 

@@ -15,8 +15,8 @@ class BookingFormPage extends StatefulWidget {
 
 class _BookingFormPageState extends State<BookingFormPage> {
   static const _cream = Color(0xFFFAF7F2);
-  static const _brown = Color(0xFF30302F);
-  static const _dark  = Color(0xFF3A3A3A);
+  static const _brown = Color(0xFFCD6E4E);
+  static const _dark  = Color(0xFF2D1B10);
 
   DateTime? _checkIn;
   DateTime? _checkOut;
@@ -329,7 +329,7 @@ class _DateField extends StatelessWidget {
           borderRadius: BorderRadius.circular(12.r),
           border: Border.all(
             color: isSet
-                ? const Color(0xFF8B5E3C).withValues(alpha: 0.4)
+                ? const Color(0xFFCD6E4E).withValues(alpha: 0.4)
                 : Colors.grey.shade200,
           ),
         ),
@@ -338,7 +338,7 @@ class _DateField extends StatelessWidget {
             Icon(Icons.calendar_month_outlined,
                 size: 20.sp,
                 color: isSet
-                    ? const Color(0xFF8B5E3C)
+                    ? const Color(0xFFCD6E4E)
                     : Colors.grey[400]),
             SizedBox(width: 12.w),
             Text(value,
@@ -434,14 +434,14 @@ class _StepBtn extends StatelessWidget {
         height: 34.h,
         decoration: BoxDecoration(
           color: enabled
-              ? const Color(0xFF8B5E3C).withValues(alpha: 0.1)
+              ? const Color(0xFFCD6E4E).withValues(alpha: 0.1)
               : Colors.grey.shade100,
           shape: BoxShape.circle,
         ),
         child: Icon(icon,
             size: 18.sp,
             color: enabled
-                ? const Color(0xFF8B5E3C)
+                ? const Color(0xFFCD6E4E)
                 : Colors.grey[300]),
       ),
     );
