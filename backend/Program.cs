@@ -10,7 +10,8 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 // Listen on all interfaces so Android phone can reach the dev machine
-builder.WebHost.UseUrls("http://0.0.0.0:5257");
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5257";
+builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
