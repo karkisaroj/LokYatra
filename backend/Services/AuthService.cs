@@ -15,20 +15,30 @@ namespace backend.Services
     {
         public async Task<TokenResponseDto?> LoginAsync(LoginDto request)
         {
+            Console.WriteLine($"[LOGIN] Attempt for email: {request.Email}");
+
             var user = await context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
             {
+                Console.WriteLine("[LOGIN] User not found");
                 return null;
             }
 
-            if (new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password) == PasswordVerificationResult.Failed)
+            var verify = new PasswordHasher<User>()
+                .VerifyHashedPassword(user, user.PasswordHash, request.Password);
+
+            Console.WriteLine($"[LOGIN] Password verify result: {verify}");
+
+            if (verify == PasswordVerificationResult.Failed)
             {
+                Console.WriteLine("[LOGIN] Password failed");
                 return null;
             }
+
             user.IsActive = true;
             await context.SaveChangesAsync();
+            Console.WriteLine("[LOGIN] Success, token creating...");
             return await CreateTokenResponse(user);
-
         }
 
         private async Task<TokenResponseDto> CreateTokenResponse(User user)
