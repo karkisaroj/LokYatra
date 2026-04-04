@@ -7,6 +7,7 @@ using Scalar.AspNetCore;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
+// Version: 1.0.1 (Forced Rebuild: 2026-04-04)
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
