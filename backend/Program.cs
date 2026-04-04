@@ -95,11 +95,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// SPA fallback — only if wwwroot/index.html exists (Flutter web build)
-var indexPath = Path.Combine(app.Environment.WebRootPath ?? "", "index.html");
-if (File.Exists(indexPath))
-{
-    app.MapFallbackToFile("index.html");
-}
+// SPA fallback — ensures we serve index.html for any frontend routes
+app.MapFallbackToFile("index.html");
 
 app.Run();
