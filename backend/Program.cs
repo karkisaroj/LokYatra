@@ -12,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Railway injects PORT; fallback to 5257 for local dev
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5257";
 builder.WebHost.UseUrls($"http://*:{port}");
+Console.WriteLine($"[LOKYATRA] Starting on port {port}...");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -24,11 +25,24 @@ builder.Services.AddControllers()
 builder.Services.AddOpenApi();
 
 // Railway provides DATABASE_URL as postgresql://user:pass@host:port/db
-// Fall back to appsettings.json for local dev
 var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-var connStr = dbUrl != null
-    ? BuildNpgsqlFromUrl(dbUrl)
-    : builder.Configuration.GetConnectionString("UserDatabase");
+string connStr;
+
+if (!string.IsNullOrEmpty(dbUrl))
+{
+    Console.WriteLine("[LOKYATRA] Using Railway Database URL...");
+    try {
+        connStr = BuildNpgsqlFromUrl(dbUrl);
+    } catch (Exception ex) {
+        Console.WriteLine($"[LOKYATRA] ERROR parsing DATABASE_URL: {ex.Message}");
+        throw;
+    }
+}
+else
+{
+    Console.WriteLine("[LOKYATRA] DATABASE_URL not found. Using local connection string.");
+    connStr = builder.Configuration.GetConnectionString("UserDatabase") ?? "";
+}
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connStr));
 
@@ -94,6 +108,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// Health check endpoint
+app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
 
 // SPA fallback — ensures we serve index.html for any frontend routes
 app.MapFallbackToFile("index.html");

@@ -4,3 +4,6 @@ buildCommand = "dotnet publish backend/backend.csproj -c Release -o out"
 
 [deploy]
 startCommand = "dotnet out/backend.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 10
+restartPolicyType = "ON_FAILURE"
