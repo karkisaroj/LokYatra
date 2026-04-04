@@ -1,8 +1,8 @@
 [build]
-builder = "nixpacks"
-
-[build.nixpacksPlan.phases.build]
-cmds = ["dotnet publish backend/backend.csproj -c Release -o /app/out"]
+builder = "NIXPACKS"
+buildCommand = "dotnet publish backend/backend.csproj -c Release -o out"
 
 [deploy]
-startCommand = "dotnet /app/out/backend.dll"
+startCommand = "dotnet out/backend.dll"
+healthcheckPath = "/health"
+healthcheckTimeout = 300

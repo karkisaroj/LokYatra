@@ -107,7 +107,14 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// SPA fallback — any non-API route serves index.html
-app.MapFallbackToFile("index.html");
+// Health check endpoint for Railway
+app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
+
+// SPA fallback — only if wwwroot/index.html exists (Flutter web build)
+var indexPath = Path.Combine(app.Environment.WebRootPath ?? "", "index.html");
+if (File.Exists(indexPath))
+{
+    app.MapFallbackToFile("index.html");
+}
 
 app.Run();
