@@ -1,6 +1,0 @@
-[deploy]
-startCommand = "dotnet out/backend.dll"
-# The health check will confirm the server is truly ready
-healthcheckPath = "/health"
-healthcheckTimeout = 15
-restartPolicyType = "ON_FAILURE"

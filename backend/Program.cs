@@ -8,11 +8,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
-
-// Railway injects PORT; fallback to 5257 for local dev
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5257";
-builder.WebHost.UseUrls($"http://*:{port}");
-Console.WriteLine($"[LOKYATRA] Starting on port {port}...");
+Console.WriteLine("[LOKYATRA] Initializing application...");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
