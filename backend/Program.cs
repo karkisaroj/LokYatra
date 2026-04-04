@@ -7,8 +7,15 @@ using Scalar.AspNetCore;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
-var builder = WebApplication.CreateBuilder(args);
-Console.WriteLine("[LOKYATRA] Initializing application...");
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    WebRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot")
+});
+
+Console.WriteLine($"[LOKYATRA] App Base Directory: {AppContext.BaseDirectory}");
+Console.WriteLine($"[LOKYATRA] Web Root Path: {builder.Environment.WebRootPath}");
+Console.WriteLine($"[LOKYATRA] index.html exists: {File.Exists(Path.Combine(builder.Environment.WebRootPath, "index.html"))}");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
