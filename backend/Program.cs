@@ -7,28 +7,7 @@ using Scalar.AspNetCore;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
-// Version: 1.0.1 (Forced Rebuild: 2026-04-04)
-var baseDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
-var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-{
-    Args = args,
-    ContentRootPath = baseDir,
-    WebRootPath = Path.Combine(baseDir, "wwwroot")
-});
-
-Console.WriteLine($"[LOKYATRA] App Base Directory: {AppContext.BaseDirectory}");
-Console.WriteLine($"[LOKYATRA] Web Root Path: {builder.Environment.WebRootPath}");
-
-if (Directory.Exists(builder.Environment.WebRootPath))
-{
-    Console.WriteLine("[LOKYATRA] Web Root Files:");
-    foreach (var f in Directory.GetFiles(builder.Environment.WebRootPath)) 
-        Console.WriteLine($"  - {Path.GetFileName(f)}");
-}
-else
-{
-    Console.WriteLine("[LOKYATRA] Web Root NOT FOUND!");
-}
+var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -42,46 +21,23 @@ builder.Services.AddOpenApi();
 
 // Railway provides DATABASE_URL as postgresql://user:pass@host:port/db
 var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
-string connStr;
-
-if (!string.IsNullOrEmpty(dbUrl))
-{
-    Console.WriteLine("[LOKYATRA] Using Railway Database URL...");
-    try {
-        connStr = BuildNpgsqlFromUrl(dbUrl);
-    } catch (Exception ex) {
-        Console.WriteLine($"[LOKYATRA] ERROR parsing DATABASE_URL: {ex.Message}");
-        throw;
-    }
-}
-else
-{
-    Console.WriteLine("[LOKYATRA] DATABASE_URL not found. Using local connection string.");
-    connStr = builder.Configuration.GetConnectionString("UserDatabase") ?? "";
-}
+var connStr = string.IsNullOrEmpty(dbUrl) 
+    ? builder.Configuration.GetConnectionString("UserDatabase") ?? ""
+    : BuildNpgsqlFromUrl(dbUrl);
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connStr));
 
 static string BuildNpgsqlFromUrl(string url)
 {
-    try 
-    {
-        // Handle postgres:// or postgresql://
-        url = url.Replace("postgres://", "postgresql://");
-        var uri = new Uri(url);
-        var userInfo = uri.UserInfo.Split(':', 2);
-        var username = userInfo[0];
-        var password = userInfo.Length > 1 ? userInfo[1] : "";
-        
-        return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};" +
-               $"Username={username};Password={password};" +
-               "Trust Server Certificate=true;SSL Mode=Require;";
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[LOKYATRA] CRITICAL: Invalid DATABASE_URL format: {ex.Message}");
-        return ""; // Let it fail later with a clear message
-    }
+    url = url.Replace("postgres://", "postgresql://");
+    var uri = new Uri(url);
+    var userInfo = uri.UserInfo.Split(':', 2);
+    var username = userInfo[0];
+    var password = userInfo.Length > 1 ? userInfo[1] : "";
+    
+    return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};" +
+           $"Username={username};Password={password};" +
+           "Trust Server Certificate=true;SSL Mode=Require;";
 }
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -118,26 +74,13 @@ builder.Services.AddHttpClient();
 var app = builder.Build();
 
 // Auto-apply pending migrations on startup
-try 
+using (var scope = app.Services.CreateScope())
 {
-    using (var scope = app.Services.CreateScope())
-    {
-        Console.WriteLine("[LOKYATRA] Applying database migrations...");
-        scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
-        Console.WriteLine("[LOKYATRA] Migrations applied successfully.");
-    }
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"[LOKYATRA] Warning: Database migration failed: {ex.Message}");
-    // We don't throw here so the app can still serve the Website even if DB is pending
+    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
 }
 
 app.UseCors("AllowAll");
 
-// Serve Flutter web build from wwwroot/
-app.UseDefaultFiles();
-app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())
 {
