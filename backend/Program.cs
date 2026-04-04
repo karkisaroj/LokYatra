@@ -8,11 +8,12 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json.Serialization;
 // Version: 1.0.1 (Forced Rebuild: 2026-04-04)
+var baseDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location)!;
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
-    ContentRootPath = AppContext.BaseDirectory,
-    WebRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot")
+    ContentRootPath = baseDir,
+    WebRootPath = Path.Combine(baseDir, "wwwroot")
 });
 
 Console.WriteLine($"[LOKYATRA] App Base Directory: {AppContext.BaseDirectory}");
@@ -151,6 +152,22 @@ app.MapControllers();
 
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
+
+// Serve index.html directly on root if DefaultFiles fails
+app.MapGet("/", async (HttpContext context) =>
+{
+    var path = Path.Combine(builder.Environment.WebRootPath, "index.html");
+    if (File.Exists(path))
+    {
+        context.Response.ContentType = "text/html";
+        await context.Response.SendFileAsync(path);
+    }
+    else
+    {
+        context.Response.StatusCode = 404;
+        await context.Response.WriteAsync("Website not found on server.");
+    }
+});
 
 // SPA fallback — ensures we serve index.html for any frontend routes
 app.MapFallbackToFile("index.html");
