@@ -1,9 +1,6 @@
-[build]
-command = "dotnet publish -c Release -o out"
-
 [deploy]
 startCommand = "dotnet out/backend.dll"
 # The health check will confirm the server is truly ready
 healthcheckPath = "/health"
-healthcheckTimeout = 10
+healthcheckTimeout = 15
 restartPolicyType = "ON_FAILURE"

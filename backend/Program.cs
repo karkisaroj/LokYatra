@@ -48,9 +48,24 @@ builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connStr
 
 static string BuildNpgsqlFromUrl(string url)
 {
-    var uri    = new Uri(url);
-    var parts  = uri.UserInfo.Split(':', 2);
-    return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={parts[0]};Password={parts[1]};Trust Server Certificate=true;SSL Mode=Require;";
+    try 
+    {
+        // Handle postgres:// or postgresql://
+        url = url.Replace("postgres://", "postgresql://");
+        var uri = new Uri(url);
+        var userInfo = uri.UserInfo.Split(':', 2);
+        var username = userInfo[0];
+        var password = userInfo.Length > 1 ? userInfo[1] : "";
+        
+        return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};" +
+               $"Username={username};Password={password};" +
+               "Trust Server Certificate=true;SSL Mode=Require;";
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[LOKYATRA] CRITICAL: Invalid DATABASE_URL format: {ex.Message}");
+        return ""; // Let it fail later with a clear message
+    }
 }
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -87,9 +102,19 @@ builder.Services.AddHttpClient();
 var app = builder.Build();
 
 // Auto-apply pending migrations on startup
-using (var scope = app.Services.CreateScope())
+try 
 {
-    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+    using (var scope = app.Services.CreateScope())
+    {
+        Console.WriteLine("[LOKYATRA] Applying database migrations...");
+        scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+        Console.WriteLine("[LOKYATRA] Migrations applied successfully.");
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"[LOKYATRA] Warning: Database migration failed: {ex.Message}");
+    // We don't throw here so the app can still serve the Website even if DB is pending
 }
 
 app.UseCors("AllowAll");
