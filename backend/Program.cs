@@ -9,25 +9,35 @@ using System.Text;
 using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
-// Listen on all interfaces so Android phone can reach the dev machine
+// Railway injects PORT; fallback to 5257 for local dev
 var port = Environment.GetEnvironmentVariable("PORT") ?? "5257";
-builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+builder.WebHost.UseUrls($"http://*:{port}");
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
-        
         options.JsonSerializerOptions.Converters.Add(
             new System.Text.Json.Serialization.JsonStringEnumConverter()
         );
-
-        
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
 builder.Services.AddOpenApi();
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("UserDatabase"))
-);
+
+// Railway provides DATABASE_URL as postgresql://user:pass@host:port/db
+// Fall back to appsettings.json for local dev
+var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+var connStr = dbUrl != null
+    ? BuildNpgsqlFromUrl(dbUrl)
+    : builder.Configuration.GetConnectionString("UserDatabase");
+
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connStr));
+
+static string BuildNpgsqlFromUrl(string url)
+{
+    var uri    = new Uri(url);
+    var parts  = uri.UserInfo.Split(':', 2);
+    return $"Host={uri.Host};Port={uri.Port};Database={uri.AbsolutePath.TrimStart('/')};Username={parts[0]};Password={parts[1]};Trust Server Certificate=true;SSL Mode=Require;";
+}
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
@@ -74,7 +84,17 @@ builder.Services.AddScoped<NotificationService>();
 builder.Services.AddHttpClient();
 var app = builder.Build();
 
+// Auto-apply pending migrations on startup
+using (var scope = app.Services.CreateScope())
+{
+    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+}
+
 app.UseCors("AllowAll");
+
+// Serve Flutter web build from wwwroot/
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 if (app.Environment.IsDevelopment())
 {
@@ -86,4 +106,8 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+
+// SPA fallback — any non-API route serves index.html
+app.MapFallbackToFile("index.html");
+
 app.Run();
