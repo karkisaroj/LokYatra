@@ -10,12 +10,23 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
+    ContentRootPath = AppContext.BaseDirectory,
     WebRootPath = Path.Combine(AppContext.BaseDirectory, "wwwroot")
 });
 
 Console.WriteLine($"[LOKYATRA] App Base Directory: {AppContext.BaseDirectory}");
 Console.WriteLine($"[LOKYATRA] Web Root Path: {builder.Environment.WebRootPath}");
-Console.WriteLine($"[LOKYATRA] index.html exists: {File.Exists(Path.Combine(builder.Environment.WebRootPath, "index.html"))}");
+
+if (Directory.Exists(builder.Environment.WebRootPath))
+{
+    Console.WriteLine("[LOKYATRA] Web Root Files:");
+    foreach (var f in Directory.GetFiles(builder.Environment.WebRootPath)) 
+        Console.WriteLine($"  - {Path.GetFileName(f)}");
+}
+else
+{
+    Console.WriteLine("[LOKYATRA] Web Root NOT FOUND!");
+}
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
