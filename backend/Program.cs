@@ -150,48 +150,7 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// Debug endpoint to find files on Railway
-app.MapGet("/debug-paths", () => 
-{
-    var root = AppContext.BaseDirectory;
-    var webRoot = builder.Environment.WebRootPath;
-    
-    var rootFiles = Directory.Exists(root) ? Directory.GetFiles(root).Select(Path.GetFileName).ToArray() : [];
-    var webRootFiles = Directory.Exists(webRoot) ? Directory.GetFiles(webRoot).Select(Path.GetFileName).ToArray() : [];
-    var rootDirs = Directory.Exists(root) ? Directory.GetDirectories(root).Select(Path.GetFileName).ToArray() : [];
-
-    return Results.Ok(new 
-    { 
-        status = "Active",
-        baseDirectory = root,
-        webRootPath = webRoot,
-        indexHtmlExists = File.Exists(Path.Combine(webRoot ?? "", "index.html")),
-        baseDirFolders = rootDirs,
-        baseDirFiles = rootFiles,
-        webRootFiles = webRootFiles
-    });
-});
-
 // Health check endpoint
 app.MapGet("/health", () => Results.Ok(new { status = "Healthy", timestamp = DateTime.UtcNow }));
-
-// Serve index.html directly on root if DefaultFiles fails
-app.MapGet("/", async (HttpContext context) =>
-{
-    var path = Path.Combine(builder.Environment.WebRootPath, "index.html");
-    if (File.Exists(path))
-    {
-        context.Response.ContentType = "text/html";
-        await context.Response.SendFileAsync(path);
-    }
-    else
-    {
-        context.Response.StatusCode = 404;
-        await context.Response.WriteAsync("Website not found on server.");
-    }
-});
-
-// SPA fallback — ensures we serve index.html for any frontend routes
-app.MapFallbackToFile("index.html");
 
 app.Run();
