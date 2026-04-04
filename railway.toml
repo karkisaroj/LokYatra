@@ -1,0 +1,8 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacksPlan.phases.build]
+cmds = ["dotnet publish backend/backend.csproj -c Release -o /app/out"]
+
+[deploy]
+startCommand = "dotnet /app/out/backend.dll"
