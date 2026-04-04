@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/services/image_proxy.dart';
-
+import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 import 'Bookingsummarypage.dart';
 
 class BookingFormPage extends StatefulWidget {
@@ -66,7 +66,23 @@ class _BookingFormPageState extends State<BookingFormPage> {
     return '${d.month.toString().padLeft(2, '0')}/${d.day.toString().padLeft(2, '0')}/${d.year}';
   }
 
-  void _proceed() {
+  Future<void> _proceed() async {
+    final isOnline = await SqliteService().isOnline();
+    if (!isOnline) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Row(children: [
+            Icon(Icons.wifi_off_rounded, color: Colors.white, size: 20.sp),
+            SizedBox(width: 10.w),
+            const Text('Check your network or you are offline'),
+          ]),
+          backgroundColor: Colors.red[800],
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+      return;
+    }
+
     if (_checkIn == null || _checkOut == null) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Please select check-in and check-out dates',

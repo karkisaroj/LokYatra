@@ -23,51 +23,47 @@ class HomestayBloc extends Bloc<HomestayEvent, HomestayState> {
 
   Future<void> _onTouristLoadAllHomestays(
       TouristLoadAllHomestays event, Emitter<HomestayState> emit) async {
-    emit(const HomestayLoading());
-
     final cached = await _sqlite.getCachedHomestays();
     if (cached.isNotEmpty) {
-      final homestays = _parseHomestays(cached);
-      emit(TouristAllHomestaysLoaded(homestays));
+      emit(TouristAllHomestaysLoaded(_parseHomestays(cached)));
     }
 
     final isOnline = await _sqlite.isOnline();
     if (!isOnline) {
-      if (cached.isEmpty) emit(const HomestayError('No internet and no cached homestays.'));
+      if (cached.isEmpty) {
+        emit(const HomestayError('No internet and no cached homestays.'));
+      }
       return;
     }
 
     try {
       final resp = await _datasource.getAllHomestays();
       if (resp.statusCode == 200) {
-        final raw       = resp.data as List<dynamic>;
-        final homestays = _parseHomestays(raw);
+        final raw = resp.data as List<dynamic>;
         await _sqlite.cacheHomestays(raw);
-        emit(TouristAllHomestaysLoaded(homestays));
-      } else {
-        if (cached.isEmpty) emit(HomestayError('Failed: ${resp.statusCode}'));
+        emit(TouristAllHomestaysLoaded(_parseHomestays(raw)));
+      } else if (cached.isEmpty) {
+        emit(HomestayError('Failed: ${resp.statusCode}'));
       }
     } catch (e) {
-      debugPrint('HomestayBloc load error: $e');
-      if (cached.isEmpty) emit(const HomestayError('Network error. Showing cached data.'));
+      if (cached.isEmpty) {
+        emit(const HomestayError('Network error. Check your connection.'));
+      }
     }
   }
 
-
   Future<void> _onTouristLoadHomestaysNearSite(
       TouristLoadHomestaysNearSite event, Emitter<HomestayState> emit) async {
-    emit(const HomestayLoading());
-
+    final cached = await _sqlite.getCachedHomestays();
+    
     Future<List<Homestay>> filterNearby(List<dynamic> raw) async {
-      final all = _parseHomestays(raw);
-      return all.where((h) {
+      return _parseHomestays(raw).where((h) {
         if (!h.isVisible) return false;
         final siteName = h.nearCulturalSite?.name.toLowerCase() ?? '';
         return siteName.contains(event.siteName.toLowerCase());
       }).toList();
     }
 
-    final cached = await _sqlite.getCachedHomestays();
     if (cached.isNotEmpty) {
       emit(TouristNearbyHomestaysLoaded(await filterNearby(cached), event.siteName));
     }
@@ -82,9 +78,7 @@ class HomestayBloc extends Bloc<HomestayEvent, HomestayState> {
         await _sqlite.cacheHomestays(raw);
         emit(TouristNearbyHomestaysLoaded(await filterNearby(raw), event.siteName));
       }
-    } catch (e) {
-      debugPrint('HomestayBloc near site error: $e');
-    }
+    } catch (_) {}
   }
 
 

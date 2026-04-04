@@ -71,24 +71,25 @@ class _OwnerProfilePageState extends State<OwnerProfilePage> {
     try {
       final res = await UserRemoteDatasource().getCurrentUser();
       if (res.statusCode == 200) {
-        final d = res.data as Map<String, dynamic>;
-        final n = d['name']         as String? ?? '';
-        final e = d['email']        as String? ?? '';
-        final p = d['phoneNumber']  as String? ?? '';
-        final i = d['profileImage'] as String? ?? '';
-        final db = SqliteService();
-        await db.put('user_name', n);
-        await db.put('user_email', e);
-        await db.put('user_profile_image', i);
-        await db.put('user_phone', p);
-        if (mounted) setState(() { _name = n; _email = e; _phone = p; _img = i.isNotEmpty ? i : null; });
+        final data = res.data as Map<String, dynamic>;
+        await SqliteService().cacheUserProfile(data);
+
+        if (mounted) {
+          setState(() {
+            _name  = data['name']         ?? '';
+            _email = data['email']        ?? '';
+            _phone = data['phoneNumber']  ?? '';
+            _img   = (data['profileImage'] != null && data['profileImage'].isNotEmpty)
+                ? data['profileImage']
+                : null;
+          });
+        }
       }
     } catch (_) {} finally { if (mounted) setState(() => _busy = false); }
   }
 
   void _logout() {
     context.read<AuthBloc>().add(LogoutButtonClicked());
-    Navigator.pushReplacementNamed(context, '/login');
   }
 
   @override

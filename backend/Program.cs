@@ -55,19 +55,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         ValidateIssuerSigningKey = true,
         RoleClaimType = ClaimTypes.Role
     };
-    options.Events = new JwtBearerEvents
-    {
-        OnAuthenticationFailed = context =>
-        {
-            Console.WriteLine($"Authentication failed: {context.Exception.Message}");
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = context =>
-        {
-            Console.WriteLine("Token validated successfully");
-            return Task.CompletedTask;
-        }
-    };
+    options.Events = new JwtBearerEvents();
 });
 
 builder.Services.AddCors(options =>
@@ -106,9 +94,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
-// Health check endpoint for Railway
-app.MapGet("/health", () => Results.Ok(new { status = "healthy" }));
 
 // SPA fallback — only if wwwroot/index.html exists (Flutter web build)
 var indexPath = Path.Combine(app.Environment.WebRootPath ?? "", "index.html");

@@ -65,19 +65,22 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
   }
 
   Future<void> loadProfile() async {
-    final savedName   = await SqliteService().get('user_name');
-    final savedEmail  = await SqliteService().get('user_email');
-    final savedImage  = await SqliteService().get('user_image');
-    final savedPhone  = await SqliteService().get('user_phone');
-    final savedPoints = await SqliteService().get('user_quiz_points');
+    final cached = await SqliteService().getCachedUserProfile();
+    if (cached != null && mounted) {
+      setState(() {
+        name  = cached['name']  ?? '';
+        email = cached['email'] ?? '';
+        phone = cached['phoneNumber'] ?? '';
+        profileImageUrl = (cached['profileImage'] != null && cached['profileImage'].isNotEmpty)
+            ? cached['profileImage']
+            : null;
+      });
+    }
 
+    final savedPoints = await SqliteService().get('user_quiz_points');
     if (mounted) {
       setState(() {
-        name= savedName  ?? '';
-        email= savedEmail ?? '';
-        phone= savedPhone ?? '';
-        quizPoints= int.tryParse(savedPoints ?? '0') ?? 0;
-        profileImageUrl = (savedImage != null && savedImage.isNotEmpty) ? savedImage : null;
+        quizPoints = int.tryParse(savedPoints ?? '0') ?? 0;
       });
     }
     await fetchFromServer();
@@ -87,23 +90,17 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
     try {
       final res = await UserRemoteDatasource().getCurrentUser();
       if (res.statusCode == 200) {
-        final data        = res.data as Map<String, dynamic>;
-        final serverName  = data['name']         as String? ?? '';
-        final serverEmail = data['email']        as String? ?? '';
-        final serverPhone = data['phoneNumber']  as String? ?? '';
-        final serverImage = data['profileImage'] as String? ?? '';
-
-        await SqliteService().put('user_name',  serverName);
-        await SqliteService().put('user_email', serverEmail);
-        await SqliteService().put('user_phone', serverPhone);
-        await SqliteService().put('user_image', serverImage);
+        final data = res.data as Map<String, dynamic>;
+        await SqliteService().cacheUserProfile(data);
 
         if (mounted) {
           setState(() {
-            name = serverName;
-            email= serverEmail;
-            phone= serverPhone;
-            profileImageUrl = serverImage.isNotEmpty ? serverImage : null;
+            name  = data['name']  ?? '';
+            email = data['email'] ?? '';
+            phone = data['phoneNumber'] ?? '';
+            profileImageUrl = (data['profileImage'] != null && (data['profileImage'] as String).isNotEmpty)
+                ? data['profileImage']
+                : null;
           });
         }
       }
@@ -628,7 +625,6 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
       child: OutlinedButton.icon(
         onPressed: () {
           context.read<AuthBloc>().add(LogoutButtonClicked());
-          Navigator.pushReplacementNamed(context, '/login');
         },
         icon: Icon(Icons.logout_rounded, size: 18.sp),
         label: Text('Logout',

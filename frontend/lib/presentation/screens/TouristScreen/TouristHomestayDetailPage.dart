@@ -15,6 +15,7 @@ import '../../widgets/Helpers/Favouritebutton.dart';
 import '../../widgets/Helpers/ReviewSection.dart';
 import 'Bookingformpage.dart';
 import 'TouristSitesDetails.dart';
+import '../../../../core/services/sqlite_service.dart';
 
 class TouristHomestayDetailPage extends StatefulWidget {
   final Map<String, dynamic> homestay;
@@ -55,11 +56,32 @@ class _TouristHomestayDetailPageState extends State<TouristHomestayDetailPage> {
   }
 
   Future<void> _fetchNearbySite(int id) async {
+    // 1. Try Cache First
+    final cachedSites = await SqliteService().getCachedSites();
+    final cachedMatch = cachedSites.firstWhere(
+      (s) => (s as Map<String, dynamic>)['id'] == id,
+      orElse: () => null,
+    );
+
+    if (cachedMatch != null && mounted) {
+      setState(() => _nearbySite = CulturalSite.fromJson(cachedMatch as Map<String, dynamic>));
+    }
+
+    final isOnline = await SqliteService().isOnline();
+    if (!isOnline) return;
+
+    // 2. Fetch from Server
     setState(() => _isLoadingSite = true);
     try {
       final res = await SitesRemoteDatasource().getSite(id);
       if (res.statusCode == 200 && mounted) {
-        setState(() => _nearbySite = CulturalSite.fromJson(res.data as Map<String, dynamic>));
+        final data = res.data as Map<String, dynamic>;
+        setState(() => _nearbySite = CulturalSite.fromJson(data));
+        
+        // Update the cached list if needed
+        final updated = cachedSites.map((s) => (s as Map)['id'] == id ? data : s).toList();
+        if (!cachedSites.any((s) => (s as Map)['id'] == id)) updated.add(data);
+        await SqliteService().cacheSites(updated);
       }
     } catch (_) {
     } finally {

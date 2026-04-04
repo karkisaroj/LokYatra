@@ -4,6 +4,7 @@ import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SqliteService {
   static final SqliteService _instance = SqliteService._internal();
@@ -11,17 +12,25 @@ class SqliteService {
   SqliteService._internal();
 
   static Database? _database;
+  static SharedPreferences? _prefs;
 
   static const _permanentKeys = {
     'has_seen_onboarding',
     'sites_last_sync',
     'homestays_last_sync',
+    'user_quiz_points',
   };
 
   Future<Database> get database async {
+    if (kIsWeb) throw UnsupportedError('SQLite is not supported on Web. Use SharedPreferences methods.');
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
+  }
+
+  Future<SharedPreferences> get prefs async {
+    _prefs ??= await SharedPreferences.getInstance();
+    return _prefs!;
   }
 
   Future<Database> _initDatabase() async {
@@ -52,10 +61,18 @@ class SqliteService {
   }
 
   Future<void> put(String key, dynamic value) async {
+    final timestamp = DateTime.now().toIso8601String();
     try {
-      final db        = await database;
-      final jsonStr   = jsonEncode(value);
-      final timestamp = DateTime.now().toIso8601String();
+      if (kIsWeb) {
+        final p    = await prefs;
+        final data = {'value': value, 'timestamp': timestamp};
+        await p.setString(key, jsonEncode(data));
+        debugPrint('Web put: $key');
+        return;
+      }
+
+      final db      = await database;
+      final jsonStr = jsonEncode(value);
       await db.insert(
         'cache',
         {'key': key, 'value': jsonStr, 'timestamp': timestamp},
@@ -63,27 +80,42 @@ class SqliteService {
       );
       debugPrint('SQLite put: $key');
     } catch (e) {
-      debugPrint('SQLite put error ($key): $e');
+      debugPrint('Cache put error ($key): $e');
     }
   }
 
   Future<dynamic> get(String key) async {
     try {
+      if (kIsWeb) {
+        final p   = await prefs;
+        final str = p.getString(key);
+        if (str != null) {
+          final data = jsonDecode(str);
+          return data['value'];
+        }
+        return null;
+      }
+
       final db   = await database;
       final rows = await db.query('cache', where: 'key = ?', whereArgs: [key]);
       if (rows.isNotEmpty) return jsonDecode(rows.first['value'] as String);
     } catch (e) {
-      debugPrint('SQLite get error ($key): $e');
+      debugPrint('Cache get error ($key): $e');
     }
     return null;
   }
 
   Future<void> delete(String key) async {
     try {
+      if (kIsWeb) {
+        final p = await prefs;
+        await p.remove(key);
+        return;
+      }
       final db = await database;
       await db.delete('cache', where: 'key = ?', whereArgs: [key]);
     } catch (e) {
-      debugPrint('SQLite delete error ($key): $e');
+      debugPrint('Cache delete error ($key): $e');
     }
   }
 
@@ -125,16 +157,18 @@ class SqliteService {
   }
 
 
-  Future<void> cacheUserProfile({
-    required String name,
-    required String email,
-    String? phone,
-    String? profileImage,
-  }) async {
-    await put('user_name',  name);
-    await put('user_email', email);
-    if (phone        != null) await put('user_phone',         phone);
-    if (profileImage != null) await put('user_profile_image', profileImage);
+  Future<void> cacheUserProfile(Map<String, dynamic> profile) async {
+    await put('user_profile', profile);
+    // Also keep legacy keys for backward compatibility with existing screens
+    if (profile['name'] != null)         await put('user_name',  profile['name']);
+    if (profile['email'] != null)        await put('user_email', profile['email']);
+    if (profile['phoneNumber'] != null)  await put('user_phone',  profile['phoneNumber']);
+    if (profile['profileImage'] != null) await put('user_image',  profile['profileImage']);
+  }
+
+  Future<Map<String, dynamic>?> getCachedUserProfile() async {
+    final data = await get('user_profile');
+    return data is Map<String, dynamic> ? data : null;
   }
 
   // ── Stories ───────────────────────────────────────────────────────────────
@@ -147,14 +181,33 @@ class SqliteService {
 
   // ── Cleanup ───────────────────────────────────────────────────────────────
 
-  Future<void> deleteOldCache({int daysOld = 7}) async {
-    try {
-      final db         = await database;
-      final cutoff     = DateTime.now().subtract(Duration(days: daysOld)).toIso8601String();
+  Future<void> deleteOldCache({int? daysOldOverride}) async {
+    // Default to 7 days for Mobile, 3 days for Web
+    final daysOldCap = daysOldOverride ?? (kIsWeb ? 3 : 7);
+    final cutoff     = DateTime.now().subtract(Duration(days: daysOldCap));
 
-      // Build exclusion list dynamically from _permanentKeys
+    try {
+      if (kIsWeb) {
+        final p    = await prefs;
+        final keys = p.getKeys();
+        for (final key in keys) {
+          if (_permanentKeys.contains(key)) continue;
+          final str = p.getString(key);
+          if (str == null) continue;
+          try {
+            final data = jsonDecode(str);
+            final ts   = DateTime.tryParse(data['timestamp'] ?? '');
+            if (ts != null && ts.isBefore(cutoff)) {
+              await p.remove(key);
+            }
+          } catch (_) {}
+        }
+        return;
+      }
+
+      final db           = await database;
       final placeholders = _permanentKeys.map((_) => '?').join(', ');
-      final whereArgs    = [cutoff, ..._permanentKeys];
+      final whereArgs    = [cutoff.toIso8601String(), ..._permanentKeys];
 
       final count = await db.delete(
         'cache',
@@ -168,6 +221,11 @@ class SqliteService {
   }
 
   Future<void> clearAllCache() async {
+    if (kIsWeb) {
+      final p = await prefs;
+      await p.clear();
+      return;
+    }
     final db = await database;
     await db.delete('cache');
     debugPrint('All cache cleared');

@@ -35,8 +35,6 @@ class AdminPageWrapper extends StatelessWidget {
 
   void _logout(BuildContext context) {
     context.read<AuthBloc>().add(LogoutButtonClicked());
-    Navigator.of(context, rootNavigator: true)
-        .pushNamedAndRemoveUntil('/login', (route) => false);
   }
 
   @override
