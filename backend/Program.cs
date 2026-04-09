@@ -74,23 +74,28 @@ builder.Services.AddHttpClient();
 
 // Bind to Railway's dynamic PORT env var
 var port = Environment.GetEnvironmentVariable("PORT");
+Console.WriteLine($"[STARTUP] PORT={port ?? "not set"}, DATABASE_URL={(Environment.GetEnvironmentVariable("DATABASE_URL") != null ? "set" : "not set")}");
 if (!string.IsNullOrEmpty(port))
     builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 var app = builder.Build();
+Console.WriteLine("[STARTUP] App built successfully");
 
 // Auto-apply pending migrations on startup
 using (var scope = app.Services.CreateScope())
 {
     try
     {
+        Console.WriteLine("[STARTUP] Running migrations...");
         scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+        Console.WriteLine("[STARTUP] Migrations complete");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"[MIGRATION ERROR] {ex.Message}");
+        Console.WriteLine($"[MIGRATION ERROR] {ex.GetType().Name}: {ex.Message}");
     }
 }
+Console.WriteLine("[STARTUP] Starting web server...");
 
 app.UseCors("AllowAll");
 
