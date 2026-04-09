@@ -71,12 +71,25 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICloudImageService, CloudinaryImageService>();
 builder.Services.AddScoped<NotificationService>();
 builder.Services.AddHttpClient();
+
+// Bind to Railway's dynamic PORT env var
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+
 var app = builder.Build();
 
 // Auto-apply pending migrations on startup
 using (var scope = app.Services.CreateScope())
 {
-    scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+    try
+    {
+        scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[MIGRATION ERROR] {ex.Message}");
+    }
 }
 
 app.UseCors("AllowAll");
