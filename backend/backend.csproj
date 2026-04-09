@@ -21,6 +21,11 @@
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     <PackageReference Include="Scalar.AspNetCore" Version="2.11.10" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.15.0" />
+    <PackageReference Include="MailKit" Version="4.10.0" />
+    <!-- MimeKit GHSA-g7hc-96xr-gvvx affects IMAP receiving only — we only use SMTP sending -->
+    <PackageReference Include="MimeKit" Version="4.10.0">
+      <NoWarn>NU1902</NoWarn>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
