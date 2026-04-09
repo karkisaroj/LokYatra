@@ -11,8 +11,6 @@ import 'package:lokyatra_frontend/presentation/screens/admin/Stories.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/UserManagementPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/admin/dashboard.dart';
 import 'package:lokyatra_frontend/presentation/widgets/Helpers/AdminPageWrapper.dart';
-import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
-import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_state.dart';
 import 'Adminhomestays.dart';
 
 class AdminDashboard extends StatefulWidget {
@@ -98,19 +96,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthState>(
-      listener: (context, state) {
-        if (state is LogoutSuccess) {
-          Navigator.of(context, rootNavigator: true)
-              .pushNamedAndRemoveUntil('/login', (route) => false);
-        }
-      },
-      child: AdminPageWrapper(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
-        pages: _pages,
-        subtitleNotifier: subtitleNotifier,
-      ),
+    return AdminPageWrapper(
+      selectedIndex: _selectedIndex,
+      onItemTapped: _onItemTapped,
+      pages: _pages,
+      subtitleNotifier: subtitleNotifier,
     );
   }
 }

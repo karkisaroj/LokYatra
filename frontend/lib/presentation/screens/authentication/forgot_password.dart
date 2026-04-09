@@ -21,6 +21,9 @@ class _ForgotPasswordState extends State<ForgotPassword> {
   final Dio _dio = Dio(BaseOptions(
     baseUrl: apiBaseUrl,
     validateStatus: (s) => s != null && s < 600,
+    connectTimeout: connectTimeout,
+    receiveTimeout: receiveTimeout,
+    sendTimeout: sendTimeout,
   ));
 
   @override
@@ -42,6 +45,16 @@ class _ForgotPasswordState extends State<ForgotPassword> {
         final msg =
             (res.data as Map?)?['message'] ?? 'Something went wrong';
         _showError(msg.toString());
+      }
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.receiveTimeout ||
+          e.type == DioExceptionType.connectionTimeout) {
+        _showError('Request timed out. Please try again.');
+      } else if (e.response != null) {
+        final msg = (e.response?.data as Map?)?['message'] ?? 'Something went wrong';
+        _showError(msg.toString());
+      } else {
+        _showError('Network error. Please try again.');
       }
     } catch (e) {
       _showError('Network error. Please try again.');

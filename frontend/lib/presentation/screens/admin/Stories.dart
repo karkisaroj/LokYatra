@@ -103,17 +103,21 @@ class _StoriesState extends State<Stories> {
   }
 
   Widget _webToolbar() {
-    return Row(children: [
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Cultural Stories', style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A2E))),
-        Text('Manage heritage site stories', style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[500])),
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Cultural Stories', style: GoogleFonts.playfairDisplay(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF1A1A2E))),
+          Text('Manage heritage site stories', style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[500])),
+        ]),
+        const Spacer(),
+        _addButton(),
       ]),
-      const Spacer(),
-      SizedBox(width: 240, child: _siteDropdown()),
-      const SizedBox(width: 12),
-      SizedBox(width: 220, child: _searchField()),
-      const SizedBox(width: 12),
-      _addButton(),
+      const SizedBox(height: 12),
+      Row(children: [
+        Expanded(child: _siteDropdown()),
+        const SizedBox(width: 12),
+        Expanded(child: _searchField()),
+      ]),
     ]);
   }
 

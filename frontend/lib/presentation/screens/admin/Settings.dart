@@ -483,8 +483,6 @@ class _LogoutTile extends StatelessWidget {
     if (confirmed != true) return;
     if (!context.mounted) return;
     context.read<AuthBloc>().add(LogoutButtonClicked());
-    Navigator.of(context, rootNavigator: true)
-        .pushNamedAndRemoveUntil('/login', (route) => false);
   }
 
   @override

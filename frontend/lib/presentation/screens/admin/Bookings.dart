@@ -188,24 +188,6 @@ class _BodyState extends State<_Body> {
         _webStatCard('Confirmed', '${counts['Confirmed'] ?? 0}', const Color(0xFF2E9E6B)),
         const SizedBox(width: 12),
         _webStatCard('Revenue', 'Rs.${(revenue / 1000).toStringAsFixed(1)}k', const Color(0xFFCD6E4E)),
-        const SizedBox(width: 24),
-        SizedBox(
-          width: 260,
-          height: 38,
-          child: TextField(
-            controller: _searchCtrl,
-            onChanged: (v) => setState(() => _search = v),
-            style: GoogleFonts.dmSans(fontSize: 13),
-            decoration: InputDecoration(
-              hintText: 'Search bookings...',
-              hintStyle: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[400]),
-              prefixIcon: Icon(Icons.search, size: 17, color: Colors.grey[400]),
-              filled: true, fillColor: const Color(0xFFF4F6F9),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
-              contentPadding: const EdgeInsets.symmetric(vertical: 8),
-            ),
-          ),
-        ),
       ]),
     );
   }
@@ -228,9 +210,29 @@ class _BodyState extends State<_Body> {
   Widget _webFilters(Map<String, int> counts) {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 12),
-      child: Row(children: [
-        ...['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled', 'Rejected'].map((s) {
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+          height: 38,
+          child: TextField(
+            controller: _searchCtrl,
+            onChanged: (v) => setState(() => _search = v),
+            style: GoogleFonts.dmSans(fontSize: 13),
+            decoration: InputDecoration(
+              hintText: 'Search bookings...',
+              hintStyle: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[400]),
+              prefixIcon: Icon(Icons.search, size: 17, color: Colors.grey[400]),
+              filled: true, fillColor: const Color(0xFFF4F6F9),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
+              contentPadding: const EdgeInsets.symmetric(vertical: 8),
+            ),
+          ),
+        ),
+        const SizedBox(height: 10),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(children: [
+            ...['All', 'Pending', 'Confirmed', 'Completed', 'Cancelled', 'Rejected'].map((s) {
           final isSelected = _statusFilter == s;
           final count = counts[s] ?? 0;
           final color = _statusColor(s);
@@ -266,6 +268,8 @@ class _BodyState extends State<_Body> {
             ),
           );
         }),
+          ]),
+        ),
       ]),
     );
   }

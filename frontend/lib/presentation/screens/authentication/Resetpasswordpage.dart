@@ -29,6 +29,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   final Dio _dio = Dio(BaseOptions(
     baseUrl: apiBaseUrl,
     validateStatus: (s) => s != null && s < 600,
+    connectTimeout: connectTimeout,
+    receiveTimeout: receiveTimeout,
+    sendTimeout: sendTimeout,
   ));
 
   @override

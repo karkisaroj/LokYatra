@@ -167,44 +167,45 @@ class HomestaysState extends State<Homestays> {
       return Container(
         color: Colors.white,
         padding: const EdgeInsets.fromLTRB(24, 16, 24, 14),
-        child: Row(children: [
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Homestays',
-                style: GoogleFonts.playfairDisplay(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1A1A2E))),
-            const SizedBox(height: 2),
-            Text('Manage all homestay listings',
-                style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[500])),
-          ]),
-          const Spacer(),
-          ...['All', 'Active', 'Paused'].map((label) => Padding(
-            padding: const EdgeInsets.only(left: 8),
-            child: GestureDetector(
-              onTap: () => setState(() => filter = label),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: filter == label ? chipColor(label) : Colors.transparent,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                      color: filter == label
-                          ? chipColor(label)
-                          : Colors.grey.shade300),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Homestays',
+                  style: GoogleFonts.playfairDisplay(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF1A1A2E))),
+              const SizedBox(height: 2),
+              Text('Manage all homestay listings',
+                  style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[500])),
+            ]),
+            const Spacer(),
+            ...['All', 'Active', 'Paused'].map((label) => Padding(
+              padding: const EdgeInsets.only(left: 8),
+              child: GestureDetector(
+                onTap: () => setState(() => filter = label),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: filter == label ? chipColor(label) : Colors.transparent,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: filter == label
+                            ? chipColor(label)
+                            : Colors.grey.shade300),
+                  ),
+                  child: Text(label,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: filter == label ? Colors.white : Colors.grey[600])),
                 ),
-                child: Text(label,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: filter == label ? Colors.white : Colors.grey[600])),
               ),
-            ),
-          )),
-          const SizedBox(width: 16),
+            )),
+          ]),
+          const SizedBox(height: 12),
           SizedBox(
-            width: 240,
             height: 40,
             child: TextField(
               onChanged: (v) => setState(() => search = v),
