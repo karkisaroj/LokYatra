@@ -1,18 +1,18 @@
 ﻿using backend.Database;
 using backend.Models;
-using MailKit.Net.Smtp;
-using MailKit.Security;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using MimeKit;
+using System.Net.Http.Headers;
 using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 
 namespace backend.Controllers
 {
     [Route("api/Auth")]
     [ApiController]
-    public class PasswordResetController(AppDbContext db, IConfiguration config) : ControllerBase
+    public class PasswordResetController(AppDbContext db, IConfiguration config, IHttpClientFactory httpClientFactory) : ControllerBase
     {
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
@@ -102,15 +102,11 @@ namespace backend.Controllers
 
         private async Task SendResetEmailAsync(string toEmail, string name, string token)
         {
-            var smtp = config.GetSection("Smtp");
-            var host     = smtp["Host"]        ?? "smtp.gmail.com";
-            var port     = int.Parse(smtp["Port"] ?? "587");
-            var sender   = smtp["SenderEmail"] ?? "";
-            var senderNm = smtp["SenderName"]  ?? "Lokyatra";
-            var password = (smtp["AppPassword"] ?? "").Trim();
+            var apiKey = Environment.GetEnvironmentVariable("RESEND_API_KEY")
+                         ?? config["Resend:ApiKey"] ?? "";
 
-            if (string.IsNullOrWhiteSpace(sender) || string.IsNullOrWhiteSpace(password))
-                throw new InvalidOperationException("SMTP credentials not configured. Set Smtp__SenderEmail and Smtp__AppPassword in Railway variables.");
+            if (string.IsNullOrWhiteSpace(apiKey))
+                throw new InvalidOperationException("RESEND_API_KEY not set in Railway variables.");
 
             var body = $"""
                 <!DOCTYPE html>
@@ -151,20 +147,29 @@ namespace backend.Controllers
                 </html>
                 """;
 
-            var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(senderNm, sender));
-            message.To.Add(new MailboxAddress(name, toEmail));
-            message.Subject = "Your Lokyatra Password Reset Code";
-            message.Body = new TextPart("html") { Text = body };
+            var payload = JsonSerializer.Serialize(new
+            {
+                from = "Lokyatra <onboarding@resend.dev>",
+                to = new[] { toEmail },
+                subject = "Your Lokyatra Password Reset Code",
+                html = body
+            });
 
-            // MailKit properly supports async timeouts — 15 second limit
+            var http = httpClientFactory.CreateClient();
+            http.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", apiKey);
+
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            using var client = new MailKit.Net.Smtp.SmtpClient();
+            var response = await http.PostAsync(
+                "https://api.resend.com/emails",
+                new StringContent(payload, Encoding.UTF8, "application/json"),
+                cts.Token);
 
-            await client.ConnectAsync(host, port, SecureSocketOptions.StartTls, cts.Token);
-            await client.AuthenticateAsync(sender, password, cts.Token);
-            await client.SendAsync(message, cts.Token);
-            await client.DisconnectAsync(true, cts.Token);
+            if (!response.IsSuccessStatusCode)
+            {
+                var err = await response.Content.ReadAsStringAsync();
+                throw new Exception($"Resend API error {response.StatusCode}: {err}");
+            }
         }
     }
 
