@@ -46,23 +46,20 @@ namespace backend.Services
             return new TokenResponseDto { AccessToken = CreateToken(user), RefreshToken = await GenerateAndSaveRefreshTokenAsync(user) };
         }
 
-        public async Task<User?> RegisterAsync(RegisterDto request)
+        public async Task<(User? User, string? Error)> RegisterAsync(RegisterDto request)
         {
             if (await context.Users.AnyAsync(u => u.Email == request.Email))
-            {
-                return null;
-            }
-            else if (string.IsNullOrWhiteSpace(request.Role))
-                return null;
-            else if (request.Role != "tourist" && request.Role != "owner")
-                return null;
+                return (null, "An account with this email already exists.");
+
+            if (string.IsNullOrWhiteSpace(request.Role) || (request.Role != "tourist" && request.Role != "owner"))
+                return (null, "Invalid role. Must be 'tourist' or 'owner'.");
 
             var user = new User
             {
                 Email = request.Email,
                 Name = request.Name,
                 Role = request.Role,
-                PhoneNumber=request.PhoneNumber,
+                PhoneNumber = request.PhoneNumber,
                 CreatedAt = DateTimeOffset.UtcNow,
                 UpdatedAt = DateTimeOffset.UtcNow,
             };
@@ -70,7 +67,7 @@ namespace backend.Services
             context.Users.Add(user);
             await context.SaveChangesAsync();
 
-            return user;
+            return (user, null);
         }
         public async Task<TokenResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request)
         {

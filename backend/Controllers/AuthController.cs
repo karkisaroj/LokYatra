@@ -15,8 +15,8 @@ namespace backend.Controllers
         [HttpPost("register")]
         public async Task<ActionResult<User>> Register([FromBody] RegisterDto request)
         {
-            var user = await authService.RegisterAsync(request);
-            if (user == null) return BadRequest("Invalid registration data values.");
+            var (user, error) = await authService.RegisterAsync(request);
+            if (user == null) return BadRequest(error);
             return Ok(user);
         }
 
