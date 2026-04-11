@@ -69,34 +69,34 @@ class _RegisterState extends State<Register> {
   Widget build(BuildContext context) {
     final width = MediaQuery.of(context).size.width;
     final isWeb = kIsWeb || width > 700;
-    return Scaffold(
-      backgroundColor: isWeb ? cream : Colors.white,
-      body: BlocConsumer<AuthBloc, AuthState>(
-        listener: (context, state) {
-          if (state is AuthError) {
-            ScaffoldMessenger.of(context)
-                .showSnackBar(SnackBar(content: Text(state.message)));
-          } else if (state is RegisterSuccess) {
-            _nameController.clear();
-            _emailController.clear();
-            _phoneController.clear();
-            _passwordController.clear();
-            _confirmController.clear();
-            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                duration: Duration(seconds: 2),
-                content:
-                Text('Registration Successful! Please login.')));
-            Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const LoginPage()));
-          }
-        },
-        builder: (context, state) {
-          final loading = state is AuthLoading;
-          return isWeb
-              ? _webLayout(context, loading)
-              : _mobileLayout(context, loading);
-        },
-      ),
+    return BlocConsumer<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthError) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text(state.message)));
+        } else if (state is RegisterSuccess) {
+          _nameController.clear();
+          _emailController.clear();
+          _phoneController.clear();
+          _passwordController.clear();
+          _confirmController.clear();
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              duration: Duration(seconds: 2),
+              content: Text('Registration Successful! Please login.')));
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (_) => const LoginPage()));
+        }
+      },
+      builder: (context, state) {
+        final loading = state is AuthLoading;
+        if (isWeb) {
+          return Scaffold(
+            backgroundColor: cream,
+            body: _webLayout(context, loading),
+          );
+        }
+        return _mobileLayout(context, loading);
+      },
     );
   }
 
