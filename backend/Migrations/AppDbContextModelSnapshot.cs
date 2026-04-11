@@ -506,6 +506,33 @@ namespace backend.Migrations
                     b.ToTable("SavedHomestays");
                 });
 
+            modelBuilder.Entity("backend.Models.SavedSite", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("SiteId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("SavedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SiteId");
+
+                    b.HasIndex("UserId", "SiteId")
+                        .IsUnique();
+
+                    b.ToTable("SavedSites");
+                });
+
             modelBuilder.Entity("backend.Models.Story", b =>
                 {
                     b.Property<int>("Id")
@@ -614,6 +641,25 @@ namespace backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Homestay");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("backend.Models.SavedSite", b =>
+                {
+                    b.HasOne("backend.Models.CulturalSite", "Site")
+                        .WithMany()
+                        .HasForeignKey("SiteId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("backend.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Site");
 
                     b.Navigation("User");
                 });
