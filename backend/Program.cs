@@ -87,8 +87,10 @@ using (var scope = app.Services.CreateScope())
     try
     {
         Console.WriteLine("[STARTUP] Running migrations...");
-        scope.ServiceProvider.GetRequiredService<AppDbContext>().Database.Migrate();
+        var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        db.Database.Migrate();
         Console.WriteLine("[STARTUP] Migrations complete");
+        await DataSeeder.SeedHomestaysAsync(db);
     }
     catch (Exception ex)
     {
