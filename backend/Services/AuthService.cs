@@ -54,6 +54,17 @@ namespace backend.Services
             if (string.IsNullOrWhiteSpace(request.Role) || (request.Role != "tourist" && request.Role != "owner"))
                 return (null, "Invalid role. Must be 'tourist' or 'owner'.");
 
+            if (string.IsNullOrEmpty(request.Password) || request.Password.Length < 8)
+                return (null, "Password must be at least 8 characters.");
+            if (!request.Password.Any(char.IsUpper))
+                return (null, "Password must include at least one uppercase letter.");
+            if (!request.Password.Any(char.IsLower))
+                return (null, "Password must include at least one lowercase letter.");
+            if (!request.Password.Any(char.IsDigit))
+                return (null, "Password must include at least one number.");
+            if (!request.Password.Any(c => "!@#$%^&*(),.?\":{}|<>_-".Contains(c)))
+                return (null, "Password must include at least one special character.");
+
             var user = new User
             {
                 Email = request.Email,
