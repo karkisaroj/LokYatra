@@ -505,6 +505,10 @@ class _RegisterState extends State<Register> {
     validator: (v) {
       if (v == null || v.isEmpty) return 'Password is required';
       if (v.length < 8) return 'At least 8 characters';
+      if (!v.contains(RegExp(r'[A-Z]'))) return 'Include at least one uppercase letter';
+      if (!v.contains(RegExp(r'[a-z]'))) return 'Include at least one lowercase letter';
+      if (!v.contains(RegExp(r'[0-9]'))) return 'Include at least one number';
+      if (!v.contains(RegExp(r'[!@#$%^&*(),.?":{}|<>_\-]'))) return 'Include at least one special character';
       return null;
     },
   );
