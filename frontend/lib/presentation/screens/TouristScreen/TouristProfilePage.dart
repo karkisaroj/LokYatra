@@ -15,6 +15,7 @@ import '../../widgets/Helpers/NotificationsPage.dart';
 import '../../widgets/Helpers/ProfileImageWidget.dart';
 import 'MyReviewsPage.dart';
 import 'Savedhomestayspage.dart';
+import 'SavedSitesPage.dart';
 import 'TouristBookingsPage.dart';
 import 'QuizHistoryPage.dart';
 import 'EditProfilePage.dart';
@@ -521,10 +522,19 @@ class _TouristProfilePageState extends State<TouristProfilePage> {
             ActivityTile(
               icon: Icons.favorite_outline_rounded,
               iconColor: accentBlack,
-              label: 'Your Saved',
-              sublabel: 'Saved homestays',
+              label: 'Saved Homestays',
+              sublabel: 'Your saved homestays',
               onTap: () => Navigator.push(context,
                   MaterialPageRoute(builder: (_) => const SavedHomestaysPage())),
+            ),
+            rowDivider(),
+            ActivityTile(
+              icon: Icons.temple_hindu_outlined,
+              iconColor: accentBlack,
+              label: 'Saved Sites',
+              sublabel: 'Your saved heritage sites',
+              onTap: () => Navigator.push(context,
+                  MaterialPageRoute(builder: (_) => const SavedSitesPage())),
             ),
             rowDivider(),
             ActivityTile(

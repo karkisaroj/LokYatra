@@ -11,6 +11,7 @@ namespace backend.Database
         public DbSet<Booking> Bookings { get; set; }
         public DbSet<Homestay> Homestays => Set<Homestay>();
         public DbSet<SavedHomestay> SavedHomestays { get; set; }
+        public DbSet<SavedSite> SavedSites { get; set; }
         public DbSet<QuizQuestion> QuizQuestions { get; set; }
         public DbSet<QuizAttempt> QuizAttempts { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
@@ -21,6 +22,10 @@ namespace backend.Database
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<SavedHomestay>()
                 .HasIndex(s => new { s.UserId, s.HomestayId })
+                .IsUnique();
+
+            modelBuilder.Entity<SavedSite>()
+                .HasIndex(s => new { s.UserId, s.SiteId })
                 .IsUnique();
 
             modelBuilder.Entity<User>(entity =>

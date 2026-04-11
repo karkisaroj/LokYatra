@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Story.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../data/datasources/saved_sites_remote_datasource.dart';
 import '../../../data/models/Site.dart';
 import '../../state_management/Bloc/review/review_bloc.dart';
 import '../../state_management/Bloc/review/review_event.dart';
@@ -38,6 +39,41 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
   int _selectedTabIndex  = 0;
   final PageController _pageController = PageController();
   final List<String> _tabs = ['About', 'History', 'Stories', 'Reviews'];
+
+  bool _isSaved = false;
+  bool _saveLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSaveStatus();
+  }
+
+  Future<void> _loadSaveStatus() async {
+    try {
+      final resp = await SavedSitesRemoteDatasource().checkSaved(widget.site.id);
+      if (resp.statusCode == 200 && mounted) {
+        setState(() => _isSaved = resp.data['saved'] == true);
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _toggleSave() async {
+    if (_saveLoading) return;
+    setState(() => _saveLoading = true);
+    try {
+      final resp = await SavedSitesRemoteDatasource().toggleSaved(widget.site.id);
+      if (resp.statusCode == 200 && mounted) {
+        setState(() => _isSaved = resp.data['saved'] == true);
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(_isSaved ? 'Added to saved sites' : 'Removed from saved'),
+          duration: const Duration(seconds: 2),
+        ));
+      }
+    } catch (_) {} finally {
+      if (mounted) setState(() => _saveLoading = false);
+    }
+  }
 
   @override
   void dispose() {
@@ -513,6 +549,30 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                   decoration: const BoxDecoration(
                       color: Colors.white, shape: BoxShape.circle),
                   child: Icon(Icons.arrow_back, size: 20.sp, color: _dark),
+                ),
+              ),
+            ),
+
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 8.h,
+              right: 8.w,
+              child: GestureDetector(
+                onTap: _toggleSave,
+                child: Container(
+                  width: 38.w, height: 38.h,
+                  decoration: const BoxDecoration(
+                      color: Colors.white, shape: BoxShape.circle),
+                  child: _saveLoading
+                      ? Padding(
+                          padding: EdgeInsets.all(10.w),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: _terracotta))
+                      : Icon(
+                          _isSaved
+                              ? Icons.favorite_rounded
+                              : Icons.favorite_border_rounded,
+                          size: 20.sp,
+                          color: _isSaved ? Colors.redAccent : _dark),
                 ),
               ),
             ),
