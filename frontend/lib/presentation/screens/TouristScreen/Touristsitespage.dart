@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristSitesDetails.dart';
+import 'package:lokyatra_frontend/presentation/widgets/Helpers/SiteFavButton.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
@@ -290,6 +291,7 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
                                 ),
                               ),
                               child: _SiteCard(
+                                siteId: site.id,
                                 imageUrl: imageUrl,
                                 name: name,
                                 category: category,
@@ -316,10 +318,12 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
 
 // ── Site Card ─────────────────────────────────────────────────
 class _SiteCard extends StatelessWidget {
+  final int    siteId;
   final String imageUrl, name, category, district, feeNPR, feeSAARC;
   final bool   isUnesco;
 
   const _SiteCard({
+    required this.siteId,
     required this.imageUrl,
     required this.name,
     required this.category,
@@ -478,6 +482,8 @@ class _SiteCard extends StatelessWidget {
                 ),
               ),
               Row(mainAxisSize: MainAxisSize.min, children: [
+                SiteFavButton(siteId: siteId, size: 20),
+                SizedBox(width: 12.w),
                 Text('Explore',
                     style: GoogleFonts.dmSans(
                         fontSize: 13.sp,

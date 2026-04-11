@@ -8,6 +8,7 @@ import 'package:lokyatra_frontend/presentation/screens/TouristScreen/QuizPage.da
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristProfilePage.dart';
 import '../../../core/services/constants.dart';
 import '../../../core/services/image_proxy.dart';
+import '../../widgets/Helpers/SiteFavButton.dart';
 import '../../../core/services/sqlite_service.dart';
 import '../../../data/datasources/User_remote_datasource.dart';
 import '../../../data/models/Site.dart';
@@ -547,6 +548,19 @@ class _SiteCard extends StatelessWidget {
                               fontWeight: FontWeight.w700)),
                     ),
                   ),
+                Positioned(
+                  top: 6.h, right: 6.w,
+                  child: Container(
+                    width: 28.w, height: 28.w,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: SiteFavButton(siteId: site.id, size: 16),
+                    ),
+                  ),
+                ),
               ],
             ),
             Expanded(
