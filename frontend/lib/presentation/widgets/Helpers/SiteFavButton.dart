@@ -2,8 +2,55 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../data/datasources/saved_sites_remote_datasource.dart';
 
-/// Standalone heart-toggle button for heritage sites.
-/// Loads its own saved status and uses optimistic UI — no spinner.
+/// Shared in-memory cache: siteId → saved state.
+/// All SiteFavButton instances listen to this so they update together.
+class _SiteCache {
+  _SiteCache._();
+  static final _SiteCache instance = _SiteCache._();
+
+  final Map<int, ValueNotifier<bool>> _notifiers = {};
+  final Set<int> _fetching = {};
+
+  ValueNotifier<bool> notifierFor(int siteId) =>
+      _notifiers.putIfAbsent(siteId, () => ValueNotifier(false));
+
+  bool isLoaded(int siteId) => _notifiers.containsKey(siteId);
+
+  Future<void> load(int siteId) async {
+    if (_fetching.contains(siteId)) return;
+    _fetching.add(siteId);
+    try {
+      final resp = await SavedSitesRemoteDatasource().checkSaved(siteId);
+      if (resp.statusCode == 200) {
+        notifierFor(siteId).value = resp.data['saved'] == true;
+      }
+    } catch (_) {
+      notifierFor(siteId); // ensure notifier exists so isLoaded returns true
+    } finally {
+      _fetching.remove(siteId);
+    }
+  }
+
+  Future<void> toggle(int siteId) async {
+    final notifier = notifierFor(siteId);
+    final prev = notifier.value;
+    notifier.value = !prev; // optimistic
+    try {
+      final resp = await SavedSitesRemoteDatasource().toggleSaved(siteId);
+      if (resp.statusCode == 200) {
+        notifier.value = resp.data['saved'] == true;
+      } else {
+        notifier.value = prev; // revert
+      }
+    } catch (_) {
+      notifier.value = prev; // revert
+    }
+  }
+
+  void invalidate(int siteId) => _notifiers.remove(siteId);
+  void invalidateAll() => _notifiers.clear();
+}
+
 class SiteFavButton extends StatefulWidget {
   final int siteId;
   final double size;
@@ -16,48 +63,30 @@ class SiteFavButton extends StatefulWidget {
     this.activeColor = Colors.redAccent,
   });
 
+  /// Call this when the user logs out to clear cached states.
+  static void clearCache() => _SiteCache.instance.invalidateAll();
+
   @override
   State<SiteFavButton> createState() => _SiteFavButtonState();
 }
 
 class _SiteFavButtonState extends State<SiteFavButton> {
-  bool _isSaved = false;
-  bool _loaded  = false;
+  bool _loaded = false;
 
   @override
   void initState() {
     super.initState();
-    _checkStatus();
+    _ensureLoaded();
   }
 
-  Future<void> _checkStatus() async {
-    try {
-      final resp = await SavedSitesRemoteDatasource().checkSaved(widget.siteId);
-      if (resp.statusCode == 200 && mounted) {
-        setState(() {
-          _isSaved = resp.data['saved'] == true;
-          _loaded  = true;
-        });
-      }
-    } catch (_) {
+  Future<void> _ensureLoaded() async {
+    final cache = _SiteCache.instance;
+    if (cache.isLoaded(widget.siteId)) {
       if (mounted) setState(() => _loaded = true);
+      return;
     }
-  }
-
-  Future<void> _toggle() async {
-    final prev = _isSaved;
-    // Optimistic update — instant feedback
-    setState(() => _isSaved = !_isSaved);
-    try {
-      final resp = await SavedSitesRemoteDatasource().toggleSaved(widget.siteId);
-      if (resp.statusCode == 200 && mounted) {
-        setState(() => _isSaved = resp.data['saved'] == true);
-      } else if (mounted) {
-        setState(() => _isSaved = prev); // revert on unexpected response
-      }
-    } catch (_) {
-      if (mounted) setState(() => _isSaved = prev); // revert on error
-    }
+    await cache.load(widget.siteId);
+    if (mounted) setState(() => _loaded = true);
   }
 
   @override
@@ -70,14 +99,20 @@ class _SiteFavButtonState extends State<SiteFavButton> {
             size: widget.size.sp, color: Colors.grey[400]),
       );
     }
-    return GestureDetector(
-      onTap: _toggle,
-      behavior: HitTestBehavior.opaque,
-      child: Icon(
-        _isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-        size: widget.size.sp,
-        color: _isSaved ? widget.activeColor : Colors.grey[400],
-      ),
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: _SiteCache.instance.notifierFor(widget.siteId),
+      builder: (_, isSaved, __) {
+        return GestureDetector(
+          onTap: () => _SiteCache.instance.toggle(widget.siteId),
+          behavior: HitTestBehavior.opaque,
+          child: Icon(
+            isSaved ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+            size: widget.size.sp,
+            color: isSaved ? widget.activeColor : Colors.grey[400],
+          ),
+        );
+      },
     );
   }
 }
