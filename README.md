@@ -1,10 +1,7 @@
-<div>
-<div style="text-align: center;">
-   <img width="1024" height="1024" alt="lokyatra logo" src="https://github.com/user-attachments/assets/a1b1972e-11f8-419f-86e3-19fb5411dc8b" />
+<div align="center"> 
+   <img width="1024" height="1024" alt="lokyatra logo" src="https://github.com/user-attachments/assets/87e42d8c-9871-46d7-8349-e87bfad91414" />
 
-</div>
 
-  
   # LokYatra
   
   **Explore Nepal's Cultural Heritage**
