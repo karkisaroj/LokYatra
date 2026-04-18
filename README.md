@@ -1,5 +1,5 @@
 <div align="center"> 
-   <img width="1024" height="1024" alt="lokyatra logo" src="https://github.com/user-attachments/assets/87e42d8c-9871-46d7-8349-e87bfad91414" />
+   <img width="120" height="120" alt="lokyatra logo" src="https://github.com/user-attachments/assets/87e42d8c-9871-46d7-8349-e87bfad91414" />
 
 
   # LokYatra
