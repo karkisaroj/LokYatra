@@ -1,5 +1,7 @@
+<div>
 <div style="text-align: center;">
-    <img width="120" height="120" alt="lokyatra_logo" src="https://github.com/user-attachments/assets/70ef1009-a44e-4e80-80a9-abe172b25a7a" />
+   <img width="1024" height="1024" alt="lokyatra logo" src="https://github.com/user-attachments/assets/a1b1972e-11f8-419f-86e3-19fb5411dc8b" />
+
 </div>
 
   
