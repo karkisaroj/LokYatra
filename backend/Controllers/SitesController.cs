@@ -215,7 +215,13 @@ namespace backend.Controllers
         {
             var entity = await db.CulturalSites.FindAsync(id);
             if (entity is null) return NotFound("Site not found");
+
+            // Delete all related records that reference this site (no cascade configured)
+            db.Stories.RemoveRange(db.Stories.Where(s => s.CulturalSiteId == id));
+            db.SavedSites.RemoveRange(db.SavedSites.Where(s => s.SiteId == id));
+            db.Reviews.RemoveRange(db.Reviews.Where(r => r.SiteId == id));
             db.CulturalSites.Remove(entity);
+
             await db.SaveChangesAsync();
             return Ok(new { message = "Site deleted successfully" });
         }
