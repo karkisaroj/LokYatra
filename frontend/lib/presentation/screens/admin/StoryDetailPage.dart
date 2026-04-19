@@ -94,18 +94,33 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                   itemCount: imgs.length,
                   physics: const BouncingScrollPhysics(),
                   onPageChanged: (i) => setState(() => _currentPage = i),
-                  itemBuilder: (_, i) => CachedNetworkImage(
-                    imageUrl: getProxyImageUrl(imgs[i]),
-                    cacheKey: 'full_${imgs[i]}',
-                    fit: BoxFit.contain,
-                    filterQuality: FilterQuality.high,
-                    color: const Color(0xFF2A2A42),
-                    colorBlendMode: BlendMode.dstOver,
-                    placeholder: (_, _) => Container(color: const Color(0xFF2A2A42),
-                        child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white24))),
-                    errorWidget: (_, _, _) => Container(color: const Color(0xFF2A2A42),
-                        child: const Center(child: Icon(Icons.broken_image, color: Colors.white24, size: 40))),
-                  ),
+                  itemBuilder: (_, i) {
+                    final rawUrl = Uri.decodeFull(imgs[i]);
+                    return kIsWeb
+                        ? Image.network(rawUrl,
+                            fit: BoxFit.contain,
+                            color: const Color(0xFF2A2A42),
+                            colorBlendMode: BlendMode.dstOver,
+                            loadingBuilder: (_, child, progress) => progress == null ? child
+                                : Container(color: const Color(0xFF2A2A42),
+                                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white24))),
+                            errorBuilder: (context, error, stack) => Container(color: const Color(0xFF2A2A42),
+                                child: const Center(child: Icon(Icons.broken_image, color: Colors.white24, size: 40))),
+                          )
+                        : CachedNetworkImage(
+                            imageUrl: rawUrl,
+                            cacheKey: 'full_$rawUrl',
+                            cacheManager: LokYatraCacheManager(),
+                            fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
+                            color: const Color(0xFF2A2A42),
+                            colorBlendMode: BlendMode.dstOver,
+                            placeholder: (_, __) => Container(color: const Color(0xFF2A2A42),
+                                child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white24))),
+                            errorWidget: (_, __, ___) => Container(color: const Color(0xFF2A2A42),
+                                child: const Center(child: Icon(Icons.broken_image, color: Colors.white24, size: 40))),
+                          );
+                  },
                 ),
                 if (imgs.length > 1) ...[
                   Positioned(left: 8, top: 0, bottom: 0, child: Center(child: _Arr(
@@ -189,11 +204,12 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                       ),
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(6),
-                        child: CachedNetworkImage(
-                          imageUrl: getProxyImageUrl(cloudinaryThumb(imgs[i], w: 300, h: 200)),
-                          cacheKey: 'thumb_${imgs[i]}',
+                        child: ProxyImage(
+                          imageUrl: imgs[i],
                           width: 150, height: 100,
-                          fit: BoxFit.cover, filterQuality: FilterQuality.medium,
+                          thumb: true,
+                          fit: BoxFit.cover,
+                          borderRadiusValue: 0,
                         ),
                       ),
                     ),
@@ -214,21 +230,11 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
       padding: const EdgeInsets.all(16),
       children: [
         if (images.isNotEmpty)
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: CachedNetworkImage(
-              imageUrl: getProxyImageUrl(images.first),
-              cacheKey: 'full_${images.first}',
-              width: double.infinity, height: 220,
-              fit: BoxFit.contain,
-              filterQuality: FilterQuality.high,
-              color: Colors.grey[200],
-              colorBlendMode: BlendMode.dstOver,
-              placeholder: (_, _) => Container(height: 220, color: Colors.grey[200],
-                  child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
-              errorWidget: (_, _, _) => Container(height: 220, color: Colors.grey[200],
-                  child: const Icon(Icons.broken_image, color: Colors.grey)),
-            ),
+          ProxyImage(
+            imageUrl: images.first,
+            width: double.infinity, height: 220,
+            fit: BoxFit.contain,
+            borderRadiusValue: 14,
           ),
         const SizedBox(height: 16),
         Container(

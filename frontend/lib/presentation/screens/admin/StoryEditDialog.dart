@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:lokyatra_frontend/data/datasources/Stories_remote_datasource.dart';
@@ -69,20 +70,6 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Get original image count
-    int originalImageCount = 0;
-    if (widget.story['imageUrls'] != null && widget.story['imageUrls'] is List) {
-      originalImageCount = (widget.story['imageUrls'] as List).length;
-    }
-
-    // If user removed images but didn't add new ones, warn them
-    if (_newFiles.isEmpty && _existingImageUrls.length != originalImageCount) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('To apply image removals, please upload at least one new image.')),
-      );
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     Map<String, dynamic> fields = {
@@ -93,6 +80,7 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
       'FullContent': _contentController.text.trim(),
       'HistoricalContext': _historicalController.text.trim().isEmpty ? null : _historicalController.text.trim(),
       'CulturalSignificance': _culturalController.text.trim().isEmpty ? null : _culturalController.text.trim(),
+      'ExistingImagesJson': json.encode(_existingImageUrls),
     };
 
     try {
