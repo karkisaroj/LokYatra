@@ -156,7 +156,7 @@ class HomestaysState extends State<Homestays> {
         ] else ...[
           _searchBar(),
           const SizedBox(height: 10),
-          _filterChips(),
+          SingleChildScrollView(scrollDirection: Axis.horizontal, child: _filterChips()),
         ],
       ]),
     );

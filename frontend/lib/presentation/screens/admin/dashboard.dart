@@ -140,17 +140,30 @@ class _DashboardState extends State<Dashboard> {
   }
 
   Widget _statsGrid(bool isMobile, int users, int sites, int homestays, double revenue) {
-    final cards = [
-      _StatCard(label: 'Users',          value: '$users',         icon: Icons.people_alt_outlined,   accent: const Color(0xFF4F6AF5)),
-      _StatCard(label: 'Heritage Sites', value: '$sites',         icon: Icons.account_balance_outlined, accent: const Color(0xFF8B5CF6)),
-      _StatCard(label: 'Homestays',      value: '$homestays',     icon: Icons.cottage_outlined,       accent: const Color(0xFFEC4899)),
-      _StatCard(label: 'Total Revenue',  value: _fmt(revenue),    icon: Icons.bar_chart_rounded,      accent: const Color(0xFF10B981)),
+    final items = [
+      (label: 'Users',          value: '$users',      icon: Icons.people_alt_outlined,      accent: const Color(0xFF4F6AF5)),
+      (label: 'Heritage Sites', value: '$sites',      icon: Icons.account_balance_outlined, accent: const Color(0xFF8B5CF6)),
+      (label: 'Homestays',      value: '$homestays',  icon: Icons.cottage_outlined,         accent: const Color(0xFFEC4899)),
+      (label: 'Total Revenue',  value: _fmt(revenue), icon: Icons.bar_chart_rounded,        accent: const Color(0xFF10B981)),
     ];
     if (isMobile) {
-      return Column(children: cards.map((c) => Padding(padding: const EdgeInsets.only(bottom: 12), child: c)).toList());
+      return Row(children: [
+        Expanded(child: Column(children: [
+          _StatCard(label: items[0].label, value: items[0].value, icon: items[0].icon, accent: items[0].accent, compact: true),
+          const SizedBox(height: 10),
+          _StatCard(label: items[2].label, value: items[2].value, icon: items[2].icon, accent: items[2].accent, compact: true),
+        ])),
+        const SizedBox(width: 10),
+        Expanded(child: Column(children: [
+          _StatCard(label: items[1].label, value: items[1].value, icon: items[1].icon, accent: items[1].accent, compact: true),
+          const SizedBox(height: 10),
+          _StatCard(label: items[3].label, value: items[3].value, icon: items[3].icon, accent: items[3].accent, compact: true),
+        ])),
+      ]);
     }
-    return Row(children: cards
-        .map((c) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: c)))
+    return Row(children: items
+        .map((c) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 6),
+            child: _StatCard(label: c.label, value: c.value, icon: c.icon, accent: c.accent))))
         .toList());
   }
 
@@ -200,29 +213,43 @@ class _StatCard extends StatelessWidget {
   final String label, value;
   final IconData icon;
   final Color accent;
-  const _StatCard({required this.label, required this.value, required this.icon, required this.accent});
+  final bool compact;
+  const _StatCard({required this.label, required this.value, required this.icon, required this.accent, this.compact = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.all(compact ? 14 : 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: const Color(0xFFE8EAF0)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 3))],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Container(
-          padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(color: accent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, size: 20, color: accent),
-        ),
-        const SizedBox(height: 14),
-        Text(value, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: const Color(0xFF1C1F26))),
-        const SizedBox(height: 3),
-        Text(label, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280))),
-      ]),
+      child: compact
+          ? Row(children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(color: accent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
+                child: Icon(icon, size: 16, color: accent),
+              ),
+              const SizedBox(width: 10),
+              Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(value, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF1C1F26))),
+                Text(label, style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280)), maxLines: 1, overflow: TextOverflow.ellipsis),
+              ])),
+            ])
+          : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: accent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+                child: Icon(icon, size: 20, color: accent),
+              ),
+              const SizedBox(height: 14),
+              Text(value, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: const Color(0xFF1C1F26))),
+              const SizedBox(height: 3),
+              Text(label, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280))),
+            ]),
     );
   }
 }

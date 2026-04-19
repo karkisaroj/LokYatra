@@ -188,11 +188,11 @@ class _AdminSitesState extends State<AdminSites> {
         ] else ...[
           Row(children: [
             Expanded(child: _searchBar()),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             _addBtn(),
           ]),
           const SizedBox(height: 10),
-          _filterChips(),
+          SingleChildScrollView(scrollDirection: Axis.horizontal, child: _filterChips()),
         ],
       ]),
     );
