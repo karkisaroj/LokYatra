@@ -71,31 +71,51 @@ class ProxyImage extends StatelessWidget {
         : width;
     final safeH = (height.isInfinite || height.isNaN) ? 200.0 : height;
 
+    // Decode percent-encoded characters to avoid double-encoding by HTTP client
+    // e.g. Wikimedia URLs with %2C, %27 in filenames
+    final rawUrl = Uri.decodeFull(imageUrl!);
     final fetchUrl = thumb
-        ? cloudinaryThumb(imageUrl!, w: safeW.toInt(), h: safeH.toInt())
-        : cloudinaryFull(imageUrl!);
-
-    final cacheKey = overrideCacheKey
-        ?? (thumb ? 'thumb_${imageUrl!}' : 'full_${imageUrl!}');
+        ? cloudinaryThumb(rawUrl, w: safeW.toInt(), h: safeH.toInt())
+        : rawUrl;
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadiusValue),
-      child: CachedNetworkImage(
-        // Load directly from Cloudinary CDN — do NOT route through backend proxy
-        // (proxy causes all images to fail when Railway server is sleeping/down)
-        imageUrl:          fetchUrl,
-        cacheKey:          cacheKey,
-        // flutter_cache_manager file-based cache only works on mobile/desktop
-        cacheManager:      kIsWeb ? null : LokYatraCacheManager(),
-        width:             safeW,
-        height:            safeH,
-        fit:               fit,
-        maxWidthDiskCache: thumb ? safeW.toInt() : 1920,
-        fadeInDuration:    const Duration(milliseconds: 200),
-        fadeOutDuration:   const Duration(milliseconds: 100),
-        placeholder:       (_, _) => loading(safeW, safeH),
-        errorWidget:       (_, _, _) => broken(safeW, safeH),
-      ),
+      child: kIsWeb
+          ? _webImage(fetchUrl, safeW, safeH)
+          : _mobileImage(fetchUrl, safeW, safeH),
+    );
+  }
+
+  // On web: use Image.network — flutter_cache_manager disk cache doesn't work
+  // in a browser and causes silent failures for some images
+  Widget _webImage(String url, double w, double h) {
+    return Image.network(
+      url,
+      width:      w,
+      height:     h,
+      fit:        fit,
+      loadingBuilder: (_, child, progress) =>
+          progress == null ? child : loading(w, h),
+      errorBuilder: (context, error, stack) => broken(w, h),
+    );
+  }
+
+  // On mobile: keep CachedNetworkImage with persistent disk cache
+  Widget _mobileImage(String url, double w, double h) {
+    final cacheKey = overrideCacheKey
+        ?? (thumb ? 'thumb_$url' : 'full_$url');
+    return CachedNetworkImage(
+      imageUrl:          url,
+      cacheKey:          cacheKey,
+      cacheManager:      LokYatraCacheManager(),
+      width:             w,
+      height:            h,
+      fit:               fit,
+      maxWidthDiskCache: 1920,
+      fadeInDuration:    const Duration(milliseconds: 200),
+      fadeOutDuration:   const Duration(milliseconds: 100),
+      placeholder:       (_, _) => loading(w, h),
+      errorWidget:       (_, _, _) => broken(w, h),
     );
   }
 
