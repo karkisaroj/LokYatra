@@ -21,8 +21,10 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  static const _brown      = Color(0xFF8B5E3C);
-  static const _terracotta = Color(0xFFCD6E4E);
+  static const _bg     = Color(0xFFF7F8FC);
+  static const _ink    = Color(0xFF1C1F26);
+  static const _muted  = Color(0xFF6B7280);
+  static const _border = Color(0xFFE8EAF0);
 
   @override
   void initState() {
@@ -47,6 +49,12 @@ class _DashboardState extends State<Dashboard> {
   String _createdAt(Map<String, dynamic> b) =>
       (_inner(b)['createdAt'] ?? _inner(b)['checkIn'] ?? '').toString();
 
+  static String _fmt(double n) {
+    if (n >= 1_000_000) return 'Rs. ${(n / 1_000_000).toStringAsFixed(1)}M';
+    if (n >= 1_000)     return 'Rs. ${(n / 1_000).toStringAsFixed(1)}K';
+    return 'Rs. ${n.toStringAsFixed(0)}';
+  }
+
   @override
   Widget build(BuildContext context) {
     final bookingState  = context.watch<BookingBloc>().state;
@@ -54,25 +62,17 @@ class _DashboardState extends State<Dashboard> {
     final sitesState    = context.watch<SitesBloc>().state;
     final userState     = context.watch<UserBloc>().state;
 
-    final bookings = bookingState is AllBookingsLoaded
-        ? bookingState.bookings
-        : <Map<String, dynamic>>[];
+    final bookings  = bookingState is AllBookingsLoaded ? bookingState.bookings : <Map<String, dynamic>>[];
     final homestays = homestayState is TouristAllHomestaysLoaded
         ? homestayState.homestays
         : (homestayState is OwnerHomestaysLoaded ? homestayState.homestays : []);
-
     final sites = sitesState is SitesLoaded ? sitesState.sites : [];
     final users = userState is UserLoaded ? userState.users : [];
 
     final totalRevenue   = bookings.fold<double>(0, (s, b) => s + _price(b));
     final pendingCount   = bookings.where((b) => _status(b) == 'pending').length;
     final confirmedCount = bookings.where((b) => _status(b) == 'confirmed').length;
-
-    final activeHosts = homestays
-        .map((h) => h.owner?.userId)
-        .where((id) => id != null)
-        .toSet()
-        .length;
+    final activeHosts    = homestays.map((h) => h.owner?.userId).where((id) => id != null).toSet().length;
 
     final today = DateTime.now();
     final todayBookings = bookings.where((b) {
@@ -95,142 +95,200 @@ class _DashboardState extends State<Dashboard> {
     });
 
     final recent = (List<Map<String, dynamic>>.from(bookings)
-      ..sort((a, b) => _createdAt(b).compareTo(_createdAt(a))))
-        .take(5).toList();
+      ..sort((a, b) => _createdAt(b).compareTo(_createdAt(a)))).take(6).toList();
 
     final isLoading = bookingState is BookingLoading;
-    final width     = MediaQuery.of(context).size.width;
-    final isMobile  = width < 600;
+    final isMobile  = MediaQuery.of(context).size.width < 700;
+
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return Container(
-      color: const Color(0xFFF5F5F5),
+      color: _bg,
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+        padding: EdgeInsets.all(isMobile ? 16 : 28),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          if (isLoading)
-            const Center(child: Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator()))
-          else ...[
-            isMobile
-                ? Column(children: [
-              _MetricCard(title: 'Total Users',    value: '${users.length}',    icon: Icons.people_rounded,       color: _brown),
-              _MetricCard(title: 'Heritage Sites', value: '${sites.length}',    icon: Icons.temple_hindu_rounded, color: const Color(0xFF7B5EA7)),
-              _MetricCard(title: 'Homestays',      value: '${homestays.length}',icon: Icons.home_work_rounded,    color: _terracotta),
-              _MetricCard(title: 'Total Revenue',  value: 'Rs. ${_fmt(totalRevenue)}', icon: Icons.payments_rounded, color: Colors.green[700]!),
-            ])
-                : Row(children: [
-              Expanded(child: _MetricCard(title: 'Total Users',    value: '${users.length}',    icon: Icons.people_rounded,       color: _brown)),
-              Expanded(child: _MetricCard(title: 'Heritage Sites', value: '${sites.length}',    icon: Icons.temple_hindu_rounded, color: const Color(0xFF7B5EA7))),
-              Expanded(child: _MetricCard(title: 'Homestays',      value: '${homestays.length}',icon: Icons.home_work_rounded,    color: _terracotta)),
-              Expanded(child: _MetricCard(title: 'Total Revenue',  value: 'Rs. ${_fmt(totalRevenue)}', icon: Icons.payments_rounded, color: Colors.green[700]!)),
-            ]),
-
-            const SizedBox(height: 32),
-
-            isMobile
-                ? Column(children: [
-              _SectionBox(title: 'Recent Activity', child: _ActivityList(
-                recent: recent, statusFn: _status,
-                nameFn: (b) => b['touristName']?.toString() ?? 'Tourist',
-                homestayFn: (b) => b['homestayName']?.toString() ?? 'Homestay',
-                dateFn: _createdAt,
-              )),
-              const SizedBox(height: 16),
-              _SectionBox(title: 'Quick Stats', child: _QuickStats(
-                todayBookings: todayBookings, pendingCount: pendingCount,
-                confirmedCount: confirmedCount, activeHosts: activeHosts,
-                monthlyRevenue: monthlyRevenue, isMobile: isMobile,
-              )),
-            ])
-                : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Expanded(child: _SectionBox(title: 'Recent Activity', child: _ActivityList(
-                recent: recent, statusFn: _status,
-                nameFn: (b) => b['touristName']?.toString() ?? 'Tourist',
-                homestayFn: (b) => b['homestayName']?.toString() ?? 'Homestay',
-                dateFn: _createdAt,
-              ))),
-              const SizedBox(width: 16),
-              Expanded(child: _SectionBox(title: 'Quick Stats', child: _QuickStats(
-                todayBookings: todayBookings, pendingCount: pendingCount,
-                confirmedCount: confirmedCount, activeHosts: activeHosts,
-                monthlyRevenue: monthlyRevenue, isMobile: isMobile,
-              ))),
-            ]),
-          ],
+          _header(isMobile, totalRevenue, bookings.length),
+          SizedBox(height: isMobile ? 20 : 28),
+          _statsGrid(isMobile, users.length, sites.length, homestays.length, totalRevenue),
+          SizedBox(height: isMobile ? 20 : 28),
+          isMobile
+              ? Column(children: [
+                  _recentBookings(recent),
+                  const SizedBox(height: 16),
+                  _quickStats(isMobile, todayBookings, pendingCount, confirmedCount, activeHosts, monthlyRevenue),
+                ])
+              : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Expanded(flex: 3, child: _recentBookings(recent)),
+                  const SizedBox(width: 20),
+                  Expanded(flex: 2, child: _quickStats(isMobile, todayBookings, pendingCount, confirmedCount, activeHosts, monthlyRevenue)),
+                ]),
         ]),
       ),
     );
   }
 
-  static String _fmt(double n) {
-    if (n >= 1000000) return '${(n / 1000000).toStringAsFixed(1)}M';
-    if (n >= 1000)    return '${(n / 1000).toStringAsFixed(1)}K';
-    return n.toStringAsFixed(0);
+  Widget _header(bool isMobile, double revenue, int totalBookings) {
+    final month = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][DateTime.now().month - 1];
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Overview', style: GoogleFonts.inter(fontSize: isMobile ? 22 : 26, fontWeight: FontWeight.w700, color: _ink)),
+            const SizedBox(height: 4),
+            Text('$month ${DateTime.now().year}  ·  ${totalBookings} bookings  ·  ${_fmt(revenue)} total',
+                style: GoogleFonts.inter(fontSize: 13, color: _muted)),
+          ]),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: const Color(0xFF4F6AF5),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(Icons.circle, size: 8, color: Color(0xFF90FFB4)),
+            const SizedBox(width: 6),
+            Text('Live', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
+          ]),
+        ),
+      ],
+    );
+  }
+
+  Widget _statsGrid(bool isMobile, int users, int sites, int homestays, double revenue) {
+    final cards = [
+      _StatCard(label: 'Users',          value: '$users',         icon: Icons.people_alt_outlined,   accent: const Color(0xFF4F6AF5)),
+      _StatCard(label: 'Heritage Sites', value: '$sites',         icon: Icons.account_balance_outlined, accent: const Color(0xFF8B5CF6)),
+      _StatCard(label: 'Homestays',      value: '$homestays',     icon: Icons.cottage_outlined,       accent: const Color(0xFFEC4899)),
+      _StatCard(label: 'Total Revenue',  value: _fmt(revenue),    icon: Icons.bar_chart_rounded,      accent: const Color(0xFF10B981)),
+    ];
+    if (isMobile) {
+      return Column(children: cards.map((c) => Padding(padding: const EdgeInsets.only(bottom: 12), child: c)).toList());
+    }
+    return Row(children: cards
+        .map((c) => Expanded(child: Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: c)))
+        .toList());
+  }
+
+  Widget _recentBookings(List<Map<String, dynamic>> recent) {
+    return _Card(
+      title: 'Recent Bookings',
+      child: recent.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: Text('No bookings yet', style: GoogleFonts.inter(color: _muted))),
+            )
+          : Column(children: recent.map((b) => _BookingRow(
+              name: b['touristName']?.toString() ?? 'Tourist',
+              homestay: b['homestayName']?.toString() ?? 'Homestay',
+              status: _status(b),
+              createdAt: _createdAt(b),
+            )).toList()),
+    );
+  }
+
+  Widget _quickStats(bool isMobile, int today, int pending, int confirmed, int hosts, double monthly) {
+    final items = [
+      (label: "Today's Bookings", value: '$today',       accent: const Color(0xFF4F6AF5)),
+      (label: 'Pending',          value: '$pending',     accent: const Color(0xFFF59E0B)),
+      (label: 'Confirmed',        value: '$confirmed',   accent: const Color(0xFF10B981)),
+      (label: 'Active Hosts',     value: '$hosts',       accent: const Color(0xFF8B5CF6)),
+      (label: 'Monthly Revenue',  value: _fmt(monthly),  accent: const Color(0xFFEC4899)),
+    ];
+    return _Card(
+      title: 'Quick Stats',
+      child: Column(
+        children: items.map((e) => Padding(
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          child: Row(children: [
+            Container(width: 4, height: 32, decoration: BoxDecoration(color: e.accent, borderRadius: BorderRadius.circular(4))),
+            const SizedBox(width: 12),
+            Expanded(child: Text(e.label, style: GoogleFonts.inter(fontSize: 13, color: _muted))),
+            Text(e.value, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: _ink)),
+          ]),
+        )).toList(),
+      ),
+    );
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  final String title, value;
+class _StatCard extends StatelessWidget {
+  final String label, value;
   final IconData icon;
-  final Color color;
-  const _MetricCard({required this.title, required this.value, required this.icon, required this.color});
+  final Color accent;
+  const _StatCard({required this.label, required this.value, required this.icon, required this.accent});
 
   @override
   Widget build(BuildContext context) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
     return Container(
-      width: isMobile ? double.infinity : null,
-      margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 3))],
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8EAF0)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 4))],
       ),
-      child: Row(children: [
-        Container(padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
-            child: Icon(icon, size: 22, color: color)),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: GoogleFonts.dmSans(fontSize: 12, color: Colors.grey[500])),
-          const SizedBox(height: 3),
-          Text(value, style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF2D1B10))),
-        ])),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(color: accent.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(10)),
+          child: Icon(icon, size: 20, color: accent),
+        ),
+        const SizedBox(height: 14),
+        Text(value, style: GoogleFonts.inter(fontSize: 24, fontWeight: FontWeight.w800, color: const Color(0xFF1C1F26))),
+        const SizedBox(height: 3),
+        Text(label, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280))),
       ]),
     );
   }
 }
 
-class _SectionBox extends StatelessWidget {
+class _Card extends StatelessWidget {
   final String title;
   final Widget child;
-  const _SectionBox({required this.title, required this.child});
+  const _Card({required this.title, required this.child});
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity, padding: const EdgeInsets.all(24),
-    decoration: BoxDecoration(
-      color: Colors.white, borderRadius: BorderRadius.circular(16),
-      boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 3))],
-    ),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(title, style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF2D1B10))),
-      const SizedBox(height: 16),
-      child,
-    ]),
-  );
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE8EAF0)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 4))],
+      ),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(title, style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF1C1F26))),
+        const SizedBox(height: 16),
+        const Divider(height: 1, color: Color(0xFFE8EAF0)),
+        const SizedBox(height: 16),
+        child,
+      ]),
+    );
+  }
 }
 
-class _ActivityList extends StatelessWidget {
-  final List<Map<String, dynamic>> recent;
-  final String Function(Map<String, dynamic>) statusFn, nameFn, homestayFn, dateFn;
-  const _ActivityList({required this.recent, required this.statusFn, required this.nameFn, required this.homestayFn, required this.dateFn});
+class _BookingRow extends StatelessWidget {
+  final String name, homestay, status, createdAt;
+  const _BookingRow({required this.name, required this.homestay, required this.status, required this.createdAt});
 
-  String _timeAgo(String raw) {
-    if (raw.isEmpty) return '';
+  static const _statusColor = {
+    'confirmed': Color(0xFF10B981),
+    'completed': Color(0xFF059669),
+    'cancelled': Color(0xFFEF4444),
+    'rejected' : Color(0xFFEF4444),
+    'pending'  : Color(0xFFF59E0B),
+  };
+
+  String _timeAgo() {
+    if (createdAt.isEmpty) return '';
     try {
-      final dt   = DateTime.parse(raw).toLocal();
-      final diff = DateTime.now().difference(dt);
+      final diff = DateTime.now().difference(DateTime.parse(createdAt).toLocal());
       if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
       if (diff.inHours < 24)   return '${diff.inHours}h ago';
       return '${diff.inDays}d ago';
@@ -239,80 +297,31 @@ class _ActivityList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (recent.isEmpty) {
-      return Center(child: Padding(padding: const EdgeInsets.all(20),
-          child: Text('No bookings yet', style: GoogleFonts.dmSans(color: Colors.grey[400]))));
-    }
-    return Column(children: recent.map((b) {
-      final status = statusFn(b);
-      final color  = status == 'confirmed' || status == 'completed' ? Colors.green[600]!
-          : status == 'cancelled' || status == 'rejected' ? Colors.red[400]! : Colors.orange[600]!;
-      final icon   = status == 'confirmed' ? Icons.check_circle_outline
-          : status == 'completed'   ? Icons.done_all_rounded
-          : status == 'cancelled' || status == 'rejected' ? Icons.cancel_outlined
-          : Icons.pending_outlined;
-      return ListTile(
-        contentPadding: EdgeInsets.zero,
-        leading: Container(padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: Icon(icon, color: color, size: 18)),
-        title: Text(
-            'Booking ${status[0].toUpperCase()}${status.substring(1)} — ${homestayFn(b)}',
-            style: GoogleFonts.dmSans(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF2D1B10))),
-        subtitle: Text(
-            '${nameFn(b)}${_timeAgo(dateFn(b)).isNotEmpty ? ' · ${_timeAgo(dateFn(b))}' : ''}',
-            style: GoogleFonts.dmSans(fontSize: 12, color: Colors.grey[500])),
-      );
-    }).toList());
+    final color = _statusColor[status] ?? const Color(0xFFF59E0B);
+    final label = status[0].toUpperCase() + status.substring(1);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF1C1F26))),
+            const SizedBox(height: 2),
+            Text(homestay, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280)), overflow: TextOverflow.ellipsis),
+          ]),
+        ),
+        const SizedBox(width: 12),
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
+            child: Text(label, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: color)),
+          ),
+          if (_timeAgo().isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(_timeAgo(), style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF9CA3AF))),
+          ],
+        ]),
+      ]),
+    );
   }
-}
-
-class _QuickStats extends StatelessWidget {
-  final int todayBookings, pendingCount, confirmedCount, activeHosts;
-  final double monthlyRevenue;
-  final bool isMobile;
-  const _QuickStats({
-    required this.todayBookings, required this.pendingCount,
-    required this.confirmedCount, required this.activeHosts,
-    required this.monthlyRevenue, required this.isMobile,
-  });
-
-  String _fmt(double n) {
-    if (n >= 1000000) return 'Rs. ${(n / 1000000).toStringAsFixed(1)}M';
-    if (n >= 1000)    return 'Rs. ${(n / 1000).toStringAsFixed(1)}K';
-    return 'Rs. ${n.toStringAsFixed(0)}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
-    return Wrap(spacing: 12, runSpacing: 12, children: [
-      _StatTile(title: "Today's Bookings", value: '$todayBookings',      width: isMobile ? (width / 2) - 42 : 150),
-      _StatTile(title: 'Pending Approval', value: '$pendingCount',       width: isMobile ? (width / 2) - 42 : 150),
-      _StatTile(title: 'Confirmed',        value: '$confirmedCount',     width: isMobile ? (width / 2) - 42 : 150),
-      _StatTile(title: 'Active Hosts',     value: '$activeHosts',        width: isMobile ? (width / 2) - 42 : 150),
-      _StatTile(title: 'Monthly Revenue',  value: _fmt(monthlyRevenue),  width: isMobile ? double.infinity : 312),
-    ]);
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  final String title, value;
-  final double width;
-  const _StatTile({required this.title, required this.value, required this.width});
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: width,
-    child: Card(
-      elevation: 0, color: const Color(0xFFFAF7F2),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade100)),
-      child: Padding(padding: const EdgeInsets.all(14), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(title, style: GoogleFonts.dmSans(fontSize: 12, color: Colors.grey[500]), maxLines: 1, overflow: TextOverflow.ellipsis),
-        const SizedBox(height: 6),
-        FittedBox(fit: BoxFit.scaleDown, child: Text(value,
-            style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w800, color: const Color(0xFF2D1B10)))),
-      ])),
-    ),
-  );
 }

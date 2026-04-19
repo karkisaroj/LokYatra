@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../state_management/Bloc/auth/auth_bloc.dart';
 import '../../state_management/Bloc/auth/auth_event.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class PageConfig {
   final String title;
@@ -33,101 +34,260 @@ class AdminPageWrapper extends StatelessWidget {
     required this.subtitleNotifier,
   });
 
-  void _logout(BuildContext context) {
-    context.read<AuthBloc>().add(LogoutButtonClicked());
+  @override
+  Widget build(BuildContext context) {
+    final page     = pages[selectedIndex];
+    final isWide   = MediaQuery.of(context).size.width >= 900;
+
+    final contentStack = IndexedStack(
+      index: selectedIndex,
+      children: pages.map((p) => p.child).toList(),
+    );
+
+    if (isWide) {
+      return Scaffold(
+        backgroundColor: const Color(0xFFF7F8FC),
+        body: Row(children: [
+          _Sidebar(pages: pages, selectedIndex: selectedIndex, onTap: onItemTapped),
+          Expanded(
+            child: Column(children: [
+              _TopBar(page: page, subtitleNotifier: subtitleNotifier),
+              Expanded(child: contentStack),
+            ]),
+          ),
+        ]),
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: const Color(0xFFF7F8FC),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(60),
+        child: _TopBar(page: page, subtitleNotifier: subtitleNotifier),
+      ),
+      drawer: _DrawerNav(pages: pages, selectedIndex: selectedIndex, onTap: onItemTapped),
+      body: contentStack,
+    );
   }
+}
+
+class _TopBar extends StatelessWidget {
+  final PageConfig page;
+  final ValueNotifier<String?> subtitleNotifier;
+  const _TopBar({required this.page, required this.subtitleNotifier});
 
   @override
   Widget build(BuildContext context) {
-    final currentPage = pages[selectedIndex];
-
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      appBar: AppBar(
-        backgroundColor: Colors.white54,
-        title: ValueListenableBuilder<String?>(
+    final isMobile = MediaQuery.of(context).size.width < 900;
+    return Container(
+      height: 60,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFE8EAF0))),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(children: [
+        if (isMobile)
+          IconButton(
+            icon: const Icon(Icons.menu_rounded, color: Color(0xFF1C1F26)),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ValueListenableBuilder<String?>(
           valueListenable: subtitleNotifier,
-          builder: (context, subtitle, _) => Column(
+          builder: (_, subtitle, __) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(currentPage.title,
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              if ((subtitle ?? currentPage.subtitle) != null &&
-                  (subtitle ?? currentPage.subtitle)!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 4.0),
-                  child: Text(
-                    subtitle ?? currentPage.subtitle!,
-                    style: const TextStyle(fontSize: 12, color: Colors.black),
-                  ),
-                ),
+              Text(page.title,
+                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF1C1F26))),
+              if ((subtitle ?? page.subtitle) != null)
+                Text(subtitle ?? page.subtitle!,
+                    style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280))),
             ],
           ),
         ),
-        actions: currentPage.actions,
-      ),
-      drawer: LayoutBuilder(
-        builder: (context, constraints) {
-          final isMobile = constraints.maxWidth < 600;
-          return Drawer(
-            backgroundColor: Colors.white,
-            width: isMobile ? 220 : 280,
-            child: Column(
-              children: [
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Welcome \nAdmin",
-                          style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold)),
-                      SizedBox(width: 5),
-                      Icon(Icons.admin_panel_settings, size: 50),
-                    ],
-                  ),
-                ),
-                const Divider(),
-                const SizedBox(height: 20),
-                Expanded(
-                  child: ListView(
-                    padding: EdgeInsets.zero,
-                    children: [
-                      for (int i = 0; i < pages.length; i++)
-                        ListTile(
-                          leading: pages[i].icon,
-                          title: Text(pages[i].title),
-                          selected: selectedIndex == i,
-                          selectedColor: Colors.blueGrey,
-                          onTap: () {
-                            Navigator.pop(context);
-                            onItemTapped(i);
-                          },
-                        ),
-                    ],
-                  ),
-                ),
-                const Divider(),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-                  child: TextButton.icon(
-                    onPressed: () => _logout(context),
-                    icon: const Icon(Icons.logout),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20)),
-                    ),
-                    label: const Text("Logout",
-                        style: TextStyle(color: Colors.black)),
-                  ),
-                ),
-              ],
+        const Spacer(),
+        if (page.actions != null) ...page.actions!,
+      ]),
+    );
+  }
+}
+
+class _Sidebar extends StatelessWidget {
+  final List<PageConfig> pages;
+  final int selectedIndex;
+  final Function(int) onTap;
+  const _Sidebar({required this.pages, required this.selectedIndex, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 220,
+      color: const Color(0xFF1C1F26),
+      child: Column(children: [
+        const SizedBox(height: 28),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(children: [
+            Container(
+              width: 34, height: 34,
+              decoration: BoxDecoration(color: const Color(0xFF4F6AF5), borderRadius: BorderRadius.circular(10)),
+              child: const Icon(Icons.travel_explore_rounded, color: Colors.white, size: 18),
             ),
-          );
-        },
+            const SizedBox(width: 10),
+            Text('LokYatra', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+          ]),
+        ),
+        const SizedBox(height: 8),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Text('Admin Panel', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280))),
+        ),
+        const SizedBox(height: 24),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            itemCount: pages.length,
+            itemBuilder: (_, i) {
+              final selected = i == selectedIndex;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: InkWell(
+                  onTap: () => onTap(i),
+                  borderRadius: BorderRadius.circular(10),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 150),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: selected ? const Color(0xFF4F6AF5) : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(children: [
+                      IconTheme(
+                        data: IconThemeData(size: 18, color: selected ? Colors.white : const Color(0xFF9CA3AF)),
+                        child: pages[i].icon,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(pages[i].title,
+                          style: GoogleFonts.inter(
+                            fontSize: 13,
+                            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                            color: selected ? Colors.white : const Color(0xFF9CA3AF),
+                          )),
+                    ]),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        const Divider(color: Color(0xFF2D3139), height: 1),
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: InkWell(
+            onTap: () => context.read<AuthBloc>().add(LogoutButtonClicked()),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(children: [
+                const Icon(Icons.logout_rounded, size: 18, color: Color(0xFF9CA3AF)),
+                const SizedBox(width: 10),
+                Text('Logout', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9CA3AF))),
+              ]),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+      ]),
+    );
+  }
+}
+
+class _DrawerNav extends StatelessWidget {
+  final List<PageConfig> pages;
+  final int selectedIndex;
+  final Function(int) onTap;
+  const _DrawerNav({required this.pages, required this.selectedIndex, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      backgroundColor: const Color(0xFF1C1F26),
+      width: 240,
+      child: SafeArea(
+        child: Column(children: [
+          const SizedBox(height: 16),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Row(children: [
+              Container(
+                width: 34, height: 34,
+                decoration: BoxDecoration(color: const Color(0xFF4F6AF5), borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.travel_explore_rounded, color: Colors.white, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text('LokYatra', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
+            ]),
+          ),
+          const SizedBox(height: 24),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              itemCount: pages.length,
+              itemBuilder: (_, i) {
+                final selected = i == selectedIndex;
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 2),
+                  child: InkWell(
+                    onTap: () {
+                      Navigator.pop(context);
+                      onTap(i);
+                    },
+                    borderRadius: BorderRadius.circular(10),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: selected ? const Color(0xFF4F6AF5) : Colors.transparent,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(children: [
+                        IconTheme(
+                          data: IconThemeData(size: 18, color: selected ? Colors.white : const Color(0xFF9CA3AF)),
+                          child: pages[i].icon,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(pages[i].title,
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                              color: selected ? Colors.white : const Color(0xFF9CA3AF),
+                            )),
+                      ]),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const Divider(color: Color(0xFF2D3139), height: 1),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: InkWell(
+              onTap: () => context.read<AuthBloc>().add(LogoutButtonClicked()),
+              borderRadius: BorderRadius.circular(10),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                child: Row(children: [
+                  const Icon(Icons.logout_rounded, size: 18, color: Color(0xFF9CA3AF)),
+                  const SizedBox(width: 10),
+                  Text('Logout', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9CA3AF))),
+                ]),
+              ),
+            ),
+          ),
+        ]),
       ),
-      body: currentPage.child,
     );
   }
 }

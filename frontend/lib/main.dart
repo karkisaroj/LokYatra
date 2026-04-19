@@ -98,13 +98,19 @@ class MyAppRunner extends StatelessWidget {
               return BlocListener<AuthBloc, AuthState>(
                 listener: (context, state) {
                   if (state is AdminLoginSuccess) {
-                    // Pre-load admin data so Reports, Users page have data ready
                     context.read<BookingBloc>().add(const LoadAllBookings());
                     context.read<UserBloc>().add(FetchUsers());
                     context.read<SitesBloc>().add(const LoadSites());
                     context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
-                    _navKey.currentState?.pushNamedAndRemoveUntil(
-                        '/adminDashboard', (route) => false);
+                    _navKey.currentState?.pushAndRemoveUntil(
+                      PageRouteBuilder(
+                        pageBuilder: (_, __, ___) => const AdminDashboard(),
+                        transitionsBuilder: (_, anim, __, child) =>
+                            FadeTransition(opacity: anim, child: child),
+                        transitionDuration: const Duration(milliseconds: 250),
+                      ),
+                      (route) => false,
+                    );
                   } else if (state is TouristLoginSuccess) {
                     _navKey.currentState?.pushNamedAndRemoveUntil(
                         '/touristHome', (route) => false);
