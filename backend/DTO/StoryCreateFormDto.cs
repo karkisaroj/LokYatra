@@ -11,6 +11,7 @@ namespace backend.DTO
         [Required, MaxLength(5000)] public string FullContent { get; set; } = default!;
         [MaxLength(500)] public string? HistoricalContext { get; set; }
         [MaxLength(500)] public string? CulturalSignificance { get; set; }
+        public string? ExistingImagesJson { get; set; }
     }
 
     public class StoryDto

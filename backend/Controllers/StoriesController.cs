@@ -1,4 +1,5 @@
-﻿using backend.Database;
+﻿using System.Text.Json;
+using backend.Database;
 using backend.DTO;
 using backend.Models;
 using backend.Services;
@@ -92,11 +93,19 @@ namespace backend.Controllers
             var site = await db.CulturalSites.FindAsync(form.CulturalSiteId);
             if (site is null) return NotFound("Related site not found");
 
+            var keepUrls = string.IsNullOrWhiteSpace(form.ExistingImagesJson)
+                ? entity.ImageUrls.ToList()
+                : JsonSerializer.Deserialize<List<string>>(form.ExistingImagesJson) ?? [];
+
             var files = Request.Form.Files;
             if (files.Count > 0)
             {
-                var urls = await imageService.UploadFilesAsync("lokyatra/stories", files);
-                entity.ImageUrls = [.. urls];
+                var newUrls = await imageService.UploadFilesAsync("lokyatra/stories", files);
+                entity.ImageUrls = [.. keepUrls, .. newUrls];
+            }
+            else
+            {
+                entity.ImageUrls = keepUrls.ToArray();
             }
 
             entity.CulturalSiteId = form.CulturalSiteId;
