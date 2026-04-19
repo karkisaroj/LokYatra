@@ -20,6 +20,7 @@ namespace backend.Models
         public string? BestTimeToVisit { get; set; }
 
         public bool IsUNESCO { get; set; } = false;
-        // Images come from Request.Form.Files
+        // JSON-encoded list of existing image URLs the client wants to keep
+        public string? ExistingImagesJson { get; set; }
     }
 }

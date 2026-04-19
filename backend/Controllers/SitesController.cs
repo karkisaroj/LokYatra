@@ -1,4 +1,5 @@
-﻿using backend.Database;
+﻿using System.Text.Json;
+using backend.Database;
 using backend.Models;
 using backend.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -142,11 +143,20 @@ namespace backend.Controllers
             if (entity is null) return NotFound("Site not found");
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
+            // Determine which existing images to keep
+            var keepUrls = string.IsNullOrWhiteSpace(form.ExistingImagesJson)
+                ? entity.ImageUrls.ToList()
+                : JsonSerializer.Deserialize<List<string>>(form.ExistingImagesJson) ?? [];
+
             var files = Request.Form.Files;
             if (files.Count > 0)
             {
-                var urls = await imageService.UploadFilesAsync("lokyatra/sites", files);
-                entity.ImageUrls = [.. urls];
+                var newUrls = await imageService.UploadFilesAsync("lokyatra/sites", files);
+                entity.ImageUrls = [.. keepUrls, .. newUrls];
+            }
+            else
+            {
+                entity.ImageUrls = keepUrls.ToArray();
             }
 
             entity.Name = form.Name;
