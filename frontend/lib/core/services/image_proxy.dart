@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
@@ -80,9 +81,12 @@ class ProxyImage extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadiusValue),
       child: CachedNetworkImage(
-        imageUrl:          getProxyImageUrl(fetchUrl),
+        // Load directly from Cloudinary CDN — do NOT route through backend proxy
+        // (proxy causes all images to fail when Railway server is sleeping/down)
+        imageUrl:          fetchUrl,
         cacheKey:          cacheKey,
-        cacheManager:      LokYatraCacheManager(),
+        // flutter_cache_manager file-based cache only works on mobile/desktop
+        cacheManager:      kIsWeb ? null : LokYatraCacheManager(),
         width:             safeW,
         height:            safeH,
         fit:               fit,

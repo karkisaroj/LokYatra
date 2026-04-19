@@ -1,10 +1,12 @@
 import 'dart:convert';
+import 'package:dio/dio.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'constants.dart';
 
 class SqliteService {
   static final SqliteService _instance = SqliteService._internal();
@@ -57,6 +59,23 @@ class SqliteService {
       return result != ConnectivityResult.none;
     } catch (_) {
       return true;
+    }
+  }
+
+  /// Checks if the API server itself is reachable (not just device connectivity).
+  /// Uses the /health endpoint with a short timeout so it fails fast.
+  Future<bool> isServerReachable() async {
+    try {
+      final response = await Dio().get(
+        '${apiBaseUrl}health',
+        options: Options(
+          sendTimeout: const Duration(seconds: 5),
+          receiveTimeout: const Duration(seconds: 5),
+        ),
+      );
+      return response.statusCode == 200;
+    } catch (_) {
+      return false;
     }
   }
 

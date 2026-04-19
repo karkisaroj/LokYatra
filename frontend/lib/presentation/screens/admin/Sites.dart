@@ -21,6 +21,7 @@ class _AdminSitesState extends State<AdminSites> {
 
   final _searchController = TextEditingController();
   String _searchQuery = '';
+  List<CulturalSite>? _lastSites; // keeps list visible during error states
 
   @override
   void initState() {
@@ -140,19 +141,24 @@ class _AdminSitesState extends State<AdminSites> {
           Expanded(
             child: BlocConsumer<SitesBloc, SitesState>(
               listener: (context, state) {
+                if (state is SitesLoaded) {
+                  // Keep a local copy so the list stays visible on error
+                  _lastSites = state.sites;
+                }
                 if (state is SitesError) {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                     content: Text(state.message),
-                    backgroundColor: Colors.red,
+                    backgroundColor: Colors.red[700],
                     behavior: SnackBarBehavior.floating,
                   ));
                 }
               },
               builder: (context, state) {
-                if (state is SitesLoading) {
+                if (state is SitesLoading && _lastSites == null) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (state is SitesError) {
+                // Only show full-page error when there's truly no data to display
+                if (state is SitesError && _lastSites == null) {
                   return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
                     const Icon(Icons.error_outline, size: 48, color: Colors.red),
                     const SizedBox(height: 12),
@@ -164,35 +170,36 @@ class _AdminSitesState extends State<AdminSites> {
                     ),
                   ]));
                 }
-                if (state is SitesLoaded) {
-                  var sites = state.sites;
-                  if (_searchQuery.isNotEmpty) {
-                    sites = sites.where((s) {
-                      final q = _searchQuery;
-                      return (s.name ?? '').toLowerCase().contains(q) ||
-                          (s.category ?? '').toLowerCase().contains(q) ||
-                          (s.district ?? '').toLowerCase().contains(q);
-                    }).toList();
-                  }
-                  if (sites.isEmpty) {
-                    return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(_searchQuery.isEmpty ? Icons.location_off : Icons.search_off,
-                          size: 48, color: Colors.grey[400]),
-                      const SizedBox(height: 12),
-                      Text(_searchQuery.isEmpty ? 'No sites available' : 'No sites match your search',
-                          style: GoogleFonts.dmSans(fontSize: 15, color: Colors.grey)),
-                      if (_searchQuery.isNotEmpty) ...[
-                        const SizedBox(height: 8),
-                        TextButton(
-                          onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); },
-                          child: const Text('Clear search'),
-                        ),
-                      ],
-                    ]));
-                  }
-                  return isWide ? _buildWebTable(sites) : _buildMobileList(sites);
+                // Show list from last-known data during loading/error states too
+                var sites = state is SitesLoaded ? state.sites : (_lastSites ?? []);
+                if (_searchQuery.isNotEmpty) {
+                  final q = _searchQuery;
+                  sites = sites.where((s) =>
+                    (s.name ?? '').toLowerCase().contains(q) ||
+                    (s.category ?? '').toLowerCase().contains(q) ||
+                    (s.district ?? '').toLowerCase().contains(q)
+                  ).toList();
                 }
-                return const SizedBox.shrink();
+                if (sites.isEmpty && state is SitesLoading) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (sites.isEmpty) {
+                  return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(_searchQuery.isEmpty ? Icons.location_off : Icons.search_off,
+                        size: 48, color: Colors.grey[400]),
+                    const SizedBox(height: 12),
+                    Text(_searchQuery.isEmpty ? 'No sites available' : 'No sites match your search',
+                        style: GoogleFonts.dmSans(fontSize: 15, color: Colors.grey)),
+                    if (_searchQuery.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: () { _searchController.clear(); setState(() => _searchQuery = ''); },
+                        child: const Text('Clear search'),
+                      ),
+                    ],
+                  ]));
+                }
+                return isWide ? _buildWebTable(sites) : _buildMobileList(sites);
               },
             ),
           ),

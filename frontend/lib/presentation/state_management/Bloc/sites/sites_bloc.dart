@@ -81,10 +81,27 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
         await _sqlite.cacheSites(raw);
         emit(SitesLoaded(sites));
       } else {
-        emit(SitesError('Refresh failed: ${resp.statusCode}'));
+        final cached = await _sqlite.getCachedSites();
+        if (cached.isNotEmpty) {
+          final sites = _parseSites(cached);
+          _memCache = sites;
+          emit(SitesLoaded(sites));
+        } else {
+          emit(SitesError('Refresh failed: ${resp.statusCode}'));
+        }
       }
     } catch (e) {
-      emit(SitesError('Refresh failed: $e'));
+      // Server unreachable — fall back to cached data
+      final cached = await _sqlite.getCachedSites();
+      if (cached.isNotEmpty) {
+        final sites = _parseSites(cached);
+        _memCache = sites;
+        emit(SitesLoaded(sites));
+      } else if (_memCache != null) {
+        emit(SitesLoaded(_memCache!));
+      } else {
+        emit(const SitesError('Unable to connect. Please check your network.'));
+      }
     }
   }
 
@@ -168,6 +185,17 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
   }
 
   Future<void> _onDeleteSite(DeleteSite event, Emitter<SitesState> emit) async {
+    // Snapshot current list before loading so we can restore on failure
+    final snapshot = _memCache != null ? List<CulturalSite>.from(_memCache!) : null;
+
+    // Check server reachability before attempting — gives a clear error message
+    final serverUp = await _sqlite.isServerReachable();
+    if (!serverUp) {
+      emit(const SitesError('Server is currently unavailable. Please try again in a moment.'));
+      if (snapshot != null) emit(SitesLoaded(snapshot));
+      return;
+    }
+
     emit(SitesLoading());
     try {
       final resp = await _remote.deleteSite(event.id);
@@ -175,10 +203,25 @@ class SitesBloc extends Bloc<SitesEvent, SitesState> {
         await _removeSiteFromCache(event.id);
         add(const RefreshSites());
       } else {
+        if (snapshot != null) {
+          _memCache = snapshot;
+          emit(SitesLoaded(snapshot));
+        }
         emit(SitesError('Failed to delete: ${resp.statusCode}'));
       }
     } catch (e) {
-      emit(SitesError('$e'));
+      if (snapshot != null) {
+        _memCache = snapshot;
+        emit(SitesLoaded(snapshot));
+      } else {
+        final cached = await _sqlite.getCachedSites();
+        if (cached.isNotEmpty) {
+          final sites = _parseSites(cached);
+          _memCache = sites;
+          emit(SitesLoaded(sites));
+        }
+      }
+      emit(const SitesError('Delete failed. Server may be temporarily unavailable.'));
     }
   }
 

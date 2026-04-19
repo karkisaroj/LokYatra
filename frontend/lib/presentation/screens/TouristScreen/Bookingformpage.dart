@@ -182,10 +182,13 @@ class _BookingFormPageState extends State<BookingFormPage> {
                             Icon(Icons.location_on_outlined,
                                 size: 13.sp, color: Colors.grey[500]),
                             SizedBox(width: 2.w),
-                            Text('Near $location',
-                                style: GoogleFonts.dmSans(
-                                    fontSize: 12.sp,
-                                    color: Colors.grey[500])),
+                            Flexible(
+                              child: Text('Near $location',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: GoogleFonts.dmSans(
+                                      fontSize: 12.sp,
+                                      color: Colors.grey[500])),
+                            ),
                           ],
                         ),
                         SizedBox(height: 4.h),
