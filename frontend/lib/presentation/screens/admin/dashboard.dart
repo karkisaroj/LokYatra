@@ -131,31 +131,12 @@ class _DashboardState extends State<Dashboard> {
 
   Widget _header(bool isMobile, double revenue, int totalBookings) {
     final month = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][DateTime.now().month - 1];
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Overview', style: GoogleFonts.inter(fontSize: isMobile ? 22 : 26, fontWeight: FontWeight.w700, color: _ink)),
-            const SizedBox(height: 4),
-            Text('$month ${DateTime.now().year}  ·  ${totalBookings} bookings  ·  ${_fmt(revenue)} total',
-                style: GoogleFonts.inter(fontSize: 13, color: _muted)),
-          ]),
-        ),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFF4F6AF5),
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.circle, size: 8, color: Color(0xFF90FFB4)),
-            const SizedBox(width: 6),
-            Text('Live', style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white)),
-          ]),
-        ),
-      ],
-    );
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text('Overview', style: GoogleFonts.inter(fontSize: isMobile ? 22 : 26, fontWeight: FontWeight.w700, color: _ink)),
+      const SizedBox(height: 4),
+      Text('$month ${DateTime.now().year}  ·  $totalBookings bookings  ·  ${_fmt(revenue)} total',
+          style: GoogleFonts.inter(fontSize: 13, color: _muted)),
+    ]);
   }
 
   Widget _statsGrid(bool isMobile, int users, int sites, int homestays, double revenue) {

@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import '../../../data/models/Homestay.dart';
@@ -19,11 +18,13 @@ class Homestays extends StatefulWidget {
 }
 
 class HomestaysState extends State<Homestays> {
-  static const slate = Color(0xFF3D5A80);
-  static const bg    = Color(0xFFF4F6F9);
+  static const _accent = Color(0xFF4F6AF5);
+  static const _ink    = Color(0xFF1C1F26);
+  static const _muted  = Color(0xFF6B7280);
+  static const _bg     = Color(0xFFF7F8FC);
 
-  String search = '';
-  String filter = 'All';
+  String _search = '';
+  String _filter = 'All';
 
   @override
   void initState() {
@@ -32,75 +33,62 @@ class HomestaysState extends State<Homestays> {
     context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
   }
 
-  void reload() => context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
+  void _reload() => context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
 
-  List<Homestay> filtered(List<Homestay> all) {
+  List<Homestay> _filtered(List<Homestay> all) {
     var list = all;
-    if (filter == 'Active') list = list.where((h) => h.isVisible).toList();
-    if (filter == 'Paused') list = list.where((h) => !h.isVisible).toList();
-    if (search.isNotEmpty) {
-      final q = search.toLowerCase();
+    if (_filter == 'Active') list = list.where((h) => h.isVisible).toList();
+    if (_filter == 'Paused') list = list.where((h) => !h.isVisible).toList();
+    if (_search.isNotEmpty) {
+      final q = _search.toLowerCase();
       list = list.where((h) =>
-      h.name.toLowerCase().contains(q) ||
-          h.location.toLowerCase().contains(q) ||
-          (h.nearCulturalSite?.name.toLowerCase().contains(q) ?? false)
+        h.name.toLowerCase().contains(q) ||
+        h.location.toLowerCase().contains(q) ||
+        (h.nearCulturalSite?.name.toLowerCase().contains(q) ?? false)
       ).toList();
     }
     return list;
   }
 
-  Color chipColor(String label) => switch (label) {
-    'Active' => Colors.green[600]!,
-    'Paused' => Colors.grey[700]!,
-    _        => slate,
-  };
-
-  void pushDetail(Homestay h) => Navigator.push(
+  void _pushDetail(Homestay h) => Navigator.push(
     context,
     MaterialPageRoute(builder: (_) => AdminHomestayDetailPage(homestay: h)),
-  ).then((_) => reload());
+  ).then((_) => _reload());
 
-  void confirmToggle(Homestay h) {
+  void _confirmToggle(Homestay h) {
     final on = h.isVisible;
-    showConfirmDialog(
+    _confirm(
       icon: on ? Icons.pause_circle_outline_rounded : Icons.play_circle_outline_rounded,
-      iconColor: on ? Colors.grey[700]! : Colors.green[600]!,
+      iconColor: on ? _muted : Colors.green[600]!,
       title: on ? 'Pause Homestay?' : 'Activate Homestay?',
-      body: on
-          ? '"${h.name}" will be hidden from tourists.'
-          : '"${h.name}" will become visible to tourists.',
+      body: on ? '"${h.name}" will be hidden from tourists.' : '"${h.name}" will become visible to tourists.',
       confirmLabel: on ? 'Pause' : 'Activate',
-      confirmColor: on ? Colors.grey[700]! : Colors.green[600]!,
-      onConfirm: () =>
-          context.read<HomestayBloc>().add(AdminToggleHomestayVisibility(h.id, !on)),
+      confirmColor: on ? _muted : Colors.green[600]!,
+      onConfirm: () => context.read<HomestayBloc>().add(AdminToggleHomestayVisibility(h.id, !on)),
     );
   }
 
-  void confirmDelete(Homestay h) {
-    showConfirmDialog(
+  void _confirmDelete(Homestay h) {
+    _confirm(
       icon: Icons.delete_outline_rounded,
       iconColor: Colors.red[600]!,
       title: 'Delete Homestay?',
       body: 'Permanently delete "${h.name}"? This cannot be undone.',
       confirmLabel: 'Delete',
       confirmColor: Colors.red[600]!,
-      onConfirm: () =>
-          context.read<HomestayBloc>().add(AdminDeleteHomestay(h.id)),
+      onConfirm: () => context.read<HomestayBloc>().add(AdminDeleteHomestay(h.id)),
     );
   }
 
-  void showConfirmDialog({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required String body,
-    required String confirmLabel,
-    required Color confirmColor,
+  void _confirm({
+    required IconData icon, required Color iconColor,
+    required String title, required String body,
+    required String confirmLabel, required Color confirmColor,
     required VoidCallback onConfirm,
   }) {
     showDialog(
       context: context,
-      builder: (_) => ConfirmDialog(
+      builder: (_) => _ConfirmDialog(
         icon: icon, iconColor: iconColor, title: title,
         body: body, confirmLabel: confirmLabel,
         confirmColor: confirmColor, onConfirm: onConfirm,
@@ -110,47 +98,33 @@ class HomestaysState extends State<Homestays> {
 
   @override
   Widget build(BuildContext context) {
-    final isWeb = kIsWeb || MediaQuery.of(context).size.width > 700;
-
+    final isWide = kIsWeb || MediaQuery.of(context).size.width >= 700;
     return Container(
-      color: bg,
+      color: _bg,
       child: Column(children: [
-        buildToolbar(isWeb),
+        _toolbar(isWide),
         Expanded(
           child: BlocBuilder<HomestayBloc, HomestayState>(
-            builder: (context, state) {
+            builder: (_, state) {
               if (state is HomestayLoading) {
-                return const Center(child: CircularProgressIndicator(color: slate));
+                return const Center(child: CircularProgressIndicator());
               }
               if (state is HomestayError) {
-                return ErrorView(message: state.message, onRetry: reload);
+                return _ErrorView(message: state.message, onRetry: _reload);
               }
               if (state is TouristAllHomestaysLoaded) {
-                final list    = filtered(state.homestays);
+                final list    = _filtered(state.homestays);
                 final activeN = state.homestays.where((h) => h.isVisible).length;
                 final pausedN = state.homestays.where((h) => !h.isVisible).length;
-
                 return Column(children: [
-                  isWeb
-                      ? webStatsBar(state.homestays.length, activeN, pausedN)
-                      : mobileStatsBar(state.homestays.length, activeN, pausedN),
-                  const Divider(height: 1),
+                  _statsBar(state.homestays.length, activeN, pausedN),
+                  const Divider(height: 1, color: Color(0xFFE8EAF0)),
                   Expanded(
                     child: list.isEmpty
-                        ? EmptyView(filter: filter)
-                        : isWeb
-                        ? WebGrid(
-                      list: list,
-                      onView: pushDetail,
-                      onToggle: confirmToggle,
-                      onDelete: confirmDelete,
-                    )
-                        : MobileList(
-                      list: list,
-                      onView: pushDetail,
-                      onToggle: confirmToggle,
-                      onDelete: confirmDelete,
-                    ),
+                        ? _EmptyView(filter: _filter)
+                        : isWide
+                            ? _WebGrid(list: list, onView: _pushDetail, onToggle: _confirmToggle, onDelete: _confirmDelete)
+                            : _MobileList(list: list, onView: _pushDetail, onToggle: _confirmToggle, onDelete: _confirmDelete),
                   ),
                 ]);
               }
@@ -162,191 +136,151 @@ class HomestaysState extends State<Homestays> {
     );
   }
 
-  Widget buildToolbar(bool isWeb) {
-    if (isWeb) {
-      return Container(
-        color: Colors.white,
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 14),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Homestays',
-                  style: GoogleFonts.playfairDisplay(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1A1A2E))),
-              const SizedBox(height: 2),
-              Text('Manage all homestay listings',
-                  style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[500])),
-            ]),
-            const Spacer(),
-            ...['All', 'Active', 'Paused'].map((label) => Padding(
-              padding: const EdgeInsets.only(left: 8),
-              child: GestureDetector(
-                onTap: () => setState(() => filter = label),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: filter == label ? chipColor(label) : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                        color: filter == label
-                            ? chipColor(label)
-                            : Colors.grey.shade300),
-                  ),
-                  child: Text(label,
-                      style: GoogleFonts.dmSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: filter == label ? Colors.white : Colors.grey[600])),
-                ),
-              ),
-            )),
-          ]),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 40,
-            child: TextField(
-              onChanged: (v) => setState(() => search = v),
-              style: GoogleFonts.dmSans(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'Search by name, location...',
-                hintStyle: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[400]),
-                prefixIcon: Icon(Icons.search, color: Colors.grey[400], size: 18),
-                suffixIcon: IconButton(
-                  icon: Icon(Icons.refresh_rounded, size: 18, color: Colors.grey[500]),
-                  onPressed: reload,
-                ),
-                filled: true,
-                fillColor: bg,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10),
-                    borderSide: BorderSide.none),
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
-              ),
-            ),
-          ),
-        ]),
-      );
-    }
-
+  Widget _toolbar(bool isWide) {
     return Container(
       color: Colors.white,
-      padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 10.h),
-      child: Column(children: [
-        Container(
-          decoration: BoxDecoration(
-              color: bg,
-              borderRadius: BorderRadius.circular(12.r),
-              border: Border.all(color: Colors.grey.shade200)),
-          child: TextField(
-            onChanged: (v) => setState(() => search = v),
-            style: GoogleFonts.dmSans(fontSize: 14.sp),
-            decoration: InputDecoration(
-              hintText: 'Search by name, location...',
-              hintStyle: GoogleFonts.dmSans(fontSize: 14.sp, color: Colors.grey[400]),
-              prefixIcon:
-              Icon(Icons.search, color: Colors.grey[400], size: 20.sp),
-              suffixIcon: IconButton(
-                  icon: Icon(Icons.refresh_rounded,
-                      size: 20.sp, color: Colors.grey[500]),
-                  onPressed: reload),
-              border: InputBorder.none,
-              contentPadding:
-              EdgeInsets.symmetric(horizontal: 4.w, vertical: 13.h),
-            ),
-          ),
-        ),
-        SizedBox(height: 10.h),
-        Row(
-          children: ['All', 'Active', 'Paused'].map((label) => Padding(
-            padding: EdgeInsets.only(right: 8.w),
-            child: GestureDetector(
-              onTap: () => setState(() => filter = label),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                padding:
-                EdgeInsets.symmetric(horizontal: 16.w, vertical: 7.h),
-                decoration: BoxDecoration(
-                  color: filter == label
-                      ? chipColor(label)
-                      : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(20.r),
-                  border: Border.all(
-                      color: filter == label
-                          ? chipColor(label)
-                          : Colors.grey.shade300),
-                ),
-                child: Text(label,
-                    style: GoogleFonts.dmSans(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                        color:
-                        filter == label ? Colors.white : Colors.grey[600])),
-              ),
-            ),
-          )).toList(),
-        ),
+      padding: EdgeInsets.fromLTRB(isWide ? 24 : 16, 16, isWide ? 24 : 16, 14),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (isWide) ...[
+          Row(children: [
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Homestays', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: _ink)),
+              const SizedBox(height: 2),
+              Text('Manage all homestay listings', style: GoogleFonts.inter(fontSize: 13, color: _muted)),
+            ]),
+            const Spacer(),
+            _filterChips(),
+          ]),
+          const SizedBox(height: 12),
+          _searchBar(),
+        ] else ...[
+          _searchBar(),
+          const SizedBox(height: 10),
+          _filterChips(),
+        ],
       ]),
     );
   }
 
-  Widget webStatsBar(int total, int activeN, int pausedN) {
+  Widget _filterChips() {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      for (final label in ['All', 'Active', 'Paused']) ...[
+        _FilterChip(
+          label: label,
+          selected: _filter == label,
+          selectedColor: label == 'Active' ? Colors.green[600]! : label == 'Paused' ? _muted : _accent,
+          onTap: () => setState(() => _filter = label),
+        ),
+        const SizedBox(width: 8),
+      ],
+    ]);
+  }
+
+  Widget _searchBar() {
+    return SizedBox(
+      height: 42,
+      child: TextField(
+        onChanged: (v) => setState(() => _search = v),
+        style: GoogleFonts.inter(fontSize: 13),
+        decoration: InputDecoration(
+          hintText: 'Search by name or location...',
+          hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9CA3AF)),
+          prefixIcon: const Icon(Icons.search, color: Color(0xFF9CA3AF), size: 18),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF9CA3AF)),
+            onPressed: _reload,
+          ),
+          filled: true,
+          fillColor: const Color(0xFFF7F8FC),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: _accent)),
+          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+        ),
+      ),
+    );
+  }
+
+  Widget _statsBar(int total, int activeN, int pausedN) {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(24, 10, 24, 12),
       child: Row(children: [
-        WebStatPill(label: 'Total',  count: total,   color: slate),
+        _StatPill(label: 'Total',  count: total,   color: _accent),
         const SizedBox(width: 8),
-        WebStatPill(label: 'Active', count: activeN, color: Colors.green[600]!),
+        _StatPill(label: 'Active', count: activeN, color: Colors.green[600]!),
         const SizedBox(width: 8),
-        WebStatPill(label: 'Paused', count: pausedN, color: Colors.grey[600]!),
-      ]),
-    );
-  }
-
-  Widget mobileStatsBar(int total, int activeN, int pausedN) {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 10.h),
-      child: Row(children: [
-        StatPill(label: 'Total',  count: total,   color: slate),
-        SizedBox(width: 8.w),
-        StatPill(label: 'Active', count: activeN, color: Colors.green[600]!),
-        SizedBox(width: 8.w),
-        StatPill(label: 'Paused', count: pausedN, color: Colors.grey[600]!),
+        _StatPill(label: 'Paused', count: pausedN, color: _muted),
       ]),
     );
   }
 }
 
-class WebGrid extends StatelessWidget {
-  final List<Homestay> list;
-  final void Function(Homestay) onView;
-  final void Function(Homestay) onToggle;
-  final void Function(Homestay) onDelete;
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final Color selectedColor;
+  final VoidCallback onTap;
+  const _FilterChip({required this.label, required this.selected, required this.selectedColor, required this.onTap});
 
-  const WebGrid({
-    super.key,
-    required this.list,
-    required this.onView,
-    required this.onToggle,
-    required this.onDelete,
-  });
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+      decoration: BoxDecoration(
+        color: selected ? selectedColor : Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: selected ? selectedColor : const Color(0xFFD1D5DB)),
+      ),
+      child: Text(label, style: GoogleFonts.inter(
+        fontSize: 13, fontWeight: FontWeight.w600,
+        color: selected ? Colors.white : const Color(0xFF6B7280),
+      )),
+    ),
+  );
+}
+
+class _StatPill extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  const _StatPill({required this.label, required this.count, required this.color});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.08),
+      borderRadius: BorderRadius.circular(20),
+      border: Border.all(color: color.withValues(alpha: 0.2)),
+    ),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      Text('$count', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: color)),
+      const SizedBox(width: 5),
+      Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, color: color)),
+    ]),
+  );
+}
+
+class _WebGrid extends StatelessWidget {
+  final List<Homestay> list;
+  final void Function(Homestay) onView, onToggle, onDelete;
+  const _WebGrid({required this.list, required this.onView, required this.onToggle, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
       padding: const EdgeInsets.all(24),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 320,
-        crossAxisSpacing: 18,
-        mainAxisSpacing: 18,
-        childAspectRatio: 0.95,
+        maxCrossAxisExtent: 300,
+        crossAxisSpacing: 16,
+        mainAxisSpacing: 16,
+        childAspectRatio: 0.88,
       ),
       itemCount: list.length,
-      itemBuilder: (_, i) => WebCard(
+      itemBuilder: (_, i) => _WebCard(
         homestay: list[i],
         onView:   () => onView(list[i]),
         onToggle: () => onToggle(list[i]),
@@ -356,51 +290,33 @@ class WebGrid extends StatelessWidget {
   }
 }
 
-class MobileList extends StatelessWidget {
+class _MobileList extends StatelessWidget {
   final List<Homestay> list;
-  final void Function(Homestay) onView;
-  final void Function(Homestay) onToggle;
-  final void Function(Homestay) onDelete;
-
-  const MobileList({
-    super.key,
-    required this.list,
-    required this.onView,
-    required this.onToggle,
-    required this.onDelete,
-  });
+  final void Function(Homestay) onView, onToggle, onDelete;
+  const _MobileList({required this.list, required this.onView, required this.onToggle, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding: EdgeInsets.fromLTRB(14.w, 12.h, 14.w, 24.h),
+      padding: const EdgeInsets.all(16),
       itemCount: list.length,
-      itemBuilder: (_, i) => MobileCard(
-        homestay: list[i],
-        onView:   () => onView(list[i]),
-        onToggle: () => onToggle(list[i]),
-        onDelete: () => onDelete(list[i]),
+      itemBuilder: (_, i) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: _MobileCard(
+          homestay: list[i],
+          onView:   () => onView(list[i]),
+          onToggle: () => onToggle(list[i]),
+          onDelete: () => onDelete(list[i]),
+        ),
       ),
     );
   }
 }
 
-class WebCard extends StatelessWidget {
+class _WebCard extends StatelessWidget {
   final Homestay homestay;
-  final VoidCallback onView;
-  final VoidCallback onToggle;
-  final VoidCallback onDelete;
-
-  static const slate = Color(0xFF3D5A80);
-  static const dark  = Color(0xFF1A1A2E);
-
-  const WebCard({
-    super.key,
-    required this.homestay,
-    required this.onView,
-    required this.onToggle,
-    required this.onDelete,
-  });
+  final VoidCallback onView, onToggle, onDelete;
+  const _WebCard({required this.homestay, required this.onView, required this.onToggle, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -412,163 +328,70 @@ class WebCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4))
-        ],
+        border: Border.all(color: const Color(0xFFE8EAF0)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3))],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: 180,
-            child: Stack(children: [
-              ClipRRect(
-                borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(14)),
-                child: ProxyImage(
-                  imageUrl: img,
-                  width: double.infinity,
-                  height: 180,
-                  borderRadiusValue: 0,
-                  thumb: false,
-                  fit: BoxFit.cover,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SizedBox(
+          height: 160,
+          child: Stack(children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+              child: ProxyImage(imageUrl: img, width: double.infinity, height: 160, borderRadiusValue: 0, fit: BoxFit.cover),
+            ),
+            if (!on)
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.4),
+                    child: Center(child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      const Icon(Icons.pause_circle_rounded, color: Colors.white, size: 16),
+                      const SizedBox(width: 5),
+                      Text('Paused', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                    ])),
+                  ),
                 ),
               ),
-              if (!on)
-                Positioned.fill(
-                  child: ClipRRect(
-                    borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(14)),
-                    child: Container(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      child: Center(
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.pause_circle_rounded,
-                              color: Colors.white, size: 18),
-                          const SizedBox(width: 6),
-                          Text('Paused',
-                              style: GoogleFonts.dmSans(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13)),
-                        ]),
-                      ),
-                    ),
-                  ),
-                ),
-              Positioned(top: 10, left: 10, child: CardBadge(isActive: on)),
-              if (h.category != null && h.category!.isNotEmpty)
-                Positioned(
-                  top: 10, right: 10,
-                  child: Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                        color: slate,
-                        borderRadius: BorderRadius.circular(6)),
-                    child: Text(h.category!,
-                        style: GoogleFonts.dmSans(
-                            color: Colors.white,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600)),
-                  ),
-                ),
-            ]),
-          ),
-
-          // Info + actions
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(h.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.playfairDisplay(
-                              fontSize: 15,
-                              fontWeight: FontWeight.bold,
-                              color: dark)),
-                      const SizedBox(height: 4),
-                      Row(children: [
-                        Icon(Icons.location_on_outlined,
-                            size: 12, color: Colors.grey[400]),
-                        const SizedBox(width: 3),
-                        Expanded(
-                          child: Text(h.location,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.dmSans(
-                                  fontSize: 12, color: Colors.grey[500])),
-                        ),
-                      ]),
-                      const SizedBox(height: 6),
-                      Row(children: [
-                        Icon(Icons.bed_outlined,
-                            size: 12, color: Colors.grey[500]),
-                        const SizedBox(width: 3),
-                        Text('${h.numberOfRooms} rooms · ${h.maxGuests} guests',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 11, color: Colors.grey[500])),
-                      ]),
-                      const SizedBox(height: 6),
-                      Text('Rs. ${h.pricePerNight.toStringAsFixed(0)} / night',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: slate)),
-                    ],
-                  ),
-                ),
-                Column(mainAxisSize: MainAxisSize.min, children: [
-                  WebBtn(
-                      icon: Icons.remove_red_eye_outlined,
-                      color: slate,
-                      onTap: onView),
-                  WebBtn(
-                      icon: on
-                          ? Icons.pause_circle_outline_rounded
-                          : Icons.play_circle_outline_rounded,
-                      color: on ? Colors.grey[600]! : Colors.green[600]!,
-                      onTap: onToggle),
-                  WebBtn(
-                      icon: Icons.delete_outline_rounded,
-                      color: Colors.red[400]!,
-                      onTap: onDelete),
-                ]),
-              ],
+            Positioned(
+              top: 10, left: 10,
+              child: _StatusBadge(isActive: on),
             ),
-          ),
-        ],
-      ),
+          ]),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(h.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1C1F26))),
+            const SizedBox(height: 4),
+            Row(children: [
+              const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF9CA3AF)),
+              const SizedBox(width: 3),
+              Expanded(child: Text(h.location, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280)))),
+            ]),
+            const SizedBox(height: 6),
+            Text('Rs. ${h.pricePerNight.toStringAsFixed(0)} / night',
+                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF4F6AF5))),
+            const SizedBox(height: 10),
+            Row(children: [
+              _ABtn(icon: Icons.remove_red_eye_outlined, color: const Color(0xFF4F6AF5), onTap: onView),
+              _ABtn(icon: on ? Icons.pause_circle_outline_rounded : Icons.play_circle_outline_rounded,
+                  color: on ? const Color(0xFF6B7280) : Colors.green[600]!, onTap: onToggle),
+              _ABtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, onTap: onDelete),
+            ]),
+          ]),
+        ),
+      ]),
     );
   }
 }
 
-class MobileCard extends StatelessWidget {
+class _MobileCard extends StatelessWidget {
   final Homestay homestay;
-  final VoidCallback onView;
-  final VoidCallback onToggle;
-  final VoidCallback onDelete;
-
-  static const slate = Color(0xFF3D5A80);
-  static const dark  = Color(0xFF1A1A2E);
-
-  const MobileCard({
-    super.key,
-    required this.homestay,
-    required this.onView,
-    required this.onToggle,
-    required this.onDelete,
-  });
+  final VoidCallback onView, onToggle, onDelete;
+  const _MobileCard({required this.homestay, required this.onView, required this.onToggle, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -577,137 +400,68 @@ class MobileCard extends StatelessWidget {
     final on  = h.isVisible;
 
     return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 8,
-              offset: const Offset(0, 3))
-        ],
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFE8EAF0)),
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 3))],
       ),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Stack(children: [
-          ClipRRect(
-            borderRadius: BorderRadius.vertical(top: Radius.circular(14.r)),
-            child: ProxyImage(
-                imageUrl: img,
-                width: double.infinity,
-                height: 130.h,
-                borderRadiusValue: 0,
-                thumb: true),
-          ),
-          if (!on)
-            Positioned.fill(
-              child: ClipRRect(
-                borderRadius:
-                BorderRadius.vertical(top: Radius.circular(14.r)),
-                child: Container(
-                  color: Colors.black.withValues(alpha: 0.5),
-                  child: Center(
-                    child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      Icon(Icons.pause_circle_rounded,
-                          color: Colors.white, size: 18.sp),
-                      SizedBox(width: 4.w),
-                      Text('Paused',
-                          style: GoogleFonts.dmSans(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12.sp)),
-                    ]),
+        SizedBox(
+          height: 140,
+          child: Stack(children: [
+            ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+              child: ProxyImage(imageUrl: img, width: double.infinity, height: 140, borderRadiusValue: 0, thumb: true, fit: BoxFit.cover),
+            ),
+            if (!on)
+              Positioned.fill(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+                  child: Container(color: Colors.black.withValues(alpha: 0.45),
+                    child: Center(child: Text('Paused', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700))),
                   ),
                 ),
               ),
-            ),
-          Positioned(
-              top: 8.h, left: 8.w, child: CardBadge(isActive: on)),
-          if (h.category != null && h.category!.isNotEmpty)
-            Positioned(
-              top: 8.h, right: 8.w,
-              child: Container(
-                padding:
-                EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                decoration: BoxDecoration(
-                    color: slate,
-                    borderRadius: BorderRadius.circular(6.r)),
-                child: Text(h.category!,
-                    style: GoogleFonts.dmSans(
-                        color: Colors.white,
-                        fontSize: 10.sp,
-                        fontWeight: FontWeight.w600)),
-              ),
-            ),
-        ]),
+            Positioned(top: 10, left: 10, child: _StatusBadge(isActive: on)),
+          ]),
+        ),
         Padding(
-          padding: EdgeInsets.fromLTRB(12.w, 10.h, 8.w, 10.h),
-          child: Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
-            Expanded(
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(h.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.playfairDisplay(
-                            fontSize: 14.sp,
-                            fontWeight: FontWeight.bold,
-                            color: dark)),
-                    SizedBox(height: 3.h),
-                    Row(children: [
-                      Icon(Icons.location_on_outlined,
-                          size: 12.sp, color: Colors.grey[500]),
-                      SizedBox(width: 2.w),
-                      Expanded(
-                        child: Text(h.location,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.dmSans(
-                                fontSize: 11.sp, color: Colors.grey[500])),
-                      ),
-                    ]),
-                    SizedBox(height: 6.h),
-                    Wrap(
-                      spacing: 5.w,
-                      runSpacing: 4.h,
-                      crossAxisAlignment: WrapCrossAlignment.center,
-                      children: [
-                        HomestayChip(
-                            icon: Icons.bed_outlined,
-                            label: '${h.numberOfRooms}R'),
-                        HomestayChip(
-                            icon: Icons.people_outline,
-                            label: '${h.maxGuests}G'),
-                        Text('Rs. ${h.pricePerNight.toStringAsFixed(0)}/N',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 11.sp,
-                                fontWeight: FontWeight.w700,
-                                color: slate)),
-                      ],
-                    ),
-                  ]),
-            ),
-            SizedBox(
-              width: 36.w,
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                MobileBtn(
-                    icon: Icons.remove_red_eye_outlined,
-                    color: slate,
-                    onTap: onView),
-                MobileBtn(
-                    icon: on
-                        ? Icons.pause_circle_outline_rounded
-                        : Icons.play_circle_outline_rounded,
-                    color: on ? Colors.grey[600]! : Colors.green[600]!,
-                    onTap: onToggle),
-                MobileBtn(
-                    icon: Icons.delete_outline_rounded,
-                    color: Colors.red[400]!,
-                    onTap: onDelete),
-              ]),
-            ),
+          padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(h.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1C1F26))),
+            const SizedBox(height: 3),
+            Row(children: [
+              const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF9CA3AF)),
+              const SizedBox(width: 3),
+              Expanded(child: Text(h.location, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280)))),
+            ]),
+            const SizedBox(height: 6),
+            Row(children: [
+              Text('${h.numberOfRooms} rooms · ${h.maxGuests} guests',
+                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280))),
+              const Spacer(),
+              Text('Rs. ${h.pricePerNight.toStringAsFixed(0)}/night',
+                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF4F6AF5))),
+            ]),
+            const SizedBox(height: 10),
+            const Divider(height: 1, color: Color(0xFFE8EAF0)),
+            const SizedBox(height: 8),
+            Row(children: [
+              _ABtn(icon: Icons.remove_red_eye_outlined, color: const Color(0xFF4F6AF5), onTap: onView),
+              _ABtn(icon: on ? Icons.pause_circle_outline_rounded : Icons.play_circle_outline_rounded,
+                  color: on ? const Color(0xFF6B7280) : Colors.green[600]!, onTap: onToggle),
+              _ABtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, onTap: onDelete),
+              const Spacer(),
+              if (h.category != null && h.category!.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(6)),
+                  child: Text(h.category!, style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280))),
+                ),
+            ]),
           ]),
         ),
       ]),
@@ -715,265 +469,117 @@ class MobileCard extends StatelessWidget {
   }
 }
 
-class WebBtn extends StatelessWidget {
+class _ABtn extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  const WebBtn({super.key, required this.icon, required this.color, required this.onTap});
+  const _ABtn({required this.icon, required this.color, required this.onTap});
 
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: onTap,
-    borderRadius: BorderRadius.circular(6),
-    child: Padding(
-        padding: const EdgeInsets.all(5),
-        child: Icon(icon, size: 20, color: color)),
+    borderRadius: BorderRadius.circular(8),
+    child: Padding(padding: const EdgeInsets.all(6), child: Icon(icon, size: 20, color: color)),
   );
 }
 
-class MobileBtn extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-  const MobileBtn({super.key, required this.icon, required this.color, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) => InkWell(
-    onTap: onTap,
-    borderRadius: BorderRadius.circular(6),
-    child: Padding(
-        padding: EdgeInsets.all(5.w),
-        child: Icon(icon, size: 20.sp, color: color)),
-  );
-}
-
-class CardBadge extends StatelessWidget {
+class _StatusBadge extends StatelessWidget {
   final bool isActive;
-  const CardBadge({super.key, required this.isActive});
+  const _StatusBadge({required this.isActive});
 
   @override
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
     decoration: BoxDecoration(
-      color: isActive ? Colors.green[600] : Colors.grey[700],
+      color: isActive ? Colors.green[600] : const Color(0xFF6B7280),
       borderRadius: BorderRadius.circular(6),
     ),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Container(
-          width: 5,
-          height: 5,
-          decoration: const BoxDecoration(
-              color: Colors.white, shape: BoxShape.circle)),
+      Container(width: 5, height: 5, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
       const SizedBox(width: 4),
       Text(isActive ? 'Active' : 'Paused',
-          style: GoogleFonts.dmSans(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w700)),
+          style: GoogleFonts.inter(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
     ]),
   );
 }
 
-class HomestayChip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  const HomestayChip({super.key, required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
-    decoration: BoxDecoration(
-      color: Colors.grey.shade100,
-      borderRadius: BorderRadius.circular(4.r),
-      border: Border.all(color: Colors.grey.shade300),
-    ),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Icon(icon, size: 9.sp, color: Colors.grey[600]),
-      SizedBox(width: 2.w),
-      Text(label,
-          style: GoogleFonts.dmSans(fontSize: 9.sp, color: Colors.grey[700])),
-    ]),
-  );
-}
-
-class WebStatPill extends StatelessWidget {
-  final String label;
-  final int count;
-  final Color color;
-  const WebStatPill(
-      {super.key, required this.label, required this.count, required this.color});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: color.withValues(alpha: 0.25)),
-    ),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Text('$count',
-          style: GoogleFonts.dmSans(
-              fontSize: 14, fontWeight: FontWeight.w800, color: color)),
-      const SizedBox(width: 5),
-      Text(label,
-          style: GoogleFonts.dmSans(
-              fontSize: 12, fontWeight: FontWeight.w500, color: color)),
-    ]),
-  );
-}
-
-class StatPill extends StatelessWidget {
-  final String label;
-  final int count;
-  final Color color;
-  const StatPill(
-      {super.key, required this.label, required this.count, required this.color});
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
-    decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.1),
-      borderRadius: BorderRadius.circular(20.r),
-      border: Border.all(color: color.withValues(alpha: 0.3)),
-    ),
-    child: Row(mainAxisSize: MainAxisSize.min, children: [
-      Text('$count',
-          style: GoogleFonts.dmSans(
-              fontSize: 13.sp, fontWeight: FontWeight.w800, color: color)),
-      SizedBox(width: 5.w),
-      Text(label,
-          style: GoogleFonts.dmSans(
-              fontSize: 11.sp, fontWeight: FontWeight.w500, color: color)),
-    ]),
-  );
-}
-
-class ConfirmDialog extends StatelessWidget {
+class _ConfirmDialog extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
   final String title, body, confirmLabel;
   final Color confirmColor;
   final VoidCallback onConfirm;
-
-  const ConfirmDialog({
-    super.key,
-    required this.icon,
-    required this.iconColor,
-    required this.title,
-    required this.body,
-    required this.confirmLabel,
-    required this.confirmColor,
-    required this.onConfirm,
-  });
+  const _ConfirmDialog({required this.icon, required this.iconColor, required this.title,
+      required this.body, required this.confirmLabel, required this.confirmColor, required this.onConfirm});
 
   @override
   Widget build(BuildContext context) => AlertDialog(
     backgroundColor: Colors.white,
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
     title: Row(children: [
-      Icon(icon, color: iconColor, size: 24),
+      Icon(icon, color: iconColor, size: 22),
       const SizedBox(width: 10),
-      Expanded(
-          child: Text(title,
-              style: GoogleFonts.playfairDisplay(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 17,
-                  color: const Color(0xFF1A1A2E)))),
+      Expanded(child: Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16, color: const Color(0xFF1C1F26)))),
     ]),
-    content: Text(body,
-        style: GoogleFonts.dmSans(
-            fontSize: 13, color: Colors.grey[700], height: 1.5)),
-    actionsPadding:
-    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    content: Text(body, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280), height: 1.5)),
+    actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
     actions: [
       TextButton(
         onPressed: () => Navigator.pop(context),
-        child: Text('Cancel',
-            style: GoogleFonts.dmSans(
-                color: Colors.grey[600], fontWeight: FontWeight.w600)),
+        child: Text('Cancel', style: GoogleFonts.inter(color: const Color(0xFF6B7280), fontWeight: FontWeight.w600)),
       ),
       ElevatedButton(
-        style: ElevatedButton.styleFrom(
-            backgroundColor: confirmColor,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8))),
-        onPressed: () {
-          Navigator.pop(context);
-          onConfirm();
-        },
-        child: Text(confirmLabel,
-            style: GoogleFonts.dmSans(
-                color: Colors.white, fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(backgroundColor: confirmColor, elevation: 0,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+        onPressed: () { Navigator.pop(context); onConfirm(); },
+        child: Text(confirmLabel, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
       ),
     ],
   );
 }
 
-class ErrorView extends StatelessWidget {
+class _ErrorView extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
-  const ErrorView({super.key, required this.message, required this.onRetry});
+  const _ErrorView({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) => Center(
     child: Padding(
-      padding: EdgeInsets.all(32.w),
+      padding: const EdgeInsets.all(32),
       child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        Icon(Icons.error_outline_rounded, size: 48.sp, color: Colors.redAccent),
-        SizedBox(height: 16.h),
-        Text('Something went wrong',
-            style: GoogleFonts.playfairDisplay(
-                fontSize: 18.sp,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF1A1A2E))),
-        SizedBox(height: 8.h),
-        Text(message,
-            textAlign: TextAlign.center,
-            style:
-            GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[600])),
-        SizedBox(height: 20.h),
+        const Icon(Icons.error_outline_rounded, size: 48, color: Colors.redAccent),
+        const SizedBox(height: 16),
+        Text('Something went wrong', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF1C1F26))),
+        const SizedBox(height: 8),
+        Text(message, textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280))),
+        const SizedBox(height: 20),
         ElevatedButton.icon(
           onPressed: onRetry,
-          style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF3D5A80),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.r))),
-          icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-          label: Text('Retry',
-              style: GoogleFonts.dmSans(
-                  color: Colors.white, fontWeight: FontWeight.bold)),
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4F6AF5), elevation: 0,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
+          icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 16),
+          label: Text('Retry', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),
         ),
       ]),
     ),
   );
 }
 
-class EmptyView extends StatelessWidget {
+class _EmptyView extends StatelessWidget {
   final String filter;
-  const EmptyView({super.key, required this.filter});
+  const _EmptyView({required this.filter});
 
   @override
   Widget build(BuildContext context) => Center(
     child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Icon(Icons.home_work_outlined, size: 56, color: Colors.grey[300]),
+      Icon(Icons.home_work_outlined, size: 52, color: Colors.grey[300]),
       const SizedBox(height: 16),
-      Text(
-          filter == 'All'
-              ? 'No homestays found'
-              : 'No $filter homestays',
-          style: GoogleFonts.playfairDisplay(
-              fontSize: 18,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.bold)),
-      const SizedBox(height: 8),
-      Text(
-          filter == 'Paused'
-              ? 'All homestays are currently active'
-              : 'No homestays match your search',
-          style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[400])),
+      Text(filter == 'All' ? 'No homestays found' : 'No $filter homestays',
+          style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF6B7280))),
+      const SizedBox(height: 6),
+      Text('No homestays match your current filter',
+          style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9CA3AF))),
     ]),
   );
 }
