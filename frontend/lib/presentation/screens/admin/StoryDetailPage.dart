@@ -13,14 +13,18 @@ class StoryDetailPage extends StatefulWidget {
 
 class _StoryDetailPageState extends State<StoryDetailPage> {
   int _currentPage = 0;
-  final PageController _pageCtrl = PageController();
+  final PageController _pageCtrl  = PageController();
+  final PageController _mobileCtrl = PageController();
 
   static const _dark   = Color(0xFF1A1A2E);
   static const _accent = Color(0xFF3D5A80);
 
+  int _mobilePage = 0;
+
   @override
   void dispose() {
     _pageCtrl.dispose();
+    _mobileCtrl.dispose();
     super.dispose();
   }
 
@@ -211,13 +215,41 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (images.isNotEmpty)
-          ProxyImage(
-            imageUrl: images.first,
-            width: double.infinity, height: 220,
-            fit: BoxFit.contain,
-            borderRadiusValue: 14,
+        if (images.isNotEmpty) ...[
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: SizedBox(
+              height: 220,
+              child: PageView.builder(
+                controller: _mobileCtrl,
+                itemCount: images.length,
+                onPageChanged: (i) => setState(() => _mobilePage = i),
+                itemBuilder: (_, i) => ProxyImage(
+                  imageUrl: images[i],
+                  width: double.infinity, height: 220,
+                  fit: BoxFit.contain,
+                  borderRadiusValue: 0,
+                ),
+              ),
+            ),
           ),
+          if (images.length > 1) ...[
+            const SizedBox(height: 8),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(images.length, (i) => AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.symmetric(horizontal: 3),
+                width:  _mobilePage == i ? 18 : 7,
+                height: 7,
+                decoration: BoxDecoration(
+                  color: _mobilePage == i ? _accent : Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              )),
+            ),
+          ],
+        ],
         const SizedBox(height: 16),
         Container(
           padding: const EdgeInsets.all(16),

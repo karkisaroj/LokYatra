@@ -91,15 +91,22 @@ class _TouristStayPageState extends State<TouristStayPage> {
         Padding(
           padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 12.h),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Find Your Stay',
-                style: GoogleFonts.playfairDisplay(
-                    fontSize: 26.sp,
-                    fontWeight: FontWeight.bold,
-                    color: _ink)),
-            SizedBox(height: 2.h),
-            Text('Traditional homestays near heritage sites',
-                style: GoogleFonts.dmSans(
-                    fontSize: 13.sp, color: Colors.grey[500])),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Find Your Stay',
+                      style: GoogleFonts.playfairDisplay(
+                          fontSize: 26.sp,
+                          fontWeight: FontWeight.bold,
+                          color: _ink)),
+                  SizedBox(height: 2.h),
+                  Text('Traditional homestays near heritage sites',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13.sp, color: Colors.grey[500])),
+                ]),
+              ],
+            ),
             SizedBox(height: 14.h),
 
             // Search + Filter row
@@ -214,76 +221,87 @@ class _TouristStayPageState extends State<TouristStayPage> {
 
         // ── List ─────────────────────────────────────────────
         Expanded(
-          child: BlocBuilder<HomestayBloc, HomestayState>(
-            builder: (context, state) {
-              if (state is HomestayLoading) {
-                return Center(
-                    child: CircularProgressIndicator(
-                        color: _accent, strokeWidth: 2));
-              }
-              if (state is TouristAllHomestaysLoaded) {
-                final filtered = _applyFilters(state.homestays);
-
-                if (filtered.isEmpty) {
-                  return Center(
-                    child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.hotel_outlined,
-                              size: 48.sp, color: Colors.grey[300]),
-                          SizedBox(height: 12.h),
-                          Text('No homestays match your filters',
-                              style: GoogleFonts.dmSans(
-                                  color: Colors.grey[400], fontSize: 14.sp)),
-                          SizedBox(height: 8.h),
-                          TextButton(
-                            onPressed: () => setState(() {
-                              _search     = '';
-                              _priceRange = const RangeValues(0, 10000);
-                              _sortBy     = 'default';
-                              _minRooms   = null;
-                            }),
-                            child: Text('Clear all filters',
-                                style: GoogleFonts.dmSans(
-                                    color: _accent,
-                                    fontWeight: FontWeight.w600)),
-                          ),
-                        ]),
-                  );
-                }
-
-                return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 8.h),
-                        child: Text(
-                            '${filtered.length} homestay${filtered.length == 1 ? '' : 's'} found',
-                            style: GoogleFonts.dmSans(
-                                fontSize: 13.sp, color: Colors.grey[500])),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
-                          itemCount: filtered.length,
-                          itemBuilder: (context, i) {
-                            final h = filtered[i];
-                            return _StayCard(
-                              homestay: h,
-                              onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (_) =>
-                                          TouristHomestayDetailPage(
-                                              homestay: h.toJson()))),
-                            );
-                          },
-                        ),
-                      ),
-                    ]);
-              }
-              return const SizedBox.shrink();
+          child: RefreshIndicator(
+            color: _accent,
+            onRefresh: () async {
+              context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
             },
+            child: BlocBuilder<HomestayBloc, HomestayState>(
+              builder: (context, state) {
+                if (state is HomestayLoading) {
+                  return Center(
+                      child: CircularProgressIndicator(
+                          color: _accent, strokeWidth: 2));
+                }
+                if (state is TouristAllHomestaysLoaded) {
+                  final filtered = _applyFilters(state.homestays);
+        
+                  if (filtered.isEmpty) {
+                    return ListView(
+                      children: [
+                        SizedBox(height: 150.h),
+                        Center(
+                          child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(Icons.hotel_outlined,
+                                    size: 48.sp, color: Colors.grey[300]),
+                                SizedBox(height: 12.h),
+                                Text('No homestays match your filters',
+                                    style: GoogleFonts.dmSans(
+                                        color: Colors.grey[400], fontSize: 14.sp)),
+                                SizedBox(height: 8.h),
+                                TextButton(
+                                  onPressed: () => setState(() {
+                                    _search     = '';
+                                    _priceRange = const RangeValues(0, 10000);
+                                    _sortBy     = 'default';
+                                    _minRooms   = null;
+                                  }),
+                                  child: Text('Clear all filters',
+                                      style: GoogleFonts.dmSans(
+                                          color: _accent,
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                              ]),
+                        ),
+                      ],
+                    );
+                  }
+        
+                  return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 8.h),
+                          child: Text(
+                              '${filtered.length} homestay${filtered.length == 1 ? '' : 's'} found',
+                              style: GoogleFonts.dmSans(
+                                  fontSize: 13.sp, color: Colors.grey[500])),
+                        ),
+                        Expanded(
+                          child: ListView.builder(
+                            padding: EdgeInsets.fromLTRB(20.w, 0, 20.w, 20.h),
+                            itemCount: filtered.length,
+                            itemBuilder: (context, i) {
+                              final h = filtered[i];
+                              return _StayCard(
+                                homestay: h,
+                                onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) =>
+                                            TouristHomestayDetailPage(
+                                                homestay: h.toJson()))),
+                              );
+                            },
+                          ),
+                        ),
+                      ]);
+                }
+                return const SizedBox.shrink();
+              },
+            ),
           ),
         ),
       ]),

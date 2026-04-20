@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -103,15 +104,22 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
         Padding(
           padding: EdgeInsets.fromLTRB(20.w, 16.h, 20.w, 12.h),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Cultural Sites',
-                style: GoogleFonts.playfairDisplay(
-                    fontSize: 26.sp,
-                    fontWeight: FontWeight.bold,
-                    color: _ink)),
-            SizedBox(height: 2.h),
-            Text('Heritage & history across Nepal',
-                style: GoogleFonts.dmSans(
-                    fontSize: 13.sp, color: Colors.grey[500])),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text('Cultural Sites',
+                      style: GoogleFonts.playfairDisplay(
+                          fontSize: 26.sp,
+                          fontWeight: FontWeight.bold,
+                          color: _ink)),
+                  SizedBox(height: 2.h),
+                  Text('Heritage & history across Nepal',
+                      style: GoogleFonts.dmSans(
+                          fontSize: 13.sp, color: Colors.grey[500])),
+                ]),
+              ],
+            ),
             SizedBox(height: 14.h),
 
             // Search + Filter row
@@ -221,7 +229,12 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
 
         // ── List ─────────────────────────────────────────────
         Expanded(
-          child: BlocBuilder<SitesBloc, SitesState>(
+          child: RefreshIndicator(
+            color: _accent,
+            onRefresh: () async {
+              context.read<SitesBloc>().add(LoadSites());
+            },
+            child: BlocBuilder<SitesBloc, SitesState>(
             builder: (context, state) {
               if (state is SitesLoading) {
                 return Center(
@@ -309,6 +322,7 @@ class _TouristSitesPageState extends State<TouristSitesPage> {
               return const SizedBox.shrink();
             },
           ),
+        ),
         ),
       ]),
     );

@@ -60,7 +60,7 @@ class Homestay {
       description: json['description']?.toString() ?? '',
       category: json['category']?.toString(),
       pricePerNight: (json['pricePerNight'] as num?)?.toDouble() ?? 0.0,
-      imageUrls: _parseStringList(json['imageUrls']),
+      imageUrls: _mergeImageUrls(json['imageUrl']?.toString(), json['imageUrls']),
       isVisible: json['isVisible'] as bool? ?? false,
       buildingHistory: json['buildingHistory']?.toString(),
       culturalSignificance: json['culturalSignificance']?.toString(),
@@ -83,6 +83,16 @@ class Homestay {
           ? DateTime.tryParse(json['updatedAt'].toString())
           : null,
     );
+  }
+
+  static List<String> _mergeImageUrls(String? single, dynamic plural) {
+    List<String> list = _parseStringList(plural);
+    if (single != null && single.isNotEmpty) {
+      if (!list.contains(single)) {
+        list.insert(0, single);
+      }
+    }
+    return list;
   }
 
   static List<String> _parseStringList(dynamic raw) {

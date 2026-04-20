@@ -181,6 +181,12 @@ class _AdminSitesState extends State<AdminSites> {
             const Spacer(),
             _filterChips(),
             const SizedBox(width: 16),
+            IconButton(
+              onPressed: () => context.read<SitesBloc>().add(LoadSites()),
+              icon: Icon(Icons.refresh, color: _muted, size: 20),
+              tooltip: 'Refresh Sites',
+            ),
+            const SizedBox(width: 8),
             _addBtn(),
           ]),
           const SizedBox(height: 12),
@@ -189,6 +195,12 @@ class _AdminSitesState extends State<AdminSites> {
           Row(children: [
             Expanded(child: _searchBar()),
             const SizedBox(width: 8),
+            IconButton(
+              onPressed: () => context.read<SitesBloc>().add(LoadSites()),
+              icon: Icon(Icons.refresh, color: _muted, size: 20),
+              tooltip: 'Refresh',
+            ),
+            const SizedBox(width: 4),
             _addBtn(),
           ]),
           const SizedBox(height: 10),

@@ -176,25 +176,29 @@ class _Sidebar extends StatelessWidget {
         border: Border(right: BorderSide(color: Color(0xFFE8EAF0))),
       ),
       child: Column(children: [
-        const SizedBox(height: 28),
+        const SizedBox(height: 32),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(children: [
-            Container(
-              width: 34, height: 34,
-              decoration: BoxDecoration(color: const Color(0xFF4F6AF5), borderRadius: BorderRadius.circular(10)),
-              child: const Icon(Icons.travel_explore_rounded, color: Colors.white, size: 18),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Image.asset('assets/images/lokyatra_logo.png', height: 44, fit: BoxFit.contain),
+                const SizedBox(height: 12),
+                Text(
+                  'ADMIN PANEL',
+                  style: GoogleFonts.inter(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.2,
+                    color: const Color(0xFF9CA3AF),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 10),
-            Text('LokYatra', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: const Color(0xFF1C1F26))),
-          ]),
+          ),
         ),
-        const SizedBox(height: 4),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Text('Admin Panel', style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF9CA3AF))),
-        ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 32),
         Expanded(
           child: ListView.builder(
             padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -202,7 +206,7 @@ class _Sidebar extends StatelessWidget {
             itemBuilder: (_, i) {
               final selected = i == selectedIndex;
               return Padding(
-                padding: const EdgeInsets.only(bottom: 2),
+                padding: const EdgeInsets.only(bottom: 6),
                 child: InkWell(
                   onTap: () => onTap(i),
                   borderRadius: BorderRadius.circular(8),

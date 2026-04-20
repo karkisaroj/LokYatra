@@ -67,7 +67,15 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
         backgroundColor: _cream,
         body: Stack(
           children: [
-            CustomScrollView(
+            RefreshIndicator(
+              color: _terracotta,
+              onRefresh: () async {
+                final id = widget.site.id;
+                context.read<StoryBloc>().add(LoadStories(siteId: id));
+                context.read<ReviewBloc>().add(LoadSiteReviews(id));
+                context.read<HomestayBloc>().add(TouristLoadHomestaysNearSite(widget.site.name ?? ''));
+              },
+              child: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(
                   child: SizedBox(
@@ -508,6 +516,7 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
                 ),
               ],
             ),
+          ),
 
             Positioned(
               top: MediaQuery.of(context).padding.top + 8.h,
@@ -561,7 +570,21 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
   }
 
   Widget _buildStoriesTab() {
-    return BlocBuilder<StoryBloc, StoryState>(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (kIsWeb)
+          Align(
+            alignment: Alignment.centerRight,
+            child: Padding(
+              padding: EdgeInsets.only(bottom: 12.h),
+              child: IconButton(
+                icon: Icon(Icons.refresh, color: _terracotta, size: 24.sp),
+                onPressed: () => context.read<StoryBloc>().add(LoadStories(siteId: widget.site.id)),
+              ),
+            ),
+          ),
+        BlocBuilder<StoryBloc, StoryState>(
       builder: (context, state) {
         if (state is StoryLoading) {
           return const Center(
@@ -609,6 +632,8 @@ class _TouristSiteDetailPageState extends State<TouristSiteDetailPage> {
         }
         return const SizedBox.shrink();
       },
+    ),
+    ],
     );
   }
 

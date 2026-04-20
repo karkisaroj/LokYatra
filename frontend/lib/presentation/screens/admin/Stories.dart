@@ -110,6 +110,12 @@ class _StoriesState extends State<Stories> {
           Text('Manage heritage site stories', style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[500])),
         ]),
         const Spacer(),
+        IconButton(
+          onPressed: () => context.read<StoryBloc>().add(LoadStories(siteId: _selectedSiteId)),
+          icon: Icon(Icons.refresh, color: Colors.grey[600], size: 20),
+          tooltip: 'Refresh Stories',
+        ),
+        const SizedBox(width: 8),
         _addButton(),
       ]),
       const SizedBox(height: 12),
@@ -127,7 +133,13 @@ class _StoriesState extends State<Stories> {
       SizedBox(height: 10.h),
       Row(children: [
         Expanded(child: _searchField()),
-        SizedBox(width: 10.w),
+        SizedBox(width: 8.w),
+        IconButton(
+          onPressed: () => context.read<StoryBloc>().add(LoadStories(siteId: _selectedSiteId)),
+          icon: Icon(Icons.refresh, color: Colors.grey[600], size: 20.sp),
+          tooltip: 'Refresh',
+        ),
+        SizedBox(width: 4.w),
         _addButton(),
       ]),
     ]);
