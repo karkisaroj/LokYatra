@@ -47,11 +47,15 @@ String? getFirstImageUrl(dynamic imageUrls) {
 
 // images.weserv.nl is a free CDN proxy with whitelisted access to Wikimedia.
 // It caches images on its own CDN so the phone never contacts Wikimedia directly.
-// Pass the URL without scheme and without re-encoding slashes — weserv.nl expects
-// the raw path (e.g. ?url=upload.wikimedia.org/wikipedia/commons/thumb/...).
+// Use Dart's Uri class to properly encode the url= query parameter so filenames
+// with special characters like apostrophes or parentheses are handled correctly.
 String _weservUrl(String url) {
   final noScheme = url.replaceFirst(RegExp(r'^https?://'), '');
-  return 'https://images.weserv.nl/?url=$noScheme';
+  return Uri(
+    scheme: 'https',
+    host: 'images.weserv.nl',
+    queryParameters: {'url': noScheme},
+  ).toString();
 }
 
 // ── ProxyImage widget ─────────────────────────────────────────────────────────
@@ -113,11 +117,14 @@ class ProxyImage extends StatelessWidget {
 
   // ── renderers ───────────────────────────────────────────────────────────────
 
-  // A minimal header forces Flutter web to use XHR/fetch instead of a plain <img>
-  // element. Without XHR mode, Flutter's CanvasKit renderer cannot paint cross-origin
-  // images (tainted-canvas restriction). Railway, Cloudinary, and Wikimedia CDN all
-  // respond to CORS preflight with Access-Control-Allow-Origin: *, so this is safe.
-  static const _webHeaders = {'X-Requested-With': 'XMLHttpRequest'};
+  // Providing any headers forces Flutter web into XHR/fetch mode so CanvasKit gets
+  // the raw image bytes it needs to paint the canvas. Without headers, Flutter web
+  // falls back to a native <img> element which CanvasKit cannot read (tainted canvas).
+  // The User-Agent header is harmless: CORS preflight succeeds because Railway uses
+  // AllowAnyHeader(), Cloudinary and Wikimedia CDN both return Access-Control-Allow-Origin: *.
+  static const _webHeaders = {
+    'User-Agent': 'LokYatraApp/1.0 (Flutter; heritage tourism FYP)',
+  };
 
   Widget _webImage(String url, double w, double h) => Image.network(
     url,
