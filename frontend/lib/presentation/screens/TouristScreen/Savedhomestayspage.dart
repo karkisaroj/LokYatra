@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import '../../../data/datasources/saved_remote_datasource.dart';
 import '../../../data/models/Homestay.dart';
 import 'TouristHomestayDetailPage.dart';
@@ -149,8 +150,7 @@ class _SavedCard extends StatelessWidget {
                 width: double.infinity,
                 height: 190.h,
                 child: imageUrl != null
-                    ? Image.network(imageUrl, fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => _placeholder())
+                    ? ProxyImage(imageUrl: imageUrl, width: double.infinity, height: double.infinity, fit: BoxFit.cover, borderRadiusValue: 0, thumb: true)
                     : _placeholder(),
               ),
               Positioned(

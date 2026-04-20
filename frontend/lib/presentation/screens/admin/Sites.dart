@@ -295,7 +295,7 @@ class _AdminSitesState extends State<AdminSites> {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                   child: Row(children: [
-                    ProxyImage(imageUrl: img, width: 72, height: 52, borderRadiusValue: 8),
+                    ProxyImage(imageUrl: img, width: 72, height: 52, borderRadiusValue: 8, thumb: true),
                     const SizedBox(width: 12),
                     Expanded(flex: 3, child: Row(children: [
                       Flexible(child: Text(site.name ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
@@ -354,7 +354,7 @@ class _AdminSitesState extends State<AdminSites> {
             child: Padding(
               padding: const EdgeInsets.all(12),
               child: Row(children: [
-                ProxyImage(imageUrl: img, width: 60, height: 60, borderRadiusValue: 8),
+                ProxyImage(imageUrl: img, width: 60, height: 60, borderRadiusValue: 8, thumb: true),
                 const SizedBox(width: 12),
                 Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Row(children: [

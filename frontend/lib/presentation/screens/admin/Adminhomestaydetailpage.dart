@@ -1,7 +1,5 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import 'package:lokyatra_frontend/data/models/Homestay.dart';
@@ -94,7 +92,7 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
       backgroundColor: _bg,
       body: CustomScrollView(slivers: [
         SliverAppBar(
-          expandedHeight: 260.h,
+          expandedHeight: 260,
           pinned: true,
           backgroundColor: _dark,
           leading: _BackBtn(),
@@ -160,15 +158,12 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
         controller: _pageCtrl,
         itemCount: h.imageUrls.length,
         onPageChanged: (i) => setState(() => _imageIndex = i),
-        itemBuilder: (_, i) => CachedNetworkImage(
-          imageUrl: getProxyImageUrl(h.imageUrls[i]),
-          cacheKey: 'full_${h.imageUrls[i]}',
+        itemBuilder: (_, i) => ProxyImage(
+          imageUrl: h.imageUrls[i],
+          width: double.infinity,
+          height: double.infinity,
           fit: BoxFit.cover,
-          filterQuality: FilterQuality.high,
-          placeholder: (_, _) => Container(color: Colors.grey[200],
-              child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
-          errorWidget: (_, _, _) => Container(color: Colors.grey[200],
-              child: const Icon(Icons.broken_image, color: Colors.grey)),
+          borderRadiusValue: 0,
         ),
       ),
       if (!_isVisible) _pausedOverlay(),
@@ -188,15 +183,12 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
         itemCount: h.imageUrls.length,
         physics: const BouncingScrollPhysics(),
         onPageChanged: (i) => setState(() => _imageIndex = i),
-        itemBuilder: (_, i) => CachedNetworkImage(
-          imageUrl: getProxyImageUrl(h.imageUrls[i]),
-          cacheKey: 'full_${h.imageUrls[i]}',
+        itemBuilder: (_, i) => ProxyImage(
+          imageUrl: h.imageUrls[i],
+          width: double.infinity,
+          height: double.infinity,
           fit: BoxFit.cover,
-          filterQuality: FilterQuality.high,
-          placeholder: (_, _) => Container(color: Colors.grey[200],
-              child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
-          errorWidget: (_, _, _) => Container(color: Colors.grey[200],
-              child: const Icon(Icons.broken_image, color: Colors.grey)),
+          borderRadiusValue: 0,
         ),
       ),
       if (!_isVisible) _pausedOverlay(),
@@ -283,29 +275,29 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
     GestureDetector(
       onTap: _onToggle,
       child: Container(
-        margin: EdgeInsets.symmetric(vertical: 8.h),
-        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         decoration: BoxDecoration(
           color: _isVisible ? Colors.green[600] : Colors.grey[600],
-          borderRadius: BorderRadius.circular(20.r),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(_isVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-              color: Colors.white, size: 13.sp),
-          SizedBox(width: 4.w),
+              color: Colors.white, size: 13),
+          const SizedBox(width: 4),
           Text(_isVisible ? 'Active' : 'Paused',
-              style: GoogleFonts.dmSans(color: Colors.white, fontSize: 11.sp, fontWeight: FontWeight.w700)),
+              style: GoogleFonts.dmSans(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
         ]),
       ),
     ),
-    SizedBox(width: 6.w),
+    const SizedBox(width: 6),
     GestureDetector(
       onTap: _onDelete,
       child: Container(
-        margin: EdgeInsets.fromLTRB(0, 8.h, 10.w, 8.h),
-        padding: EdgeInsets.all(7.w),
+        margin: const EdgeInsets.fromLTRB(0, 8, 10, 8),
+        padding: const EdgeInsets.all(7),
         decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-        child: Icon(Icons.delete_outline_rounded, size: 19.sp, color: Colors.red[500]),
+        child: Icon(Icons.delete_outline_rounded, size: 19, color: Colors.red[500]),
       ),
     ),
   ];
@@ -424,14 +416,13 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
                 itemBuilder: (_, i) => GestureDetector(
                   onTap: () => _pageCtrl.animateToPage(i,
                       duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: getProxyImageUrl(cloudinaryThumb(h.imageUrls[i], w: 180, h: 180)),
-                      cacheKey: 'thumb_${h.imageUrls[i]}',
-                      width: 110, height: 80,
-                      fit: BoxFit.cover, filterQuality: FilterQuality.medium,
-                    ),
+                  child: ProxyImage(
+                    imageUrl: h.imageUrls[i],
+                    width: 110,
+                    height: 80,
+                    thumb: true,
+                    fit: BoxFit.cover,
+                    borderRadiusValue: 8,
                   ),
                 ),
               ),
@@ -453,13 +444,13 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
   Widget _mobileBody() {
     final h = widget.homestay;
     return Padding(
-      padding: EdgeInsets.all(18.w),
+      padding: const EdgeInsets.all(18),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(child: Text(h.name,
-              style: GoogleFonts.playfairDisplay(fontSize: 22.sp, fontWeight: FontWeight.bold, color: _dark))),
+              style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.bold, color: _dark))),
           if (h.category != null && h.category!.isNotEmpty) ...[
-            SizedBox(width: 8.w),
+            const SizedBox(width: 8),
             Container(
               margin: const EdgeInsets.only(top: 4),
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -488,7 +479,7 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
                 style: GoogleFonts.dmSans(fontSize: 12, color: Colors.grey[500])),
           ]),
         ],
-        SizedBox(height: 18.h),
+        const SizedBox(height: 18),
         Row(children: [
           Expanded(child: _StatCard(label: 'Price/Night', value: 'Rs. ${h.pricePerNight.toStringAsFixed(0)}', icon: Icons.payments_outlined)),
           const SizedBox(width: 8),
@@ -498,29 +489,29 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
           const SizedBox(width: 8),
           Expanded(child: _StatCard(label: 'Baths', value: '${h.bathrooms}', icon: Icons.bathtub_outlined)),
         ]),
-        SizedBox(height: 18.h),
+        const SizedBox(height: 18),
         const Divider(),
-        SizedBox(height: 14.h),
+        const SizedBox(height: 14),
         if (h.description.isNotEmpty)
           _Section(title: 'About',
               child: Text(h.description, style: GoogleFonts.dmSans(fontSize: 13, height: 1.6, color: Colors.grey[700]))),
         if (_notEmpty(h.culturalSignificance)) ...[
-          SizedBox(height: 16.h),
+          const SizedBox(height: 16),
           _Section(title: 'Cultural Significance',
               child: Text(h.culturalSignificance!, style: GoogleFonts.dmSans(fontSize: 13, height: 1.6, color: Colors.grey[700]))),
         ],
         if (_notEmpty(h.buildingHistory)) ...[
-          SizedBox(height: 16.h),
+          const SizedBox(height: 16),
           _Section(title: 'Building History',
               child: Text(h.buildingHistory!, style: GoogleFonts.dmSans(fontSize: 13, height: 1.6, color: Colors.grey[700]))),
         ],
         if (_notEmpty(h.traditionalFeatures)) ...[
-          SizedBox(height: 16.h),
+          const SizedBox(height: 16),
           _Section(title: 'Traditional Features',
               child: Text(h.traditionalFeatures!, style: GoogleFonts.dmSans(fontSize: 13, height: 1.6, color: Colors.grey[700]))),
         ],
         if (h.amenities.isNotEmpty) ...[
-          SizedBox(height: 16.h),
+          const SizedBox(height: 16),
           _Section(title: 'Amenities', child: Wrap(
             spacing: 8, runSpacing: 8,
             children: h.amenities.map((a) => Container(
@@ -535,7 +526,7 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
           )),
         ],
         if (h.culturalExperiences.isNotEmpty) ...[
-          SizedBox(height: 16.h),
+          const SizedBox(height: 16),
           _Section(title: 'Cultural Experiences', child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: h.culturalExperiences.map((e) => Padding(
@@ -553,10 +544,10 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
           )),
         ],
         if (h.imageUrls.length > 1) ...[
-          SizedBox(height: 16.h),
+          const SizedBox(height: 16),
           _Section(title: 'All Photos (${h.imageUrls.length})',
             child: SizedBox(
-              height: 80.h,
+              height: 80,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: h.imageUrls.length,
@@ -564,30 +555,29 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
                 itemBuilder: (_, i) => GestureDetector(
                   onTap: () => _pageCtrl.animateToPage(i,
                       duration: const Duration(milliseconds: 300), curve: Curves.easeInOut),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: CachedNetworkImage(
-                      imageUrl: getProxyImageUrl(cloudinaryThumb(h.imageUrls[i], w: 180, h: 180)),
-                      cacheKey: 'thumb_${h.imageUrls[i]}',
-                      width: 110.w, height: 80.h,
-                      fit: BoxFit.cover, filterQuality: FilterQuality.medium,
-                    ),
+                  child: ProxyImage(
+                    imageUrl: h.imageUrls[i],
+                    width: 110,
+                    height: 80,
+                    thumb: true,
+                    fit: BoxFit.cover,
+                    borderRadiusValue: 8,
                   ),
                 ),
               ),
             ),
           ),
         ],
-        SizedBox(height: 16.h),
+        const SizedBox(height: 16),
         const Divider(),
-        SizedBox(height: 10.h),
+        const SizedBox(height: 10),
         if (h.createdAt != null)
           Text('Listed on ${_fmt(h.createdAt!)}',
               style: GoogleFonts.dmSans(fontSize: 11, color: Colors.grey[400])),
         if (h.updatedAt != null)
           Text('Last updated ${_fmt(h.updatedAt!)}',
               style: GoogleFonts.dmSans(fontSize: 11, color: Colors.grey[400])),
-        SizedBox(height: 40.h),
+        const SizedBox(height: 40),
       ]),
     );
   }

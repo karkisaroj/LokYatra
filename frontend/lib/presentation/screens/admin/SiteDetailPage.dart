@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/services/image_proxy.dart';
@@ -63,17 +62,12 @@ class _SiteDetailPageState extends State<SiteDetailPage> {
                         itemCount: images.length,
                         physics: const BouncingScrollPhysics(),
                         onPageChanged: (i) => setState(() => _currentImageIndex = i),
-                        itemBuilder: (_, i) => CachedNetworkImage(
-                          imageUrl: getProxyImageUrl(images[i]),
-                          cacheKey: 'full_${images[i]}',
+                        itemBuilder: (_, i) => ProxyImage(
+                          imageUrl: images[i],
+                          width: double.infinity,
+                          height: 340,
                           fit: BoxFit.contain,
-                          filterQuality: FilterQuality.high,
-                          color: Colors.black,
-                          colorBlendMode: BlendMode.dstOver,
-                          placeholder: (_, _) => Container(color: Colors.grey[200],
-                              child: const Center(child: CircularProgressIndicator(strokeWidth: 2))),
-                          errorWidget: (_, _, _) => Container(color: Colors.grey[200],
-                              child: const Icon(Icons.broken_image, color: Colors.grey)),
+                          borderRadiusValue: 0,
                         ),
                       ),
                       Positioned.fill(
@@ -233,18 +227,13 @@ class _SiteDetailPageState extends State<SiteDetailPage> {
                                   border: Border.all(
                                       color: isActive ? _terracotta : Colors.transparent, width: 2.5),
                                 ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(8),
-                                  child: CachedNetworkImage(
-                                    imageUrl: getProxyImageUrl(cloudinaryThumb(images[i], w: 180, h: 180)),
-                                    cacheKey: 'thumb_${images[i]}',
-                                    width: 90, height: 90,
-                                    fit: BoxFit.cover,
-                                    filterQuality: FilterQuality.medium,
-                                    placeholder: (_, _) => Container(color: Colors.grey[200]),
-                                    errorWidget: (_, _, _) => Container(color: Colors.grey[200],
-                                        child: const Icon(Icons.broken_image, size: 18, color: Colors.grey)),
-                                  ),
+                                child: ProxyImage(
+                                  imageUrl: images[i],
+                                  width: 90,
+                                  height: 90,
+                                  thumb: true,
+                                  fit: BoxFit.cover,
+                                  borderRadiusValue: 8,
                                 ),
                               ),
                             );

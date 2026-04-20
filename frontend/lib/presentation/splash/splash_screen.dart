@@ -17,7 +17,13 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(seconds: 2), _checkAuth);
+    // Web: check immediately so refresh shows a spinner, not a 2-second branded wait.
+    // Mobile: show branded splash for 2 s before navigating.
+    if (kIsWeb) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _checkAuth());
+    } else {
+      Future.delayed(const Duration(seconds: 2), _checkAuth);
+    }
   }
 
   Future<void> _checkAuth() async {
@@ -69,6 +75,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // On web: plain white spinner — no branded splash that looks like a login screen.
+    if (kIsWeb) {
+      return const Scaffold(
+        backgroundColor: Colors.white,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(

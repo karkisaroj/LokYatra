@@ -9,6 +9,7 @@ import 'package:lokyatra_frontend/data/models/Site.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_state.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 
 class SiteAddPage extends StatefulWidget {
   const SiteAddPage({super.key});
@@ -580,8 +581,8 @@ class _ExistingImageTile extends StatelessWidget {
     ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: SizedBox.expand(
-        child: Image.network(url, fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => Container(color: Colors.grey[200], child: const Icon(Icons.broken_image))),
+        child: ProxyImage(imageUrl: url, width: double.infinity, height: double.infinity,
+            fit: BoxFit.cover, borderRadiusValue: 0, thumb: true),
       ),
     ),
     if (label != null)

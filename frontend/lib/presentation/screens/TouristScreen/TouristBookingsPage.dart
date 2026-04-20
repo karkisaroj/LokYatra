@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import '../../state_management/Bloc/booking/booking_bloc.dart';
 import '../../state_management/Bloc/booking/booking_event.dart';
 import '../../state_management/Bloc/booking/booking_state.dart';
@@ -235,9 +236,7 @@ class _BookingCard extends StatelessWidget {
               width: double.infinity,
               height: 170.h,
               child: imageUrl.isNotEmpty
-                  ? Image.network(imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => _fallbackImage())
+                  ? ProxyImage(imageUrl: imageUrl, width: double.infinity, height: double.infinity, fit: BoxFit.cover, borderRadiusValue: 0, thumb: true)
                   : _fallbackImage(),
             ),
             Container(

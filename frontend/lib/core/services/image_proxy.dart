@@ -1,13 +1,33 @@
+import 'dart:async';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
 
-// ── Custom cache manager: 30-day TTL, 500 images ─────────────────────────────
+// ── Sequential throttle for Wikimedia on mobile ───────────────────────────────
+// Allows one new Wikimedia CDN request to start every 800 ms, preventing the
+// burst of concurrent connections that triggers HTTP 429 from Wikimedia.
+// Cached images skip the queue entirely (cache-check happens first in initState).
+class _WikimediaThrottle {
+  static final _WikimediaThrottle instance = _WikimediaThrottle._();
+  _WikimediaThrottle._();
+  Future<void> _gate = Future.value();
+
+  Future<void> acquire() {
+    final prev = _gate;
+    final c = Completer<void>();
+    // Next caller waits for c to complete, then another 800 ms before its turn.
+    _gate = c.future.then((_) => Future.delayed(const Duration(milliseconds: 800)));
+    // Our turn starts when prev resolves; immediately signal c so the chain advances.
+    return prev.then((_) { c.complete(); });
+  }
+}
+
+// ── Disk cache ────────────────────────────────────────────────────────────────
 class LokYatraCacheManager extends CacheManager with ImageCacheManager {
   static const key = 'lokyatraImageCache';
-
   static final LokYatraCacheManager _instance = LokYatraCacheManager._();
   factory LokYatraCacheManager() => _instance;
 
@@ -19,17 +39,25 @@ class LokYatraCacheManager extends CacheManager with ImageCacheManager {
         ));
 }
 
-// ── Cloudinary URL helpers ────────────────────────────────────────────────────
-String cloudinaryThumb(String url, {int w = 300, int h = 300}) {
-  final idx = url.indexOf('/upload/');
-  if (idx == -1) return url;
-  final before = url.substring(0, idx + '/upload/'.length);
-  final after  = url.substring(idx + '/upload/'.length);
-  return '${before}c_fill,w_$w,h_$h,q_auto,f_auto/$after';
+// ── URL helpers ───────────────────────────────────────────────────────────────
+
+bool _isCloudinary(String url) => url.contains('cloudinary.com');
+bool _isWikimedia(String url)  => url.contains('upload.wikimedia.org');
+
+// Returns the Wikimedia CDN pre-rendered thumbnail URL (served by Fastly).
+// We use a fixed 800 px width so the cache key is always the same URL,
+// making the initState cache-check consistent with what CachedNetworkImage stores.
+String wikimediaCdnThumb(String url) {
+  const marker = 'upload.wikimedia.org/wikipedia/commons/';
+  final idx = url.indexOf(marker);
+  if (idx == -1 || url.contains('/commons/thumb/')) return url;
+  final scheme   = url.startsWith('https') ? 'https' : 'http';
+  final path     = url.substring(idx + marker.length); // "a/ad/File.jpg"
+  final filename = path.split('/').last;                // "File.jpg"
+  return '$scheme://${marker}thumb/$path/800px-$filename';
 }
 
-String cloudinaryFull(String url) => url;
-
+// Kept for legacy callers.
 String getProxyImageUrl(String originalUrl) =>
     '${apiBaseUrl}api/Sites/proxy-image?url=${Uri.encodeComponent(originalUrl)}';
 
@@ -42,7 +70,7 @@ String? getFirstImageUrl(dynamic imageUrls) {
 }
 
 // ── ProxyImage widget ─────────────────────────────────────────────────────────
-class ProxyImage extends StatelessWidget {
+class ProxyImage extends StatefulWidget {
   final String? imageUrl;
   final double  width;
   final double  height;
@@ -63,77 +91,127 @@ class ProxyImage extends StatelessWidget {
   });
 
   @override
+  State<ProxyImage> createState() => _ProxyImageState();
+}
+
+class _ProxyImageState extends State<ProxyImage> {
+  static const _headers = {
+    'User-Agent': 'LokYatraApp/1.0 (Flutter; heritage tourism FYP)',
+  };
+
+  late final Future<void> _ready;
+
+  @override
+  void initState() {
+    super.initState();
+    final raw = Uri.decodeFull(widget.imageUrl ?? '');
+
+    if (!kIsWeb && _isWikimedia(raw)) {
+      // Mobile Wikimedia: go through backend proxy (browser UA avoids 429).
+      // Cache key = proxy URL so cache check and CachedNetworkImage agree.
+      final proxyUrl = getProxyImageUrl(wikimediaCdnThumb(raw));
+      final cacheKey = widget.overrideCacheKey ?? proxyUrl;
+      _ready = LokYatraCacheManager()
+          .getFileFromCache(cacheKey)
+          .then((info) async {
+        if (info != null) return; // already on disk — skip throttle
+        await _WikimediaThrottle.instance.acquire(); // stagger proxy requests
+      });
+    } else {
+      _ready = Future.value();
+    }
+  }
+
+  // Resolve which URL to fetch.
+  String _fetchUrl(String rawUrl) {
+    if (_isCloudinary(rawUrl)) return rawUrl;
+    // Mobile Wikimedia → backend proxy; web → CDN direct (browser UA is fine).
+    if (_isWikimedia(rawUrl))  return kIsWeb ? wikimediaCdnThumb(rawUrl) : getProxyImageUrl(wikimediaCdnThumb(rawUrl));
+    return getProxyImageUrl(rawUrl); // everything else via backend proxy
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (imageUrl == null || imageUrl!.isEmpty) return blank();
+    final imageUrl = widget.imageUrl;
+    if (imageUrl == null || imageUrl.isEmpty) return _blank();
 
-    final safeW = (width.isInfinite || width.isNaN)
+    final safeW = (widget.width.isInfinite  || widget.width.isNaN)
         ? MediaQuery.of(context).size.width
-        : width;
-    final safeH = (height.isInfinite || height.isNaN) ? 200.0 : height;
+        : widget.width;
+    final safeH = (widget.height.isInfinite || widget.height.isNaN)
+        ? 200.0
+        : widget.height;
 
-    // Decode percent-encoded characters to avoid double-encoding by HTTP client
-    // e.g. Wikimedia URLs with %2C, %27 in filenames
-    final rawUrl = Uri.decodeFull(imageUrl!);
-    final fetchUrl = thumb
-        ? cloudinaryThumb(rawUrl, w: safeW.toInt(), h: safeH.toInt())
-        : rawUrl;
+    final rawUrl  = Uri.decodeFull(imageUrl);
+    final fetchUrl = _fetchUrl(rawUrl);
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadiusValue),
+      borderRadius: BorderRadius.circular(widget.borderRadiusValue),
       child: kIsWeb
           ? _webImage(fetchUrl, safeW, safeH)
-          : _mobileImage(fetchUrl, safeW, safeH),
+          : _isWikimedia(rawUrl)
+              // Wikimedia on mobile: wait for the stagger / cache-check future
+              ? FutureBuilder<void>(
+                  future: _ready,
+                  builder: (_, snap) =>
+                      snap.connectionState == ConnectionState.done
+                          ? _mobileImage(fetchUrl, safeW, safeH)
+                          : _loading(safeW, safeH),
+                )
+              : _mobileImage(fetchUrl, safeW, safeH),
     );
   }
 
-  // On web: use Image.network — flutter_cache_manager disk cache doesn't work
-  // in a browser and causes silent failures for some images
-  Widget _webImage(String url, double w, double h) {
-    return Image.network(
-      url,
-      width:      w,
-      height:     h,
-      fit:        fit,
-      loadingBuilder: (_, child, progress) =>
-          progress == null ? child : loading(w, h),
-      errorBuilder: (context, error, stack) => broken(w, h),
-    );
-  }
+  // ── renderers ───────────────────────────────────────────────────────────────
 
-  // On mobile: keep CachedNetworkImage with persistent disk cache
-  Widget _mobileImage(String url, double w, double h) {
-    final cacheKey = overrideCacheKey
-        ?? (thumb ? 'thumb_$url' : 'full_$url');
-    return CachedNetworkImage(
-      imageUrl:          url,
-      cacheKey:          cacheKey,
-      cacheManager:      LokYatraCacheManager(),
-      width:             w,
-      height:            h,
-      fit:               fit,
-      maxWidthDiskCache: 1920,
-      fadeInDuration:    const Duration(milliseconds: 200),
-      fadeOutDuration:   const Duration(milliseconds: 100),
-      placeholder:       (_, _) => loading(w, h),
-      errorWidget:       (_, _, _) => broken(w, h),
-    );
-  }
+  Widget _webImage(String url, double w, double h) => Image.network(
+    url,
+    width:  w,
+    height: h,
+    fit:    widget.fit,
+    // No custom headers on web: adding headers triggers a CORS preflight OPTIONS
+    // request that Cloudinary and Wikimedia CDN reject, breaking image loads.
+    // The browser sends its own User-Agent automatically, which Wikimedia accepts.
+    loadingBuilder: (_, child, progress) =>
+        progress == null ? child : _loading(w, h),
+    errorBuilder: (_, __, ___) => _broken(w, h),
+  );
 
-  Widget blank() => Container(
-    width: width, height: height,
+  Widget _mobileImage(String url, double w, double h) =>
+      CachedNetworkImage(
+        imageUrl:        url,
+        cacheKey:        widget.overrideCacheKey ?? url,
+        cacheManager:    LokYatraCacheManager(),
+        width:           w,
+        height:          h,
+        fit:             widget.fit,
+        fadeInDuration:  const Duration(milliseconds: 200),
+        fadeOutDuration: const Duration(milliseconds: 100),
+        placeholder:     (_, _) => _loading(w, h),
+        errorWidget: (_, failedUrl, err) {
+          debugPrint('[ProxyImage] failed: $failedUrl — $err');
+          return _broken(w, h);
+        },
+      );
+
+  // ── placeholders ────────────────────────────────────────────────────────────
+
+  Widget _blank() => Container(
+    width: widget.width,
+    height: widget.height,
     decoration: BoxDecoration(
       color: Colors.grey[200],
-      borderRadius: BorderRadius.circular(borderRadiusValue),
+      borderRadius: BorderRadius.circular(widget.borderRadiusValue),
     ),
     child: const Center(child: Icon(Icons.image, color: Colors.grey)),
   );
 
-  Widget loading(double w, double h) => Container(
+  Widget _loading(double w, double h) => Container(
     width: w, height: h, color: Colors.grey[200],
     child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
   );
 
-  Widget broken(double w, double h) => Container(
+  Widget _broken(double w, double h) => Container(
     width: w, height: h, color: Colors.grey[200],
     child: const Center(child: Icon(Icons.broken_image, color: Colors.grey)),
   );

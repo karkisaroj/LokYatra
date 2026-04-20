@@ -91,7 +91,7 @@ class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       title: ValueListenableBuilder<String?>(
         valueListenable: subtitleNotifier,
-        builder: (_, subtitle, __) {
+        builder: (_, subtitle, _) {
           final sub = subtitle ?? page.subtitle;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,

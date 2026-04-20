@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -94,33 +93,16 @@ class _StoryDetailPageState extends State<StoryDetailPage> {
                   itemCount: imgs.length,
                   physics: const BouncingScrollPhysics(),
                   onPageChanged: (i) => setState(() => _currentPage = i),
-                  itemBuilder: (_, i) {
-                    final rawUrl = Uri.decodeFull(imgs[i]);
-                    return kIsWeb
-                        ? Image.network(rawUrl,
-                            fit: BoxFit.contain,
-                            color: const Color(0xFF2A2A42),
-                            colorBlendMode: BlendMode.dstOver,
-                            loadingBuilder: (_, child, progress) => progress == null ? child
-                                : Container(color: const Color(0xFF2A2A42),
-                                    child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white24))),
-                            errorBuilder: (context, error, stack) => Container(color: const Color(0xFF2A2A42),
-                                child: const Center(child: Icon(Icons.broken_image, color: Colors.white24, size: 40))),
-                          )
-                        : CachedNetworkImage(
-                            imageUrl: rawUrl,
-                            cacheKey: 'full_$rawUrl',
-                            cacheManager: LokYatraCacheManager(),
-                            fit: BoxFit.contain,
-                            filterQuality: FilterQuality.high,
-                            color: const Color(0xFF2A2A42),
-                            colorBlendMode: BlendMode.dstOver,
-                            placeholder: (_, __) => Container(color: const Color(0xFF2A2A42),
-                                child: const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white24))),
-                            errorWidget: (_, __, ___) => Container(color: const Color(0xFF2A2A42),
-                                child: const Center(child: Icon(Icons.broken_image, color: Colors.white24, size: 40))),
-                          );
-                  },
+                  itemBuilder: (_, i) => Container(
+                    color: const Color(0xFF2A2A42),
+                    child: ProxyImage(
+                      imageUrl: imgs[i],
+                      width: double.infinity,
+                      height: double.infinity,
+                      fit: BoxFit.contain,
+                      borderRadiusValue: 0,
+                    ),
+                  ),
                 ),
                 if (imgs.length > 1) ...[
                   Positioned(left: 8, top: 0, bottom: 0, child: Center(child: _Arr(
