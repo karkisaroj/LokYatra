@@ -1,29 +1,8 @@
-import 'dart:async';
-
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
-
-// ── Sequential throttle for Wikimedia on mobile ───────────────────────────────
-// Allows one new Wikimedia CDN request to start every 800 ms, preventing the
-// burst of concurrent connections that triggers HTTP 429 from Wikimedia.
-// Cached images skip the queue entirely (cache-check happens first in initState).
-class _WikimediaThrottle {
-  static final _WikimediaThrottle instance = _WikimediaThrottle._();
-  _WikimediaThrottle._();
-  Future<void> _gate = Future.value();
-
-  Future<void> acquire() {
-    final prev = _gate;
-    final c = Completer<void>();
-    // Next caller waits for c to complete, then another 800 ms before its turn.
-    _gate = c.future.then((_) => Future.delayed(const Duration(milliseconds: 800)));
-    // Our turn starts when prev resolves; immediately signal c so the chain advances.
-    return prev.then((_) { c.complete(); });
-  }
-}
 
 // ── Disk cache ────────────────────────────────────────────────────────────────
 class LokYatraCacheManager extends CacheManager with ImageCacheManager {
@@ -44,20 +23,17 @@ class LokYatraCacheManager extends CacheManager with ImageCacheManager {
 bool _isCloudinary(String url) => url.contains('cloudinary.com');
 bool _isWikimedia(String url)  => url.contains('upload.wikimedia.org');
 
-// Returns the Wikimedia CDN pre-rendered thumbnail URL (served by Fastly).
-// We use a fixed 800 px width so the cache key is always the same URL,
-// making the initState cache-check consistent with what CachedNetworkImage stores.
 String wikimediaCdnThumb(String url) {
   const marker = 'upload.wikimedia.org/wikipedia/commons/';
   final idx = url.indexOf(marker);
   if (idx == -1 || url.contains('/commons/thumb/')) return url;
   final scheme   = url.startsWith('https') ? 'https' : 'http';
-  final path     = url.substring(idx + marker.length); // "a/ad/File.jpg"
-  final filename = path.split('/').last;                // "File.jpg"
+  final path     = url.substring(idx + marker.length);
+  final filename = path.split('/').last;
   return '$scheme://${marker}thumb/$path/800px-$filename';
 }
 
-// Kept for legacy callers.
+// Proxy for non-Cloudinary, non-Wikimedia images (backend Railway proxy).
 String getProxyImageUrl(String originalUrl) =>
     '${apiBaseUrl}api/Sites/proxy-image?url=${Uri.encodeComponent(originalUrl)}';
 
@@ -69,8 +45,17 @@ String? getFirstImageUrl(dynamic imageUrls) {
   return null;
 }
 
+// images.weserv.nl is a free CDN proxy with whitelisted access to Wikimedia.
+// It caches images on its own CDN so the phone never contacts Wikimedia directly.
+// Pass the URL without scheme and without re-encoding slashes — weserv.nl expects
+// the raw path (e.g. ?url=upload.wikimedia.org/wikipedia/commons/thumb/...).
+String _weservUrl(String url) {
+  final noScheme = url.replaceFirst(RegExp(r'^https?://'), '');
+  return 'https://images.weserv.nl/?url=$noScheme';
+}
+
 // ── ProxyImage widget ─────────────────────────────────────────────────────────
-class ProxyImage extends StatefulWidget {
+class ProxyImage extends StatelessWidget {
   final String? imageUrl;
   final double  width;
   final double  height;
@@ -90,88 +75,56 @@ class ProxyImage extends StatefulWidget {
     this.fit               = BoxFit.cover,
   });
 
-  @override
-  State<ProxyImage> createState() => _ProxyImageState();
-}
-
-class _ProxyImageState extends State<ProxyImage> {
-  static const _headers = {
-    'User-Agent': 'LokYatraApp/1.0 (Flutter; heritage tourism FYP)',
-  };
-
-  late final Future<void> _ready;
-
-  @override
-  void initState() {
-    super.initState();
-    final raw = Uri.decodeFull(widget.imageUrl ?? '');
-
-    if (!kIsWeb && _isWikimedia(raw)) {
-      // Mobile Wikimedia: go through backend proxy (browser UA avoids 429).
-      // Cache key = proxy URL so cache check and CachedNetworkImage agree.
-      final proxyUrl = getProxyImageUrl(wikimediaCdnThumb(raw));
-      final cacheKey = widget.overrideCacheKey ?? proxyUrl;
-      _ready = LokYatraCacheManager()
-          .getFileFromCache(cacheKey)
-          .then((info) async {
-        if (info != null) return; // already on disk — skip throttle
-        await _WikimediaThrottle.instance.acquire(); // stagger proxy requests
-      });
-    } else {
-      _ready = Future.value();
-    }
-  }
-
-  // Resolve which URL to fetch.
+  // Resolve which URL to actually fetch.
   String _fetchUrl(String rawUrl) {
     if (_isCloudinary(rawUrl)) return rawUrl;
-    // Mobile Wikimedia → backend proxy; web → CDN direct (browser UA is fine).
-    if (_isWikimedia(rawUrl))  return kIsWeb ? wikimediaCdnThumb(rawUrl) : getProxyImageUrl(wikimediaCdnThumb(rawUrl));
-    return getProxyImageUrl(rawUrl); // everything else via backend proxy
+    if (_isWikimedia(rawUrl)) {
+      final cdnThumb = wikimediaCdnThumb(rawUrl);
+      // Web: browser UA is accepted by Wikimedia CDN directly.
+      // Mobile: route through images.weserv.nl which has whitelisted CDN access
+      //         to Wikimedia and caches the result — phone never contacts Wikimedia.
+      return kIsWeb ? cdnThumb : _weservUrl(cdnThumb);
+    }
+    return getProxyImageUrl(rawUrl);
   }
 
   @override
   Widget build(BuildContext context) {
-    final imageUrl = widget.imageUrl;
+    final imageUrl = this.imageUrl;
     if (imageUrl == null || imageUrl.isEmpty) return _blank();
 
-    final safeW = (widget.width.isInfinite  || widget.width.isNaN)
+    final safeW = (width.isInfinite  || width.isNaN)
         ? MediaQuery.of(context).size.width
-        : widget.width;
-    final safeH = (widget.height.isInfinite || widget.height.isNaN)
+        : width;
+    final safeH = (height.isInfinite || height.isNaN)
         ? 200.0
-        : widget.height;
+        : height;
 
-    final rawUrl  = Uri.decodeFull(imageUrl);
+    final rawUrl   = Uri.decodeFull(imageUrl);
     final fetchUrl = _fetchUrl(rawUrl);
 
     return ClipRRect(
-      borderRadius: BorderRadius.circular(widget.borderRadiusValue),
+      borderRadius: BorderRadius.circular(borderRadiusValue),
       child: kIsWeb
           ? _webImage(fetchUrl, safeW, safeH)
-          : _isWikimedia(rawUrl)
-              // Wikimedia on mobile: wait for the stagger / cache-check future
-              ? FutureBuilder<void>(
-                  future: _ready,
-                  builder: (_, snap) =>
-                      snap.connectionState == ConnectionState.done
-                          ? _mobileImage(fetchUrl, safeW, safeH)
-                          : _loading(safeW, safeH),
-                )
-              : _mobileImage(fetchUrl, safeW, safeH),
+          : _mobileImage(fetchUrl, safeW, safeH),
     );
   }
 
   // ── renderers ───────────────────────────────────────────────────────────────
 
+  // A minimal header forces Flutter web to use XHR/fetch instead of a plain <img>
+  // element. Without XHR mode, Flutter's CanvasKit renderer cannot paint cross-origin
+  // images (tainted-canvas restriction). Railway, Cloudinary, and Wikimedia CDN all
+  // respond to CORS preflight with Access-Control-Allow-Origin: *, so this is safe.
+  static const _webHeaders = {'X-Requested-With': 'XMLHttpRequest'};
+
   Widget _webImage(String url, double w, double h) => Image.network(
     url,
-    width:  w,
-    height: h,
-    fit:    widget.fit,
-    // No custom headers on web: adding headers triggers a CORS preflight OPTIONS
-    // request that Cloudinary and Wikimedia CDN reject, breaking image loads.
-    // The browser sends its own User-Agent automatically, which Wikimedia accepts.
+    width:   w,
+    height:  h,
+    fit:     fit,
+    headers: _webHeaders,
     loadingBuilder: (_, child, progress) =>
         progress == null ? child : _loading(w, h),
     errorBuilder: (_, __, ___) => _broken(w, h),
@@ -180,11 +133,11 @@ class _ProxyImageState extends State<ProxyImage> {
   Widget _mobileImage(String url, double w, double h) =>
       CachedNetworkImage(
         imageUrl:        url,
-        cacheKey:        widget.overrideCacheKey ?? url,
+        cacheKey:        overrideCacheKey ?? url,
         cacheManager:    LokYatraCacheManager(),
         width:           w,
         height:          h,
-        fit:             widget.fit,
+        fit:             fit,
         fadeInDuration:  const Duration(milliseconds: 200),
         fadeOutDuration: const Duration(milliseconds: 100),
         placeholder:     (_, _) => _loading(w, h),
@@ -197,11 +150,11 @@ class _ProxyImageState extends State<ProxyImage> {
   // ── placeholders ────────────────────────────────────────────────────────────
 
   Widget _blank() => Container(
-    width: widget.width,
-    height: widget.height,
+    width: width,
+    height: height,
     decoration: BoxDecoration(
       color: Colors.grey[200],
-      borderRadius: BorderRadius.circular(widget.borderRadiusValue),
+      borderRadius: BorderRadius.circular(borderRadiusValue),
     ),
     child: const Center(child: Icon(Icons.image, color: Colors.grey)),
   );
