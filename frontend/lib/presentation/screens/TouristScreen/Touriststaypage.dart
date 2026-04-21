@@ -285,14 +285,16 @@ class _TouristStayPageState extends State<TouristStayPage> {
                             itemCount: filtered.length,
                             itemBuilder: (context, i) {
                               final h = filtered[i];
-                              return _StayCard(
-                                homestay: h,
-                                onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (_) =>
-                                            TouristHomestayDetailPage(
-                                                homestay: h.toJson()))),
+                              return RepaintBoundary(
+                                child: _StayCard(
+                                  homestay: h,
+                                  onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) =>
+                                              TouristHomestayDetailPage(
+                                                  homestay: h.toJson()))),
+                                ),
                               );
                             },
                           ),

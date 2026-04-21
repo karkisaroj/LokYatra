@@ -1,4 +1,4 @@
-﻿using backend.Database;
+using backend.Database;
 using backend.DTO;
 using backend.Models;
 using Microsoft.AspNetCore.Identity;
@@ -162,6 +162,20 @@ namespace backend.Services
             user.RefreshTokenExpiryTime = null;
             await context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<User?> UpdateProfileAsync(int userId, User updatedUser)
+        {
+            var user = await context.Users.FindAsync(userId);
+            if (user == null) return null;
+
+            user.Name = updatedUser.Name;
+            user.PhoneNumber = updatedUser.PhoneNumber;
+            user.ProfileImage = updatedUser.ProfileImage;
+            user.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await context.SaveChangesAsync();
+            return user;
         }
     }
 }

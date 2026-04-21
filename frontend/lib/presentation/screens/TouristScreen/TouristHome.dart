@@ -294,7 +294,7 @@ class _HomeTabState extends State<_HomeTab> {
                             fontWeight: FontWeight.bold,
                             color: _dark)),
                     SizedBox(height: 16.h),
-                    const _Categories(),
+                    const RepaintBoundary(child: _Categories()),
                   ],
                 ),
               ),
@@ -325,18 +325,20 @@ class _HomeTabState extends State<_HomeTab> {
                               SizedBox(width: 14.w),
                           itemBuilder: (context, i) {
                             final site = state.sites[i];
-                            return _SiteCard(
-                              site: site,
-                              onTap: () => Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => BlocProvider.value(
-                                      value:
-                                      context.read<HomestayBloc>(),
-                                      child: TouristSiteDetailPage(
-                                          site: site),
-                                    ),
-                                  )),
+                            return RepaintBoundary(
+                              child: _SiteCard(
+                                site: site,
+                                onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => BlocProvider.value(
+                                        value:
+                                        context.read<HomestayBloc>(),
+                                        child: TouristSiteDetailPage(
+                                            site: site),
+                                      ),
+                                    )),
+                              ),
                             );
                           },
                         ),
@@ -378,16 +380,18 @@ class _HomeTabState extends State<_HomeTab> {
                     }
                     return Column(
                       children: visible
-                          .map((h) => _HomestayCard(
-                        homestay: h,
-                        onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  TouristHomestayDetailPage(
-                                      homestay: h.toJson()),
-                            )),
-                      ))
+                          .map((h) => RepaintBoundary(
+                            child: _HomestayCard(
+                              homestay: h,
+                              onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        TouristHomestayDetailPage(
+                                            homestay: h.toJson()),
+                                  )),
+                            ),
+                          ))
                           .toList(),
                     );
                   }

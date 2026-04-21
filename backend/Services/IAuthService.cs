@@ -1,4 +1,4 @@
-﻿using backend.DTO;
+using backend.DTO;
 using backend.Models;
 
 namespace backend.Services
@@ -11,5 +11,6 @@ namespace backend.Services
         Task<TokenResponseDto?> LoginAsync(LoginDto request);
         Task<TokenResponseDto?> RefreshTokenAsync(RefreshTokenRequestDto request);
         Task<bool> LogoutAsync(int userId);
+        Task<User?> UpdateProfileAsync(int userId, User user);
     }
 }

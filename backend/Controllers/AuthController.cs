@@ -1,4 +1,4 @@
-﻿using backend.Database;
+using backend.Database;
 using backend.DTO;
 using backend.Models;
 using backend.Services;
@@ -63,6 +63,23 @@ namespace backend.Controllers
             if (!result) return Ok("Logged out");
 
             return Ok("Logged out successfully");
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpGet("users")]
+        public async Task<ActionResult<IEnumerable<User>>> GetUsers()
+        {
+            var users = await authService.GetUserAsync();
+            return Ok(users);
+        }
+
+        [Authorize]
+        [HttpPut("profile/{id}")]
+        public async Task<ActionResult<User>> UpdateProfile(int id, [FromBody] User user)
+        {
+            var updated = await authService.UpdateProfileAsync(id, user);
+            if (updated == null) return NotFound();
+            return Ok(updated);
         }
     }
 }

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../data/models/Review.dart';
+import '../../../core/services/image_proxy.dart';
 import '../../state_management/Bloc/review/review_bloc.dart';
 import '../../state_management/Bloc/review/review_event.dart';
 import '../../state_management/Bloc/review/review_state.dart';
@@ -412,21 +413,30 @@ class _TouristCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasImage = review.touristImage.isNotEmpty;
     return Row(mainAxisSize: MainAxisSize.min, children: [
-      CircleAvatar(
-        radius: 16,
-        backgroundColor: const Color(0xFFE8DCCD),
-        backgroundImage:
-        hasImage ? NetworkImage(review.touristImage) : null,
-        child: !hasImage
-            ? Text(
-            review.touristName.isNotEmpty
-                ? review.touristName[0].toUpperCase()
-                : '?',
-            style: GoogleFonts.dmSans(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF2D1B10)))
-            : null,
+      Stack(
+        children: [
+          ProxyImage(
+            imageUrl: review.touristImage,
+            width: 32,
+            height: 32,
+            borderRadiusValue: 16, // Circular
+            fit: BoxFit.cover,
+          ),
+          if (!hasImage)
+            Positioned.fill(
+              child: Center(
+                child: Text(
+                  review.touristName.isNotEmpty
+                      ? review.touristName[0].toUpperCase()
+                      : '?',
+                  style: GoogleFonts.dmSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF2D1B10)),
+                ),
+              ),
+            ),
+        ],
       ),
       const SizedBox(width: 8),
       Flexible(

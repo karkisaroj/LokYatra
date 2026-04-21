@@ -302,39 +302,41 @@ class _AdminSitesState extends State<AdminSites> {
               final site  = sites[i];
               final img   = getFirstImageUrl(site.imageUrls);
               final siteId = int.tryParse(site.id.toString()) ?? 0;
-              return InkWell(
-                onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  child: Row(children: [
-                    ProxyImage(imageUrl: img, width: 72, height: 52, borderRadiusValue: 8, thumb: true),
-                    const SizedBox(width: 12),
-                    Expanded(flex: 3, child: Row(children: [
-                      Flexible(child: Text(site.name ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _ink))),
-                      if (site.isUNESCO == true) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(4)),
-                          child: Text('UNESCO', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: const Color(0xFF059669))),
-                        ),
-                      ],
-                    ])),
-                    Expanded(flex: 2, child: Text(site.category ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 13, color: _muted))),
-                    Expanded(flex: 2, child: Text(site.district ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 13, color: _muted))),
-                    SizedBox(
-                      width: 110,
-                      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                        _IBtn(icon: Icons.remove_red_eye_outlined, color: _accent, tooltip: 'View',
-                            onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site)))),
-                        _IBtn(icon: Icons.edit_outlined, color: _muted, tooltip: 'Edit', onTap: () => _editSite(site)),
-                        _IBtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, tooltip: 'Delete', onTap: () => _deleteSite(siteId)),
-                      ]),
-                    ),
-                  ]),
+              return RepaintBoundary(
+                child: InkWell(
+                  onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    child: Row(children: [
+                      ProxyImage(imageUrl: img, width: 72, height: 52, borderRadiusValue: 8, thumb: true),
+                      const SizedBox(width: 12),
+                      Expanded(flex: 3, child: Row(children: [
+                        Flexible(child: Text(site.name ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _ink))),
+                        if (site.isUNESCO == true) ...[
+                          const SizedBox(width: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(4)),
+                            child: Text('UNESCO', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: const Color(0xFF059669))),
+                          ),
+                        ],
+                      ])),
+                      Expanded(flex: 2, child: Text(site.category ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(fontSize: 13, color: _muted))),
+                      Expanded(flex: 2, child: Text(site.district ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(fontSize: 13, color: _muted))),
+                      SizedBox(
+                        width: 110,
+                        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                          _IBtn(icon: Icons.remove_red_eye_outlined, color: _accent, tooltip: 'View',
+                              onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site)))),
+                          _IBtn(icon: Icons.edit_outlined, color: _muted, tooltip: 'Edit', onTap: () => _editSite(site)),
+                          _IBtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, tooltip: 'Delete', onTap: () => _deleteSite(siteId)),
+                        ]),
+                      ),
+                    ]),
+                  ),
                 ),
               );
             },
@@ -353,43 +355,45 @@ class _AdminSitesState extends State<AdminSites> {
         final img     = getFirstImageUrl(site.imageUrls);
         final siteId  = int.tryParse(site.id.toString()) ?? 0;
         final subtitle = [site.category ?? '', site.district ?? ''].where((v) => v.isNotEmpty).join(' · ');
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: const Color(0xFFE8EAF0)),
-            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
-          ),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(12),
-            onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))),
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Row(children: [
-                ProxyImage(imageUrl: img, width: 60, height: 60, borderRadiusValue: 8, thumb: true),
-                const SizedBox(width: 12),
-                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Row(children: [
-                    Flexible(child: Text(site.name ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _ink))),
-                    if (site.isUNESCO == true) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                        decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(4)),
-                        child: Text('UNESCO', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: const Color(0xFF059669))),
-                      ),
-                    ],
+        return RepaintBoundary(
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: const Color(0xFFE8EAF0)),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
+            ),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(children: [
+                  ProxyImage(imageUrl: img, width: 60, height: 60, borderRadiusValue: 8, thumb: true),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(children: [
+                      Flexible(child: Text(site.name ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _ink))),
+                      if (site.isUNESCO == true) ...[
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                          decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(4)),
+                          child: Text('UNESCO', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: const Color(0xFF059669))),
+                        ),
+                      ],
+                    ]),
+                    const SizedBox(height: 3),
+                    Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis,
+                        style: GoogleFonts.inter(fontSize: 12, color: _muted)),
+                  ])),
+                  Row(mainAxisSize: MainAxisSize.min, children: [
+                    _IBtn(icon: Icons.edit_outlined,          color: _muted,         tooltip: 'Edit',   onTap: () => _editSite(site)),
+                    _IBtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, tooltip: 'Delete', onTap: () => _deleteSite(siteId)),
                   ]),
-                  const SizedBox(height: 3),
-                  Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 12, color: _muted)),
-                ])),
-                Row(mainAxisSize: MainAxisSize.min, children: [
-                  _IBtn(icon: Icons.edit_outlined,          color: _muted,         tooltip: 'Edit',   onTap: () => _editSite(site)),
-                  _IBtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, tooltip: 'Delete', onTap: () => _deleteSite(siteId)),
                 ]),
-              ]),
+              ),
             ),
           ),
         );

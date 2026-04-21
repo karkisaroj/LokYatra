@@ -4,6 +4,7 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/user/user_b
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/user/user_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/user/user_state.dart';
 import 'package:lokyatra_frontend/data/models/user.dart';
+import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 
 class UserManagementPage extends StatefulWidget {
   final ValueNotifier<String?> subtitleNotifier;
@@ -373,26 +374,25 @@ class _UserCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Stack(children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: roleColor.withValues(alpha: 0.12),
-                backgroundImage: (user.profileImage != null &&
-                    user.profileImage!.isNotEmpty)
-                    ? NetworkImage(user.profileImage!)
-                    : null,
-                child: (user.profileImage == null ||
-                    user.profileImage!.isEmpty)
-                    ? Text(
-                  user.name.isNotEmpty
-                      ? user.name[0].toUpperCase()
-                      : '?',
-                  style: TextStyle(
-                      color: roleColor,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold),
-                )
-                    : null,
+              ProxyImage(
+                imageUrl: user.profileImage,
+                width: 52,
+                height: 52,
+                borderRadiusValue: 26,
+                fit: BoxFit.cover,
               ),
+              if (user.profileImage == null || user.profileImage!.isEmpty)
+                Positioned.fill(
+                  child: Center(
+                    child: Text(
+                      user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                      style: TextStyle(
+                          color: roleColor,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
               Positioned(
                 bottom: 1,
                 right: 1,
