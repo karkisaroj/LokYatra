@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using backend.Database;
 using backend.Models;
 using backend.Services;
@@ -186,34 +186,6 @@ namespace backend.Controllers
             });
         }
 
-        [HttpGet("proxy-image")]
-        [ResponseCache(Duration = 86400)]
-        public async Task<ActionResult> ProxyImage([FromQuery] string url)
-        {
-            if (string.IsNullOrWhiteSpace(url)) return BadRequest("url required");
-            try
-            {
-                using var http = new HttpClient();
-                http.Timeout = TimeSpan.FromSeconds(30);
-                // Browser UA so Wikimedia CDN (Fastly) serves the image instead of 429-ing.
-                http.DefaultRequestHeaders.Add("User-Agent",
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-                if (url.Contains("wikimedia.org"))
-                    http.DefaultRequestHeaders.Add("Referer", "https://en.wikipedia.org/");
-
-                var response = await http.GetAsync(url);
-                if (!response.IsSuccessStatusCode)
-                    return StatusCode((int)response.StatusCode, "Image fetch failed");
-
-                var contentType = response.Content.Headers.ContentType?.ToString() ?? "image/jpeg";
-                var bytes = await response.Content.ReadAsByteArrayAsync();
-                return File(bytes, contentType);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(502, $"Proxy error: {ex.Message}");
-            }
-        }
 
         [Authorize(Roles = "admin")]
         [HttpDelete("{id:int}")]
