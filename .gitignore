@@ -26,11 +26,4 @@ backend/TestResults/
 
 # OS specific
 .DS_Store
-Thumbs.db
-
-# Migration & AI helpers
-migrate_images_to_cloudinary.*
-node_modules/
-package.json
-package-lock.json
-.gemini/
+Thumbs.db
