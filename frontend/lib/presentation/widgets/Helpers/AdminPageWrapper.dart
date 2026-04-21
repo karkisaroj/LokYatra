@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:animate_do/animate_do.dart';
 import '../../state_management/Bloc/auth/auth_bloc.dart';
 import '../../state_management/Bloc/auth/auth_event.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'LazyIndexedStack.dart';
 
 class PageConfig {
   final String title;
   final String? subtitle;
-  final Icon icon;
+  final Widget icon; // Changed to Widget to support more icon types
   final Widget child;
   final List<Widget>? actions;
 
@@ -36,23 +38,30 @@ class AdminPageWrapper extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final page     = pages[selectedIndex];
-    final isWide   = MediaQuery.of(context).size.width >= 900;
+    final page = pages[selectedIndex];
+    final isWide = MediaQuery.of(context).size.width >= 1100; // Increased breakpoint for better layout
 
-    final contentStack = IndexedStack(
+    final contentStack = LazyIndexedStack(
       index: selectedIndex,
       children: pages.map((p) => p.child).toList(),
     );
 
     if (isWide) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF7F8FC),
+        resizeToAvoidBottomInset: false,
+        backgroundColor: const Color(0xFFF3F4F7),
         body: Row(children: [
           _Sidebar(pages: pages, selectedIndex: selectedIndex, onTap: onItemTapped),
           Expanded(
             child: Column(children: [
               _TopBar(page: page, subtitleNotifier: subtitleNotifier),
-              Expanded(child: contentStack),
+              Expanded(
+                child: FadeInUp(
+                  key: ValueKey(selectedIndex),
+                  duration: const Duration(milliseconds: 300),
+                  child: contentStack,
+                ),
+              ),
             ]),
           ),
         ]),
@@ -60,7 +69,8 @@ class AdminPageWrapper extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FC),
+      resizeToAvoidBottomInset: false,
+      backgroundColor: const Color(0xFFF3F4F7),
       appBar: _MobileAppBar(page: page, subtitleNotifier: subtitleNotifier),
       drawer: _DrawerNav(pages: pages, selectedIndex: selectedIndex, onTap: onItemTapped),
       body: contentStack,
@@ -80,42 +90,38 @@ class _MobileAppBar extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return AppBar(
       backgroundColor: Colors.white,
-      surfaceTintColor: Colors.white,
       elevation: 0,
-      scrolledUnderElevation: 0,
+      centerTitle: false,
       leading: Builder(
         builder: (ctx) => IconButton(
-          icon: const Icon(Icons.menu_rounded, color: Color(0xFF1C1F26), size: 22),
+          icon: const Icon(Icons.menu_rounded, color: Color(0xFF1E1E2D), size: 24),
           onPressed: () => Scaffold.of(ctx).openDrawer(),
         ),
       ),
       title: ValueListenableBuilder<String?>(
         valueListenable: subtitleNotifier,
         builder: (_, subtitle, _) {
-          final sub = subtitle ?? page.subtitle;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(page.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w700, color: const Color(0xFF1C1F26))),
-              if (sub != null)
-                Text(sub,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280))),
+                  style: GoogleFonts.outfit(
+                    fontSize: 18, 
+                    fontWeight: FontWeight.w700, 
+                    color: const Color(0xFF1E1E2D),
+                  )),
+              if (subtitle != null || page.subtitle != null)
+                Text(subtitle ?? page.subtitle!,
+                    style: GoogleFonts.inter(
+                      fontSize: 11, 
+                      color: const Color(0xFF71717A),
+                    )),
             ],
           );
         },
       ),
-      titleSpacing: 0,
       actions: page.actions,
-      bottom: const PreferredSize(
-        preferredSize: Size.fromHeight(1),
-        child: Divider(height: 1, color: Color(0xFFE8EAF0)),
-      ),
     );
   }
 }
@@ -128,12 +134,12 @@ class _TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 60,
-      decoration: const BoxDecoration(
+      height: 70,
+      decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFE8EAF0))),
+        border: Border(bottom: BorderSide(color: Colors.grey.withValues(alpha: 0.1))),
       ),
-      padding: const EdgeInsets.symmetric(horizontal: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Row(children: [
         Expanded(
           child: ValueListenableBuilder<String?>(
@@ -143,14 +149,18 @@ class _TopBar extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(page.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: const Color(0xFF1C1F26))),
-                if ((subtitle ?? page.subtitle) != null)
+                    style: GoogleFonts.outfit(
+                      fontSize: 22, 
+                      fontWeight: FontWeight.w700, 
+                      color: const Color(0xFF1E1E2D),
+                    )),
+                if (subtitle != null || page.subtitle != null)
                   Text(subtitle ?? page.subtitle!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280))),
+                      style: GoogleFonts.inter(
+                        fontSize: 13, 
+                        color: const Color(0xFF71717A),
+                        fontWeight: FontWeight.w500,
+                      )),
               ],
             ),
           ),
@@ -170,91 +180,153 @@ class _Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 220,
+      width: 260,
       decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(right: BorderSide(color: Color(0xFFE8EAF0))),
+        border: Border(right: BorderSide(color: Color(0xFFE5E7EB))),
       ),
       child: Column(children: [
-        const SizedBox(height: 32),
+        const SizedBox(height: 48),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/images/lokyatra_logo.png', height: 44, fit: BoxFit.contain),
-                const SizedBox(height: 12),
-                Text(
-                  'ADMIN PANEL',
-                  style: GoogleFonts.inter(
-                    fontSize: 10,
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Image.asset('assets/images/lokyatra_logo.png', height: 32),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'LOKYATRA',
+                  style: GoogleFonts.outfit(
+                    fontSize: 20,
                     fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                    color: const Color(0xFF9CA3AF),
+                    color: const Color(0xFF1E1E2D),
+                    letterSpacing: 1.5,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 48),
         Expanded(
           child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             itemCount: pages.length,
             itemBuilder: (_, i) {
               final selected = i == selectedIndex;
               return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: InkWell(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _SidebarItem(
+                  config: pages[i],
+                  isSelected: selected,
                   onTap: () => onTap(i),
-                  borderRadius: BorderRadius.circular(8),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                    decoration: BoxDecoration(
-                      color: selected ? const Color(0xFFEEF2FF) : Colors.transparent,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Row(children: [
-                      IconTheme(
-                        data: IconThemeData(size: 18, color: selected ? const Color(
-                            0xFFAFB2C6) : const Color(0xFF9CA3AF)),
-                        child: pages[i].icon,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(pages[i].title,
-                          style: GoogleFonts.inter(
-                            fontSize: 13,
-                            fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                            color: selected ? const Color(0xFF8F9093) : const Color(0xFF6B7280),
-                          )),
-                    ]),
-                  ),
                 ),
               );
             },
           ),
         ),
-        const Divider(color: Color(0xFFE8EAF0), height: 1),
+        const Divider(color: Color(0xFFE5E7EB)),
         Padding(
-          padding: const EdgeInsets.all(12),
-          child: InkWell(
-            onTap: () => context.read<AuthBloc>().add(LogoutButtonClicked()),
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-              child: Row(children: [
-                const Icon(Icons.logout_rounded, size: 18, color: Color(0xFF9CA3AF)),
-                const SizedBox(width: 10),
-                Text('Logout', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280))),
-              ]),
+          padding: const EdgeInsets.all(16),
+          child: _SidebarItem(
+            config: PageConfig(
+              title: 'Logout',
+              icon: const Icon(Icons.logout_rounded),
+              child: const SizedBox(),
             ),
+            isSelected: false,
+            onTap: () => context.read<AuthBloc>().add(LogoutButtonClicked()),
+            isDanger: true,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 12),
       ]),
+    );
+  }
+}
+
+class _SidebarItem extends StatelessWidget {
+  final PageConfig config;
+  final bool isSelected;
+  final VoidCallback onTap;
+  final bool isDanger;
+
+  const _SidebarItem({
+    required this.config,
+    required this.isSelected,
+    required this.onTap,
+    this.isDanger = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isSelected 
+        ? const Color(0xFF1E1E2D) 
+        : isDanger 
+            ? Colors.red[600]! 
+            : const Color(0xFF71717A);
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        hoverColor: const Color(0xFFF3F4F7).withValues(alpha: 0.5),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected 
+                ? const Color(0xFFF3F4F7) 
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            border: isSelected 
+                ? Border.all(color: const Color(0xFF1E1E2D).withValues(alpha: 0.05))
+                : null,
+          ),
+          child: Row(children: [
+            AnimatedScale(
+              scale: isSelected ? 1.1 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              child: IconTheme(
+                data: IconThemeData(
+                  size: 20, 
+                  color: color,
+                ),
+                child: config.icon,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              config.title,
+              style: GoogleFonts.inter(
+                fontSize: 14,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: color,
+                letterSpacing: 0.2,
+              ),
+            ),
+            if (isSelected) ...[
+              const Spacer(),
+              Container(
+                width: 4,
+                height: 16,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E1E2D),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ]
+          ]),
+        ),
+      ),
     );
   }
 }
@@ -269,77 +341,56 @@ class _DrawerNav extends StatelessWidget {
   Widget build(BuildContext context) {
     return Drawer(
       backgroundColor: Colors.white,
-      width: 240,
+      width: 280,
       child: SafeArea(
         child: Column(children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 32),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 24),
             child: Row(children: [
-              Container(
-                width: 34, height: 34,
-                decoration: BoxDecoration(color: Colors.white54, borderRadius: BorderRadius.circular(10)),
-                child:  Image.asset('assets/images/lokyatra_logo.png', color: Colors.grey[500], fit: BoxFit.fill),
-              ),
-              const SizedBox(width: 10),
-              Text('LokYatra', style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: const Color(0xFF1C1F26))),
+              Image.asset('assets/images/lokyatra_logo.png', height: 32),
+              const SizedBox(width: 12),
+              Text('LokYatra', 
+                  style: GoogleFonts.outfit(
+                    fontSize: 20, 
+                    fontWeight: FontWeight.w800, 
+                    color: const Color(0xFF1E1E2D),
+                  )),
             ]),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 32),
           Expanded(
             child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: pages.length,
               itemBuilder: (_, i) {
                 final selected = i == selectedIndex;
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 2),
-                  child: InkWell(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: _SidebarItem(
+                    config: pages[i],
+                    isSelected: selected,
                     onTap: () {
                       Navigator.pop(context);
                       onTap(i);
                     },
-                    borderRadius: BorderRadius.circular(8),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                      decoration: BoxDecoration(
-                        color: selected ? const Color(0xFFEEF2FF) : Colors.transparent,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(children: [
-                        IconTheme(
-                          data: IconThemeData(size: 18, color: selected ? const Color(0xFF4F6AF5) : const Color(0xFF9CA3AF)),
-                          child: pages[i].icon,
-                        ),
-                        const SizedBox(width: 10),
-                        Text(pages[i].title,
-                            style: GoogleFonts.inter(
-                              fontSize: 13,
-                              fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                              color: selected ? const Color(0xFF4F6AF5) : const Color(0xFF6B7280),
-                            )),
-                      ]),
-                    ),
                   ),
                 );
               },
             ),
           ),
-          const Divider(color: Color(0xFFE8EAF0), height: 1),
+          const Divider(color: Color(0xFFE5E7EB)),
           Padding(
-            padding: const EdgeInsets.all(12),
-            child: InkWell(
-              onTap: () => context.read<AuthBloc>().add(LogoutButtonClicked()),
-              borderRadius: BorderRadius.circular(8),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-                child: Row(children: [
-                  const Icon(Icons.logout_rounded, size: 18, color: Color(0xFF9CA3AF)),
-                  const SizedBox(width: 10),
-                  Text('Logout', style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280))),
-                ]),
+            padding: const EdgeInsets.all(16),
+            child: _SidebarItem(
+              config: PageConfig(
+                title: 'Logout',
+                icon: const Icon(Icons.logout_rounded),
+                child: const SizedBox(),
               ),
+              isSelected: false,
+              onTap: () => context.read<AuthBloc>().add(LogoutButtonClicked()),
+              isDanger: true,
             ),
           ),
         ]),
@@ -347,3 +398,4 @@ class _DrawerNav extends StatelessWidget {
     );
   }
 }
+

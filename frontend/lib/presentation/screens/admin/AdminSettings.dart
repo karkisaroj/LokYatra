@@ -10,7 +10,7 @@ import '../../state_management/Bloc/auth/auth_bloc.dart';
 import '../../state_management/Bloc/auth/auth_event.dart';
 import '../shared/TermsAndConditionsPage.dart';
 
-// Page index constants — must match AdminDashboard._pages order
+
 const int kPageUsers     = 1;
 const int kPageSites     = 2;
 const int kPageHomestays = 4;
@@ -18,15 +18,16 @@ const int kPageQuizzes   = 7;
 const int kPageReviews   = 8;
 const int kPageReports   = 9;
 
-class Settings extends StatelessWidget {
+class AdminSettings extends StatelessWidget {
   final void Function(int pageIndex)? onNavigate;
 
-  const Settings({super.key, this.onNavigate});
+  const AdminSettings({super.key, this.onNavigate});
 
-  static const _bg         = Color(0xFFF4F6F9);
-  static const _slate      = Color(0xFF3D5A80);
-  static const _terracotta = Color(0xFFCD6E4E);
-  static const _ink        = Color(0xFF1A2B3C);
+  static const _bg         = Color(0xFFF8FAFC);
+  static const _slate      = Color(0xFF475569);
+  static const _terracotta = Color(0xFFE2725B);
+  static const _ink        = Color(0xFF0F172A);
+  static const _accent     = Color(0xFF6366F1);
 
   @override
   Widget build(BuildContext context) {
@@ -101,13 +102,13 @@ class Settings extends StatelessWidget {
       _InfoTile(icon: Icons.temple_hindu_rounded, iconColor: _terracotta,
           label: 'App', value: 'LokYatra'),
       _Divider(),
-      _InfoTile(icon: Icons.tag_rounded, iconColor: Colors.grey[600]!,
+      _InfoTile(icon: Icons.tag_rounded, iconColor: const Color(0xFF64748B),
           label: 'Version', value: '1.0.0'),
       _Divider(),
-      _InfoTile(icon: Icons.code_rounded, iconColor: _slate,
+      _InfoTile(icon: Icons.code_rounded, iconColor: _accent,
           label: 'Platform', value: 'Flutter + .NET'),
       _Divider(),
-      _InfoTile(icon: Icons.business_rounded, iconColor: Colors.teal[600]!,
+      _InfoTile(icon: Icons.business_rounded, iconColor: const Color(0xFF10B981),
           label: 'Build', value: 'Production'),
     ]),
     const SizedBox(height: 20),
@@ -116,21 +117,21 @@ class Settings extends StatelessWidget {
     const SizedBox(height: 10),
     _SettingsCard(children: [
       _ActionTile(
-        icon: Icons.bar_chart_rounded, iconColor: Colors.indigo[600]!,
+        icon: Icons.bar_chart_rounded, iconColor: const Color(0xFF4F46E5),
         title: 'Reports & Analytics',
         subtitle: 'View bookings, revenue and site statistics',
         onTap: () => _go(context, kPageReports),
       ),
       _Divider(),
       _ActionTile(
-        icon: Icons.people_alt_outlined, iconColor: Colors.teal[600]!,
+        icon: Icons.people_alt_outlined, iconColor: const Color(0xFF0D9488),
         title: 'User Management',
         subtitle: 'Manage tourists, owners and admins',
         onTap: () => _go(context, kPageUsers),
       ),
       _Divider(),
       _ActionTile(
-        icon: Icons.rate_review_outlined, iconColor: Colors.orange[700]!,
+        icon: Icons.rate_review_outlined, iconColor: const Color(0xFFD97706),
         title: 'Review Moderation',
         subtitle: 'Approve, flag or remove user reviews',
         onTap: () => _go(context, kPageReviews),
@@ -149,14 +150,14 @@ class Settings extends StatelessWidget {
       ),
       _Divider(),
       _ActionTile(
-        icon: Icons.home_outlined, iconColor: Colors.brown[600]!,
+        icon: Icons.home_outlined, iconColor: const Color(0xFF8B5E3C),
         title: 'Homestay Listings',
         subtitle: 'Review and manage all homestays',
         onTap: () => _go(context, kPageHomestays),
       ),
       _Divider(),
       _ActionTile(
-        icon: Icons.quiz_outlined, iconColor: Colors.green[700]!,
+        icon: Icons.quiz_outlined, iconColor: const Color(0xFF059669),
         title: 'Quiz Management',
         subtitle: 'Edit quiz questions and point values',
         onTap: () => _go(context, kPageQuizzes),
@@ -237,7 +238,7 @@ class _ProfileCardState extends State<_ProfileCard> {
       }
       return;
     }
-    // Mobile: read from SQLite cache
+
     final n   = await SqliteService().get('user_name');
     final e   = await SqliteService().get('user_email');
     final img = await SqliteService().get('user_image');
@@ -260,13 +261,13 @@ class _ProfileCardState extends State<_ProfileCard> {
     try {
       await UserRemoteDatasource().updateProfile(imageFile: result.files.first);
 
-      // Fetch fresh user data directly from API (SQLite silently fails on web)
+
       try {
         final res = await UserRemoteDatasource().getCurrentUser();
         if (res.statusCode == 200) {
           final d = res.data as Map<String, dynamic>;
           final newImg = (d['profileImage'] as String?) ?? '';
-          // Best-effort SQLite update for mobile
+
           try {
             await SqliteService().put('user_image', newImg);
             await SqliteService().put('user_name', (d['name'] as String?) ?? '');
@@ -282,7 +283,7 @@ class _ProfileCardState extends State<_ProfileCard> {
           }
         }
       } catch (_) {
-        // Fallback to SQLite path on mobile if API call fails
+
         await _loadUser();
         if (mounted) setState(() => imageKey++);
       }
@@ -318,13 +319,12 @@ class _ProfileCardState extends State<_ProfileCard> {
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade100),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 12,
-              offset: const Offset(0, 4))
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 20,
+              offset: const Offset(0, 8))
         ],
       ),
       child: Column(children: [
@@ -380,12 +380,12 @@ class _ProfileCardState extends State<_ProfileCard> {
         ]),
         const SizedBox(height: 14),
         Text(name ?? 'Admin',
-            style: GoogleFonts.playfairDisplay(
-                fontSize: 17, fontWeight: FontWeight.bold,
-                color: const Color(0xFF1A2B3C))),
+            style: GoogleFonts.inter(
+                fontSize: 18, fontWeight: FontWeight.w700,
+                color: const Color(0xFF1E293B))),
         const SizedBox(height: 4),
         Text(email ?? '',
-            style: GoogleFonts.dmSans(fontSize: 12, color: Colors.grey[500])),
+            style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w500)),
       ]),
     );
   }
@@ -520,7 +520,6 @@ class AdminChangePasswordPage extends StatefulWidget {
 }
 
 class _AdminChangePasswordPageState extends State<AdminChangePasswordPage> {
-  static const _brown = Color(0xFF5C4033);
   final formKey     = GlobalKey<FormState>();
   final currentCtrl = TextEditingController();
   final newCtrl     = TextEditingController();
@@ -627,21 +626,21 @@ class _AdminChangePasswordPageState extends State<AdminChangePasswordPage> {
                   SizedBox(
                     width: double.infinity, height: 48,
                     child: ElevatedButton(
-                      onPressed: loading ? null : submit,
-                      style: ElevatedButton.styleFrom(
-                          backgroundColor: _brown,
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12))),
-                      child: loading
-                          ? const SizedBox(width: 20, height: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                          : Text('Update Password',
-                          style: GoogleFonts.dmSans(
-                              fontSize: 14, fontWeight: FontWeight.bold)),
-                    ),
+                        onPressed: loading ? null : submit,
+                        style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF0F172A),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12))),
+                        child: loading
+                            ? const SizedBox(width: 20, height: 20,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                            : Text('Update Password',
+                            style: GoogleFonts.inter(
+                                fontSize: 14, fontWeight: FontWeight.w700)),
+                      ),
                   ),
                 ]),
               ),
@@ -693,12 +692,16 @@ class _SectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(children: [
-    Icon(icon, size: 17, color: const Color(0xFF1A2B3C)),
-    const SizedBox(width: 7),
-    Text(title, style: GoogleFonts.dmSans(fontSize: 13,
-        fontWeight: FontWeight.w700, color: const Color(0xFF1A2B3C))),
-    const SizedBox(width: 10),
-    Expanded(child: Divider(color: Colors.grey.shade200)),
+    Icon(icon, size: 16, color: const Color(0xFF64748B)),
+    const SizedBox(width: 8),
+    Text(title.toUpperCase(),
+        style: GoogleFonts.inter(
+            fontSize: 11,
+            letterSpacing: 0.8,
+            fontWeight: FontWeight.w800,
+            color: const Color(0xFF64748B))),
+    const SizedBox(width: 12),
+    const Expanded(child: Divider(color: Color(0xFFE2E8F0))),
   ]);
 }
 
@@ -750,12 +753,13 @@ class _ActionTile extends StatelessWidget {
         ),
         const SizedBox(width: 14),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: GoogleFonts.dmSans(fontSize: 14,
-              fontWeight: FontWeight.w600, color: const Color(0xFF1A2B3C))),
-          Text(subtitle, style: GoogleFonts.dmSans(
-              fontSize: 11, color: Colors.grey[500])),
+          Text(title, style: GoogleFonts.inter(fontSize: 14,
+              fontWeight: FontWeight.w600, color: const Color(0xFF0F172A))),
+          const SizedBox(height: 2),
+          Text(subtitle, style: GoogleFonts.inter(
+              fontSize: 12, color: const Color(0xFF64748B))),
         ])),
-        Icon(Icons.chevron_right_rounded, size: 18, color: Colors.grey[400]),
+        const Icon(Icons.chevron_right_rounded, size: 18, color: Color(0xFF94A3B8)),
       ]),
     ),
   );
@@ -780,9 +784,9 @@ class _InfoTile extends StatelessWidget {
         child: Icon(icon, size: 18, color: iconColor),
       ),
       const SizedBox(width: 14),
-      Expanded(child: Text(label, style: GoogleFonts.dmSans(fontSize: 14,
-          fontWeight: FontWeight.w600, color: const Color(0xFF1A2B3C)))),
-      Text(value, style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[500])),
+      Expanded(child: Text(label, style: GoogleFonts.inter(fontSize: 14,
+          fontWeight: FontWeight.w600, color: const Color(0xFF0F172A)))),
+      Text(value, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF64748B), fontWeight: FontWeight.w500)),
     ]),
   );
 }

@@ -29,3 +29,5 @@ class LogoutButtonClicked extends AuthEvent{
   @override
   List<Object?> get props => [];
 }
+
+class CheckAuthStatus extends AuthEvent {}

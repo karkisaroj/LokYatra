@@ -6,15 +6,15 @@ import 'package:lokyatra_frontend/data/models/Homestay.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
 
-class AdminHomestayDetailPage extends StatefulWidget {
+class HomestayApprovalDetail extends StatefulWidget {
   final Homestay homestay;
-  const AdminHomestayDetailPage({super.key, required this.homestay});
+  const HomestayApprovalDetail({super.key, required this.homestay});
 
   @override
-  State<AdminHomestayDetailPage> createState() => _AdminHomestayDetailPageState();
+  State<HomestayApprovalDetail> createState() => _HomestayApprovalDetailState();
 }
 
-class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
+class _HomestayApprovalDetailState extends State<HomestayApprovalDetail> {
   static const _slate = Color(0xFF3D5A80);
   static const _dark  = Color(0xFF1A1A2E);
   static const _bg    = Color(0xFFF4F6F9);
@@ -38,14 +38,14 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
   void _onToggle() {
     final next = !_isVisible;
     _showConfirm(
-      icon: next ? Icons.play_circle_outline_rounded : Icons.pause_circle_outline_rounded,
-      iconColor: next ? Colors.green[600]! : Colors.grey[700]!,
-      title: next ? 'Activate Homestay?' : 'Pause Homestay?',
+      icon: next ? Icons.check_circle_outline_rounded : Icons.pause_circle_outline_rounded,
+      iconColor: next ? Colors.green[600]! : Colors.orange[700]!,
+      title: next ? 'Approve Homestay?' : 'Pause Homestay?',
       body: next
-          ? '"${widget.homestay.name}" will become visible to all tourists.'
-          : '"${widget.homestay.name}" will be hidden from all tourists.',
-      confirmLabel: next ? 'Activate' : 'Pause',
-      confirmColor: next ? Colors.green[600]! : Colors.grey[700]!,
+          ? '"${widget.homestay.name}" will be approved and become visible to all tourists.'
+          : '"${widget.homestay.name}" will be paused and hidden from all tourists.',
+      confirmLabel: next ? 'Approve' : 'Pause',
+      confirmColor: next ? Colors.green[600]! : Colors.orange[700]!,
       onConfirm: () {
         setState(() => _isVisible = next);
         context.read<HomestayBloc>().add(AdminToggleHomestayVisibility(widget.homestay.id, next));
@@ -54,12 +54,15 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
   }
 
   void _onDelete() {
+    final isNew = !widget.homestay.isVisible;
     _showConfirm(
       icon: Icons.delete_outline_rounded,
       iconColor: Colors.red[600]!,
-      title: 'Delete Homestay?',
-      body: 'Permanently delete "${widget.homestay.name}"? This cannot be undone.',
-      confirmLabel: 'Delete',
+      title: isNew ? 'Reject & Delete?' : 'Delete Homestay?',
+      body: isNew 
+          ? 'Reject and permanently delete "${widget.homestay.name}"? This cannot be undone.'
+          : 'Permanently delete "${widget.homestay.name}"? This cannot be undone.',
+      confirmLabel: isNew ? 'Reject' : 'Delete',
       confirmColor: Colors.red[600]!,
       onConfirm: () {
         context.read<HomestayBloc>().add(AdminDeleteHomestay(widget.homestay.id));
@@ -245,30 +248,47 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
       onTap: _onToggle,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: _isVisible ? Colors.green[600] : Colors.grey[600],
+          color: _isVisible ? Colors.orange[700] : Colors.green[600],
           borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: (_isVisible ? Colors.orange[700]! : Colors.green[600]!).withValues(alpha: 0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            )
+          ],
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(_isVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-              color: Colors.white, size: 14),
-          const SizedBox(width: 4),
-          Text(_isVisible ? 'Active' : 'Paused',
-              style: GoogleFonts.dmSans(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700)),
+          Icon(_isVisible ? Icons.pause_circle_outline_rounded : Icons.check_circle_outline_rounded,
+              color: Colors.white, size: 16),
+          const SizedBox(width: 6),
+          Text(_isVisible ? 'Pause Listing' : 'Approve Listing',
+              style: GoogleFonts.dmSans(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)),
         ]),
       ),
     ),
-    const SizedBox(width: 6),
+    const SizedBox(width: 8),
     GestureDetector(
       onTap: _onDelete,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(0, 8, 12, 8),
-        padding: const EdgeInsets.all(7),
-        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-        child: Icon(Icons.delete_outline_rounded, size: 19, color: Colors.red[500]),
+        margin: const EdgeInsets.symmetric(vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.red[500]!),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.delete_outline_rounded, color: Colors.red[500], size: 16),
+          const SizedBox(width: 6),
+          Text(!_isVisible ? 'Reject' : 'Delete',
+              style: GoogleFonts.dmSans(color: Colors.red[500], fontSize: 13, fontWeight: FontWeight.bold)),
+        ]),
       ),
     ),
+    const SizedBox(width: 12),
   ];
 
   List<Widget> _mobileActions() => [
@@ -276,28 +296,37 @@ class _AdminHomestayDetailPageState extends State<AdminHomestayDetailPage> {
       onTap: _onToggle,
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
         decoration: BoxDecoration(
-          color: _isVisible ? Colors.green[600] : Colors.grey[600],
+          color: _isVisible ? Colors.orange[700] : Colors.green[600],
           borderRadius: BorderRadius.circular(20),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(_isVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-              color: Colors.white, size: 13),
+          Icon(_isVisible ? Icons.pause_circle_outline_rounded : Icons.check_circle_outline_rounded,
+              color: Colors.white, size: 14),
           const SizedBox(width: 4),
-          Text(_isVisible ? 'Active' : 'Paused',
-              style: GoogleFonts.dmSans(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
+          Text(_isVisible ? 'Pause' : 'Approve',
+              style: GoogleFonts.dmSans(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
         ]),
       ),
     ),
-    const SizedBox(width: 6),
+    const SizedBox(width: 10),
     GestureDetector(
       onTap: _onDelete,
       child: Container(
         margin: const EdgeInsets.fromLTRB(0, 8, 10, 8),
-        padding: const EdgeInsets.all(7),
-        decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-        child: Icon(Icons.delete_outline_rounded, size: 19, color: Colors.red[500]),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.red[500]!),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.delete_outline_rounded, color: Colors.red[500], size: 14),
+          const SizedBox(width: 4),
+          Text(!_isVisible ? 'Reject' : 'Delete',
+              style: GoogleFonts.dmSans(color: Colors.red[500], fontSize: 12, fontWeight: FontWeight.bold)),
+        ]),
       ),
     ),
   ];

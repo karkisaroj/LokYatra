@@ -10,7 +10,7 @@ import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/Ownerprofilep
 import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerChangePasswordPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristProfilePage.dart';
 import 'package:lokyatra_frontend/presentation/screens/TouristScreen/touristHome.dart';
-import 'package:lokyatra_frontend/presentation/screens/admin/AdminDashboard.dart';
+import 'package:lokyatra_frontend/presentation/screens/admin/AdminPanel.dart';
 import 'package:lokyatra_frontend/presentation/screens/authentication/loginPage.dart';
 import 'package:lokyatra_frontend/presentation/screens/authentication/register.dart';
 import 'package:lokyatra_frontend/presentation/splash/splash_screen.dart';
@@ -18,6 +18,7 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/Booking/boo
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/Booking/booking_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_state.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayEvent.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/notification/notification_bloc.dart';
@@ -60,7 +61,7 @@ class MyAppRunner extends StatelessWidget {
       builder: (context, child) {
         return MultiBlocProvider(
           providers: [
-            BlocProvider<AuthBloc>(create: (_) => AuthBloc()),
+            BlocProvider<AuthBloc>(create: (_) => AuthBloc()..add(CheckAuthStatus())),
             BlocProvider<SitesBloc>(create: (_) => SitesBloc()),
             BlocProvider<StoryBloc>(create: (_) => StoryBloc()),
             BlocProvider<HomestayBloc>(create: (_) => HomestayBloc()),
@@ -96,7 +97,7 @@ class MyAppRunner extends StatelessWidget {
             home: const SplashScreen(),
             builder: (context, appChild) {
               return BlocListener<AuthBloc, AuthState>(
-                listener: (context, state) {
+                listener: (context, state) async {
                   if (state is AdminLoginSuccess) {
                     context.read<BookingBloc>().add(const LoadAllBookings());
                     context.read<UserBloc>().add(FetchUsers());
@@ -117,6 +118,13 @@ class MyAppRunner extends StatelessWidget {
                   } else if (state is OwnerLoginSuccess) {
                     _navKey.currentState?.pushNamedAndRemoveUntil(
                         '/ownerHome', (route) => false);
+                  } else if (state is AuthUnauthenticated) {
+                    final hasCompletedOnboarding = await SqliteService().get("has_seen_onboarding") ?? "false";
+                    if (hasCompletedOnboarding == "false") {
+                      _navKey.currentState?.pushNamedAndRemoveUntil('/onboarding', (route) => false);
+                    } else {
+                      _navKey.currentState?.pushNamedAndRemoveUntil('/login', (route) => false);
+                    }
                   } else if (state is LogoutSuccess) {
                     _navKey.currentState?.pushNamedAndRemoveUntil(
                         '/login', (route) => false);

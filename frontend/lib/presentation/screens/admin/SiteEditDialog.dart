@@ -118,7 +118,7 @@ class _SiteEditPageState extends State<SiteEditPage> {
       'ClosingTime': _closeTime.text.trim().isEmpty ? null : _closeTime.text.trim(),
       'BestTimeToVisit': _bestTime.text.trim().isEmpty ? null : _bestTime.text.trim(),
       'IsUNESCO': _isUnesco,
-      // We might need to handle existing images if the backend supports partial updates or expects the full list of URLs to keep.
+
     };
     fields.removeWhere((key, value) => value == null);
 

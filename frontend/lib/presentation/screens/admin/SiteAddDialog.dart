@@ -295,7 +295,7 @@ class _SiteEditPageState extends State<SiteEditPage> {
         if (_closeTime.text.trim().isNotEmpty)  'ClosingTime': _closeTime.text.trim(),
         if (_bestTime.text.trim().isNotEmpty)   'BestTimeToVisit': _bestTime.text.trim(),
         'IsUNESCO': _isUnesco,
-        // Send the kept existing image URLs so backend knows which to preserve
+
         'ExistingImagesJson': json.encode(_existingImages),
       },
       files: _newImages,

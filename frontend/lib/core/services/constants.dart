@@ -1,18 +1,10 @@
-import 'package:flutter/foundation.dart';
 const String _prodBaseUrl = "https://lokyatra-production.up.railway.app";
 
-const String _localIp = "192.168.1.65";
-const int _localPort = 5257;
 
-// Optional override from build/run command: in case the railway token will expire
-// flutter run --dart-define=API_BASE_URL=http://192.168.1.65:5257
-// flutter build web --dart-define=API_BASE_URL=https://lokyatra-production.up.railway.app
 const String _envApiBaseUrl = String.fromEnvironment("API_BASE_URL");
 
 String getBaseUrl() {
   if (_envApiBaseUrl.isNotEmpty) return _envApiBaseUrl;
-
-  // Always use production URL for now to allow device app login to work!
   return _prodBaseUrl;
 }
 

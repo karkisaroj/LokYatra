@@ -139,7 +139,6 @@ class _HomeTab extends StatefulWidget {
 
 class _HomeTabState extends State<_HomeTab> {
   static const _dark = Color(0xFF2D1B10);
-  static const _accent = Color(0xFFCD6E4E);
   String? _profileImage;
 
   @override

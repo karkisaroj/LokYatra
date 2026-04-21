@@ -7,8 +7,15 @@ import '../../state_management/Bloc/Booking/booking_bloc.dart';
 import '../../state_management/Bloc/Booking/booking_event.dart';
 import '../../state_management/Bloc/Booking/booking_state.dart';
 
-class Bookings extends StatelessWidget {
-  const Bookings({super.key});
+const _ink    = Color(0xFF111111);
+const _bg     = Color(0xFFFBFBFB);
+const _border = Color(0xFFEEEEEE);
+const _muted  = Color(0xFF757575);
+const _terracotta = Color(0xFFCD6E4E);
+const _slate   = Color(0xFF3D5A80);
+
+class AdminBookings extends StatelessWidget {
+  const AdminBookings({super.key});
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -25,10 +32,6 @@ class _Body extends StatefulWidget {
 }
 
 class _BodyState extends State<_Body> {
-  static const _slate      = Color(0xFF3D5A80);
-  static const _bg         = Color(0xFFF4F6F9);
-  static const _terracotta = Color(0xFFCD6E4E);
-
   String _search = '';
   String _statusFilter = 'All';
   final _searchCtrl = TextEditingController();
@@ -80,12 +83,12 @@ class _BodyState extends State<_Body> {
       .fold(0.0, (s, b) => s + _priceOf(b));
 
   Color _statusColor(String s) => switch (s) {
-    'Pending'   => const Color(0xFF5B8CDB),
-    'Confirmed' => const Color(0xFF2E9E6B),
-    'Completed' => _slate,
-    'Cancelled' => const Color(0xFF78909C),
-    'Rejected'  => const Color(0xFFE05252),
-    _           => _slate,
+    'Pending'   => const Color(0xFF64748B),
+    'Confirmed' => const Color(0xFF10B981),
+    'Completed' => _ink,
+    'Cancelled' => const Color(0xFF94A3B8),
+    'Rejected'  => const Color(0xFFEF4444),
+    _           => _ink,
   };
 
   (Color, Color) _statusPair(String s) {
@@ -175,9 +178,9 @@ class _BodyState extends State<_Body> {
       child: Row(children: [
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Bookings', style: GoogleFonts.playfairDisplay(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF1A2B3C))),
+            Text('Bookings', style: GoogleFonts.inter(fontSize: 22, fontWeight: FontWeight.bold, color: _ink)),
             const SizedBox(height: 2),
-            Text('Manage all homestay reservations', style: GoogleFonts.dmSans(fontSize: 13, color: Colors.grey[500])),
+            Text('Manage all homestay reservations', style: GoogleFonts.inter(fontSize: 13, color: _muted)),
           ]),
         ),
         const SizedBox(width: 32),
@@ -196,13 +199,13 @@ class _BodyState extends State<_Body> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: _border),
       ),
       child: Column(children: [
-        Text(value, style: GoogleFonts.dmSans(fontSize: 18, fontWeight: FontWeight.w800, color: color)),
-        Text(label, style: GoogleFonts.dmSans(fontSize: 11, color: Colors.grey[500])),
+        Text(value, style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w800, color: color)),
+        Text(label, style: GoogleFonts.inter(fontSize: 11, color: _muted)),
       ]),
     );
   }
@@ -281,15 +284,15 @@ class _BodyState extends State<_Body> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: _border),
         ),
         child: Column(children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             decoration: BoxDecoration(
-              color: Colors.grey.shade50,
+              color: const Color(0xFFFBFBFB),
               borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
+              border: Border(bottom: BorderSide(color: _border)),
             ),
             child: Row(children: [
               SizedBox(width: 60, child: _th('ID')),
@@ -383,7 +386,7 @@ class _BodyState extends State<_Body> {
         child: Row(children: [
           Expanded(child: Container(
             height: 42.h,
-            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10.r), border: Border.all(color: Colors.grey.shade200)),
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10.r), border: Border.all(color: _border)),
             child: TextField(
               controller: _searchCtrl,
               onChanged: (v) => setState(() => _search = v),
@@ -421,13 +424,13 @@ class _BodyState extends State<_Body> {
                   duration: const Duration(milliseconds: 200),
                   padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 4.h),
                   decoration: BoxDecoration(
-                    color: isSelected ? color : Colors.white,
+                    color: isSelected ? color : _muted,
                     borderRadius: BorderRadius.circular(20.r),
-                    border: Border.all(color: isSelected ? color : Colors.grey.shade300),
+                    border: Border.all(color: isSelected ? color : _border),
                   ),
                   child: Row(children: [
-                    Text(s, style: GoogleFonts.dmSans(fontSize: 12.sp, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        color: isSelected ? Colors.white : Colors.grey[700])),
+                    Text(s, style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? Colors.white : _muted)),
                     if (count > 0) ...[
                       SizedBox(width: 4.w),
                       Container(
@@ -474,14 +477,14 @@ class _BodyState extends State<_Body> {
     Icon(Icons.calendar_month_outlined, size: 56, color: Colors.grey[300]),
     const SizedBox(height: 16),
     Text(_search.isNotEmpty ? 'No results for "$_search"' : _statusFilter == 'All' ? 'No bookings yet' : 'No $_statusFilter bookings',
-        style: GoogleFonts.dmSans(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1A2B3C))),
+        style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.bold, color: _ink)),
     const SizedBox(height: 6),
     Text('Pull down to refresh', style: GoogleFonts.dmSans(fontSize: 12, color: Colors.grey[400])),
   ]));
 
-  Widget _th(String label) => Text(label, style: GoogleFonts.dmSans(fontSize: 12, fontWeight: FontWeight.w700, color: Colors.grey[600]));
+  Widget _th(String label) => Text(label, style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w700, color: _muted));
 
-  Widget _vDivider() => Container(width: 1, height: 40.h, color: Colors.grey.shade200, margin: EdgeInsets.symmetric(horizontal: 8.w));
+  Widget _vDivider() => Container(width: 1, height: 40.h, color: _border, margin: EdgeInsets.symmetric(horizontal: 8.w));
 
   String _fmtDate(dynamic raw) {
     if (raw == null) return '—';
@@ -579,9 +582,9 @@ class _BookingCard extends StatelessWidget {
         Container(
           padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
           decoration: BoxDecoration(
-            color: _slate.withValues(alpha: 0.04),
+            color: _ink.withValues(alpha: 0.04),
             borderRadius: BorderRadius.vertical(top: Radius.circular(14.r)),
-            border: Border(bottom: BorderSide(color: Colors.grey.shade100)),
+            border: Border(bottom: BorderSide(color: _border)),
           ),
           child: Row(children: [
             Icon(Icons.tag_rounded, size: 13.sp, color: Colors.grey[500]),
@@ -614,21 +617,25 @@ class _BookingCard extends StatelessWidget {
             SizedBox(height: 10.h),
             Divider(height: 1, color: Colors.grey.shade100),
             SizedBox(height: 10.h),
-            Row(children: [
-              _InfoChip(icon: Icons.login_rounded,          label: 'In',     value: checkIn),
-              SizedBox(width: 8.w),
-              _InfoChip(icon: Icons.logout_rounded,         label: 'Out',    value: checkOut),
-              SizedBox(width: 8.w),
-              _InfoChip(icon: Icons.nights_stay_outlined,   label: 'Nights', value: '$nights'),
-            ]),
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 8.h,
+              children: [
+                _InfoChip(icon: Icons.login_rounded,          label: 'In',     value: checkIn),
+                _InfoChip(icon: Icons.logout_rounded,         label: 'Out',    value: checkOut),
+                _InfoChip(icon: Icons.nights_stay_outlined,   label: 'Nights', value: '$nights'),
+              ],
+            ),
             SizedBox(height: 8.h),
-            Row(children: [
-              _InfoChip(icon: Icons.king_bed_outlined,      label: 'Rooms',  value: '$rooms'),
-              SizedBox(width: 8.w),
-              _InfoChip(icon: Icons.people_outline_rounded, label: 'Guests', value: '$guests'),
-              SizedBox(width: 8.w),
-              _InfoChip(icon: payMethod.toLowerCase() == 'khalti' ? Icons.payment_rounded : Icons.money_outlined, label: 'Pay', value: payMethod.isEmpty ? 'Cash' : payMethod),
-            ]),
+            Wrap(
+              spacing: 8.w,
+              runSpacing: 8.h,
+              children: [
+                _InfoChip(icon: Icons.king_bed_outlined,      label: 'Rooms',  value: '$rooms'),
+                _InfoChip(icon: Icons.people_outline_rounded, label: 'Guests', value: '$guests'),
+                _InfoChip(icon: payMethod.toLowerCase() == 'khalti' ? Icons.payment_rounded : Icons.money_outlined, label: 'Pay', value: payMethod.isEmpty ? 'Cash' : payMethod),
+              ],
+            ),
             SizedBox(height: 10.h),
             Divider(height: 1, color: Colors.grey.shade100),
             SizedBox(height: 10.h),
@@ -687,7 +694,7 @@ class _PersonTile extends StatelessWidget {
       SizedBox(width: 6.w),
       Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: GoogleFonts.dmSans(fontSize: 9.sp, color: color, fontWeight: FontWeight.w600)),
-        Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.dmSans(fontSize: 12.sp, fontWeight: FontWeight.bold, color: const Color(0xFF1A2B3C))),
+        Text(name, maxLines: 1, overflow: TextOverflow.ellipsis, style: GoogleFonts.inter(fontSize: 12.sp, fontWeight: FontWeight.bold, color: _ink)),
         if (sub != null) Text(sub!, style: GoogleFonts.dmSans(fontSize: 10.sp, color: Colors.grey[500])),
       ])),
     ]),
@@ -707,7 +714,7 @@ class _InfoChip extends StatelessWidget {
       SizedBox(width: 4.w),
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(label, style: GoogleFonts.dmSans(fontSize: 9.sp, color: Colors.grey[400])),
-        Text(value, style: GoogleFonts.dmSans(fontSize: 11.sp, fontWeight: FontWeight.bold, color: const Color(0xFF1A2B3C))),
+        Text(value, style: GoogleFonts.inter(fontSize: 11.sp, fontWeight: FontWeight.bold, color: _ink)),
       ]),
     ]),
   );

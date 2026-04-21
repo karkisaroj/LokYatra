@@ -13,16 +13,16 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_state.dart';
 import 'StoryAddDialog.dart';
-import 'StoryDetailPage.dart';
+import 'AdminStoryDetail.dart';
 import 'StoryEditDialog.dart';
 
-class Stories extends StatefulWidget {
-  const Stories({super.key});
+class AdminStories extends StatefulWidget {
+  const AdminStories({super.key});
   @override
-  State<Stories> createState() => _StoriesState();
+  State<AdminStories> createState() => _AdminStoriesState();
 }
 
-class _StoriesState extends State<Stories> {
+class _AdminStoriesState extends State<AdminStories> {
   static const _accent = Color(0xFF3D5A80);
   static const _bg     = Color(0xFFF4F6F9);
 

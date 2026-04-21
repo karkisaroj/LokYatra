@@ -13,6 +13,47 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<RegisterButtonClicked>(_onRegister);
     on<LoginButtonClicked>(_onLogin);
     on<LogoutButtonClicked>(_onLogout);
+    on<CheckAuthStatus>(_onCheckAuthStatus);
+  }
+
+  Future<void> _onCheckAuthStatus(
+      CheckAuthStatus event, Emitter<AuthState> emit) async {
+    final token = await SecureStorageService.getAccessToken();
+
+    if (token == null || JwtDecoder.isExpired(token)) {
+      emit(AuthUnauthenticated());
+      return;
+    }
+
+    try {
+      final name = await SqliteService().get("user_name") ?? '';
+      final email = await SqliteService().get("user_email") ?? '';
+      final image = await SqliteService().get("user_image") ?? '';
+
+      // Set user info for the state
+      emit(AuthAuthenticated(
+        name: name,
+        email: email,
+        profileImage: image.isEmpty ? null : image,
+      ));
+
+      // Determine role and emit success state for fixed navigation in main.dart
+      final decoded = JwtDecoder.decode(token);
+      final role = decoded['role'] ??
+          decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+
+      if (role == 'admin') {
+        emit(AdminLoginSuccess(token));
+      } else if (role == 'tourist') {
+        emit(TouristLoginSuccess(token));
+      } else if (role == 'owner') {
+        emit(OwnerLoginSuccess(token));
+      } else {
+        emit(AuthUnauthenticated());
+      }
+    } catch (e) {
+      emit(AuthUnauthenticated());
+    }
   }
 
   final Dio _dio = Dio(BaseOptions(

@@ -4,6 +4,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../widgets/Helpers/SecureStorageService.dart';
 import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,96 +13,61 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _fadeIn;
 
   @override
   void initState() {
     super.initState();
-    // Web: check immediately so refresh shows a spinner, not a 2-second branded wait.
-    // Mobile: show branded splash for 2 s before navigating.
-    if (kIsWeb) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _checkAuth());
-    } else {
-      Future.delayed(const Duration(seconds: 2), _checkAuth);
-    }
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _controller.forward();
   }
 
-  Future<void> _checkAuth() async {
-    if (!mounted) return;
-
-    bool seenOnboarding = false;
-    if (kIsWeb) {
-      final prefs = await SharedPreferences.getInstance();
-      seenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
-    } else {
-      final val = await SqliteService().get('has_seen_onboarding');
-      seenOnboarding = val != null;
-    }
-
-    if (!mounted) return;
-
-    if (!seenOnboarding) {
-      Navigator.pushReplacementNamed(context, '/onboarding');
-      return;
-    }
-
-    final token = await SecureStorageService.getAccessToken();
-
-    if (!mounted) return;
-
-    if (token == null || JwtDecoder.isExpired(token)) {
-      Navigator.pushReplacementNamed(context, '/login');
-      return;
-    }
-
-    try {
-      final decoded = JwtDecoder.decode(token);
-      final role = decoded['role'] ??
-          decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-
-      if (!mounted) return;
-
-      switch (role) {
-        case 'tourist': Navigator.pushReplacementNamed(context, '/touristHome'); break;
-        case 'owner':   Navigator.pushReplacementNamed(context, '/ownerHome');   break;
-        case 'admin':   Navigator.pushReplacementNamed(context, '/adminDashboard'); break;
-        default:        Navigator.pushReplacementNamed(context, '/login');
-      }
-    } catch (e) {
-      debugPrint('JWT decode error: $e');
-      if (mounted) Navigator.pushReplacementNamed(context, '/login');
-    }
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // On web: plain white spinner — no branded splash that looks like a login screen.
-    if (kIsWeb) {
-      return const Scaffold(
-        backgroundColor: Colors.white,
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset('assets/images/lokyatra_logo.png', height: 120),
-            const SizedBox(height: 24),
-            const Text(
-              "Explore Nepal's \nCultural Heritage",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.black87),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 32),
-            const CircularProgressIndicator(),
-            const SizedBox(height: 12),
-            const Text('Loading...', style: TextStyle(fontSize: 14, color: Colors.grey)),
-          ],
+        child: FadeTransition(
+          opacity: _fadeIn,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset('assets/images/lokyatra_logo.png', height: 100),
+              const SizedBox(height: 32),
+              const SizedBox(
+                width: 24,
+                height: 24,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFF6B4EFF),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Explore Nepal",
+                style: GoogleFonts.inter(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 1.1,
+                  color: const Color(0xFF6B7280),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
-}
+}

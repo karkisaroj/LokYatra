@@ -3,25 +3,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lokyatra_frontend/core/services/image_proxy.dart';
+import 'package:animate_do/animate_do.dart';
+import 'HomestayApprovalDetail.dart';
 import '../../../data/models/Homestay.dart';
 import '../../state_management/Bloc/homestays/HomestayBloc.dart';
 import '../../state_management/Bloc/homestays/HomestayEvent.dart';
 import '../../state_management/Bloc/homestays/HomestayState.dart';
-import 'Adminhomestaydetailpage.dart';
 
-class Homestays extends StatefulWidget {
+const _ink       = Color(0xFF0F172A);
+const _muted     = Color(0xFF64748B);
+const _slateDark = Color(0xFF1E293B);
+const _accent     = Color(0xFF334155);
+const _bg        = Color(0xFFF1F5F9);
+const _border    = Color(0xFFE2E8F0);
+
+class HomestayApproval extends StatefulWidget {
   final ValueNotifier subtitleNotifier;
-  const Homestays({super.key, required this.subtitleNotifier});
+  const HomestayApproval({super.key, required this.subtitleNotifier});
 
   @override
-  State<Homestays> createState() => HomestaysState();
+  State<HomestayApproval> createState() => _HomestayApprovalState();
 }
 
-class HomestaysState extends State<Homestays> {
-  static const _accent = Color(0xFF4F6AF5);
-  static const _ink    = Color(0xFF1C1F26);
-  static const _muted  = Color(0xFF6B7280);
-  static const _bg     = Color(0xFFF7F8FC);
+class _HomestayApprovalState extends State<HomestayApproval> {
 
   String _search = '';
   String _filter = 'All';
@@ -38,7 +42,7 @@ class HomestaysState extends State<Homestays> {
   List<Homestay> _filtered(List<Homestay> all) {
     var list = all;
     if (_filter == 'Active') list = list.where((h) => h.isVisible).toList();
-    if (_filter == 'Paused') list = list.where((h) => !h.isVisible).toList();
+    if (_filter == 'Pending/Paused') list = list.where((h) => !h.isVisible).toList();
     if (_search.isNotEmpty) {
       final q = _search.toLowerCase();
       list = list.where((h) =>
@@ -52,7 +56,7 @@ class HomestaysState extends State<Homestays> {
 
   void _pushDetail(Homestay h) => Navigator.push(
     context,
-    MaterialPageRoute(builder: (_) => AdminHomestayDetailPage(homestay: h)),
+    MaterialPageRoute(builder: (_) => HomestayApprovalDetail(homestay: h)),
   ).then((_) => _reload());
 
   void _confirmToggle(Homestay h) {
@@ -118,7 +122,7 @@ class HomestaysState extends State<Homestays> {
                 final pausedN = state.homestays.where((h) => !h.isVisible).length;
                 return Column(children: [
                   _statsBar(state.homestays.length, activeN, pausedN),
-                  const Divider(height: 1, color: Color(0xFFE8EAF0)),
+                  const Divider(height: 1, color: _border),
                   Expanded(
                     child: list.isEmpty
                         ? _EmptyView(filter: _filter)
@@ -143,12 +147,14 @@ class HomestaysState extends State<Homestays> {
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         if (isWide) ...[
           Row(children: [
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Homestays', style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700, color: _ink)),
-              const SizedBox(height: 2),
-              Text('Manage all homestay listings', style: GoogleFonts.inter(fontSize: 13, color: _muted)),
-            ]),
-            const Spacer(),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Homestays', style: GoogleFonts.outfit(fontSize: 22, fontWeight: FontWeight.w700, color: _ink)),
+                const SizedBox(height: 2),
+                Text('Review and manage homestay approval requests', style: GoogleFonts.inter(fontSize: 13, color: _muted, fontWeight: FontWeight.w500)),
+              ]),
+            ),
+            const SizedBox(width: 16),
             _filterChips(),
           ]),
           const SizedBox(height: 12),
@@ -163,39 +169,37 @@ class HomestaysState extends State<Homestays> {
   }
 
   Widget _filterChips() {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      for (final label in ['All', 'Active', 'Paused']) ...[
+    return Wrap(spacing: 8, runSpacing: 8, children: [
+      for (final label in ['All', 'Active', 'Pending/Paused'])
         _FilterChip(
           label: label,
           selected: _filter == label,
-          selectedColor: label == 'Active' ? Colors.green[600]! : label == 'Paused' ? _muted : _accent,
+          selectedColor: label == 'Active' ? Colors.green[600]! : label == 'Pending/Paused' ? _muted : _accent,
           onTap: () => setState(() => _filter = label),
         ),
-        const SizedBox(width: 8),
-      ],
     ]);
   }
 
   Widget _searchBar() {
     return SizedBox(
-      height: 42,
+      height: 48,
       child: TextField(
         onChanged: (v) => setState(() => _search = v),
-        style: GoogleFonts.inter(fontSize: 13),
+        style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           hintText: 'Search by name or location...',
-          hintStyle: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF9CA3AF)),
-          prefixIcon: const Icon(Icons.search, color: Color(0xFF9CA3AF), size: 18),
+          hintStyle: GoogleFonts.inter(fontSize: 14, color: _muted),
+          prefixIcon: const Icon(Icons.search_rounded, color: _muted, size: 20),
           suffixIcon: IconButton(
-            icon: const Icon(Icons.refresh_rounded, size: 18, color: Color(0xFF9CA3AF)),
+            icon: const Icon(Icons.refresh_rounded, size: 18, color: _muted),
             onPressed: _reload,
           ),
           filled: true,
-          fillColor: const Color(0xFFF7F8FC),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: _accent)),
-          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          fillColor: _bg,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: _border)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: const BorderSide(color: _accent, width: 1.5)),
+          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
         ),
       ),
     );
@@ -203,15 +207,19 @@ class HomestaysState extends State<Homestays> {
 
   Widget _statsBar(int total, int activeN, int pausedN) {
     return Container(
+      width: double.infinity,
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(24, 10, 24, 12),
-      child: Row(children: [
-        _StatPill(label: 'Total',  count: total,   color: _accent),
-        const SizedBox(width: 8),
-        _StatPill(label: 'Active', count: activeN, color: Colors.green[600]!),
-        const SizedBox(width: 8),
-        _StatPill(label: 'Paused', count: pausedN, color: _muted),
-      ]),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(children: [
+          _StatPill(label: 'Total',  count: total,   color: _accent),
+          const SizedBox(width: 8),
+          _StatPill(label: 'Active', count: activeN, color: Colors.green[600]!),
+          const SizedBox(width: 8),
+          _StatPill(label: 'Pending/Paused', count: pausedN, color: _muted),
+        ]),
+      ),
     );
   }
 }
@@ -230,9 +238,10 @@ class _FilterChip extends StatelessWidget {
       duration: const Duration(milliseconds: 150),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
       decoration: BoxDecoration(
-        color: selected ? selectedColor : Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: selected ? selectedColor : const Color(0xFFD1D5DB)),
+        color: selected ? selectedColor : Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: selected ? selectedColor : _border),
+        boxShadow: selected ? [BoxShadow(color: selectedColor.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 4))] : null,
       ),
       child: Text(label, style: GoogleFonts.inter(
         fontSize: 13, fontWeight: FontWeight.w600,
@@ -252,9 +261,9 @@ class _StatPill extends StatelessWidget {
   Widget build(BuildContext context) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
     decoration: BoxDecoration(
-      color: color.withValues(alpha: 0.08),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: color.withValues(alpha: 0.2)),
+      color: color.withValues(alpha: 0.05),
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: color.withValues(alpha: 0.12)),
     ),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       Text('$count', style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w800, color: color)),
@@ -274,17 +283,20 @@ class _WebGrid extends StatelessWidget {
     return GridView.builder(
       padding: const EdgeInsets.all(24),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 300,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.88,
+        maxCrossAxisExtent: 320,
+        crossAxisSpacing: 20,
+        mainAxisSpacing: 20,
+        childAspectRatio: 0.76,
       ),
       itemCount: list.length,
-      itemBuilder: (_, i) => _WebCard(
-        homestay: list[i],
-        onView:   () => onView(list[i]),
-        onToggle: () => onToggle(list[i]),
-        onDelete: () => onDelete(list[i]),
+      itemBuilder: (_, i) => FadeInUp(
+        delay: Duration(milliseconds: i * 50),
+        child: _WebCard(
+          homestay: list[i],
+          onView:   () => onView(list[i]),
+          onToggle: () => onToggle(list[i]),
+          onDelete: () => onDelete(list[i]),
+        ),
       ),
     );
   }
@@ -301,12 +313,15 @@ class _MobileList extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       itemCount: list.length,
       itemBuilder: (_, i) => Padding(
-        padding: const EdgeInsets.only(bottom: 12),
-        child: _MobileCard(
-          homestay: list[i],
-          onView:   () => onView(list[i]),
-          onToggle: () => onToggle(list[i]),
-          onDelete: () => onDelete(list[i]),
+        padding: const EdgeInsets.only(bottom: 16),
+        child: FadeInLeft(
+          delay: Duration(milliseconds: i * 50),
+          child: _MobileCard(
+            homestay: list[i],
+            onView:   () => onView(list[i]),
+            onToggle: () => onToggle(list[i]),
+            onDelete: () => onDelete(list[i]),
+          ),
         ),
       ),
     );
@@ -327,63 +342,67 @@ class _WebCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE8EAF0)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3))],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 5)),
+        ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(
-          height: 160,
-          child: Stack(children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-              child: ProxyImage(imageUrl: img, width: double.infinity, height: 160, borderRadiusValue: 0, fit: BoxFit.cover),
-            ),
-            if (!on)
-              Positioned.fill(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            height: 170,
+            child: Stack(children: [
+              ProxyImage(imageUrl: img, width: double.infinity, height: 170, borderRadiusValue: 0, fit: BoxFit.cover),
+              if (!on)
+                Positioned.fill(
                   child: Container(
-                    color: Colors.black.withValues(alpha: 0.4),
+                    color: Colors.black.withValues(alpha: 0.45),
                     child: Center(child: Row(mainAxisSize: MainAxisSize.min, children: [
-                      const Icon(Icons.pause_circle_rounded, color: Colors.white, size: 16),
-                      const SizedBox(width: 5),
-                      Text('Paused', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+                      const Icon(Icons.pause_circle_rounded, color: Colors.white, size: 18),
+                      const SizedBox(width: 6),
+                      Text('PENDING / PAUSED', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13, letterSpacing: 1)),
                     ])),
                   ),
                 ),
+              Positioned(
+                top: 12, left: 12,
+                child: _StatusBadge(isActive: on),
               ),
-            Positioned(
-              top: 10, left: 10,
-              child: _StatusBadge(isActive: on),
-            ),
-          ]),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(h.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1C1F26))),
-            const SizedBox(height: 4),
-            Row(children: [
-              const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF9CA3AF)),
-              const SizedBox(width: 3),
-              Expanded(child: Text(h.location, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280)))),
             ]),
-            const SizedBox(height: 6),
-            Text('Rs. ${h.pricePerNight.toStringAsFixed(0)} / night',
-                style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF4F6AF5))),
-            const SizedBox(height: 10),
-            Row(children: [
-              _ABtn(icon: Icons.remove_red_eye_outlined, color: const Color(0xFF4F6AF5), onTap: onView),
-              _ABtn(icon: on ? Icons.pause_circle_outline_rounded : Icons.play_circle_outline_rounded,
-                  color: on ? const Color(0xFF6B7280) : Colors.green[600]!, onTap: onToggle),
-              _ABtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, onTap: onDelete),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(h.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w800, color: _ink)),
+              const SizedBox(height: 6),
+              Row(children: [
+                const Icon(Icons.location_on_outlined, size: 14, color: _muted),
+                const SizedBox(width: 4),
+                Expanded(child: Text(h.location, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(fontSize: 12, color: _muted, fontWeight: FontWeight.w500))),
+              ]),
+              const SizedBox(height: 12),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Rs. ${h.pricePerNight.toStringAsFixed(0)}',
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: _ink)),
+                Text('/ night', style: GoogleFonts.inter(fontSize: 11, color: _muted)),
+              ]),
+              const SizedBox(height: 14),
+              const Divider(height: 1, color: _border),
+              const SizedBox(height: 12),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [
+                _ABtn(icon: Icons.remove_red_eye_outlined, color: _accent, onTap: onView, tooltip: 'View'),
+                _ABtn(icon: on ? Icons.pause_circle_outline_rounded : Icons.play_circle_outline_rounded,
+                    color: on ? _muted : Colors.green[600]!, onTap: onToggle, tooltip: on ? 'Pause' : 'Activate'),
+                _ABtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, onTap: onDelete, tooltip: 'Delete'),
+              ]),
             ]),
-          ]),
-        ),
-      ]),
+          ),
+        ]),
+      ),
     );
   }
 }
@@ -402,69 +421,91 @@ class _MobileCard extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE8EAF0)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 3))],
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _border),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 15, offset: const Offset(0, 5)),
+        ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(
-          height: 140,
-          child: Stack(children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-              child: ProxyImage(imageUrl: img, width: double.infinity, height: 140, borderRadiusValue: 0, thumb: true, fit: BoxFit.cover),
-            ),
-            if (!on)
-              Positioned.fill(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                  child: Container(color: Colors.black.withValues(alpha: 0.45),
-                    child: Center(child: Text('Paused', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700))),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          SizedBox(
+            height: 180,
+            child: Stack(children: [
+              ProxyImage(imageUrl: img, width: double.infinity, height: 180, borderRadiusValue: 0, fit: BoxFit.cover),
+                if (!on)
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withValues(alpha: 0.5),
+                    child: Center(child: Text('PENDING / PAUSED', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w800, letterSpacing: 1))),
                   ),
                 ),
-              ),
-            Positioned(top: 10, left: 10, child: _StatusBadge(isActive: on)),
-          ]),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(h.name, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: const Color(0xFF1C1F26))),
-            const SizedBox(height: 3),
-            Row(children: [
-              const Icon(Icons.location_on_outlined, size: 12, color: Color(0xFF9CA3AF)),
-              const SizedBox(width: 3),
-              Expanded(child: Text(h.location, maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280)))),
-            ]),
-            const SizedBox(height: 6),
-            Row(children: [
-              Text('${h.numberOfRooms} rooms · ${h.maxGuests} guests',
-                  style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280))),
-              const Spacer(),
-              Text('Rs. ${h.pricePerNight.toStringAsFixed(0)}/night',
-                  style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700, color: const Color(0xFF4F6AF5))),
-            ]),
-            const SizedBox(height: 10),
-            const Divider(height: 1, color: Color(0xFFE8EAF0)),
-            const SizedBox(height: 8),
-            Row(children: [
-              _ABtn(icon: Icons.remove_red_eye_outlined, color: const Color(0xFF4F6AF5), onTap: onView),
-              _ABtn(icon: on ? Icons.pause_circle_outline_rounded : Icons.play_circle_outline_rounded,
-                  color: on ? const Color(0xFF6B7280) : Colors.green[600]!, onTap: onToggle),
-              _ABtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, onTap: onDelete),
-              const Spacer(),
-              if (h.category != null && h.category!.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: const Color(0xFFF3F4F6), borderRadius: BorderRadius.circular(6)),
-                  child: Text(h.category!, style: GoogleFonts.inter(fontSize: 11, color: const Color(0xFF6B7280))),
+              Positioned(top: 12, left: 12, child: _StatusBadge(isActive: on)),
+              Positioned(
+                bottom: 0, left: 0, right: 0,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black.withValues(alpha: 0.7)],
+                    ),
+                  ),
+                  child: Text('Rs. ${h.pricePerNight.toStringAsFixed(0)} / night',
+                      style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: Colors.white)),
                 ),
+              ),
             ]),
-          ]),
-        ),
-      ]),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Expanded(child: Text(h.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w800, color: _ink))),
+                if (h.category != null && h.category!.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _slateDark.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      h.category!,
+                      style: GoogleFonts.dmSans(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: _slateDark),
+                    ),
+                  ),
+              ]),
+              const SizedBox(height: 6),
+              Row(children: [
+                const Icon(Icons.location_on_outlined, size: 14, color: _muted),
+                const SizedBox(width: 4),
+                Expanded(child: Text(h.location, maxLines: 1, overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.inter(fontSize: 13, color: _muted, fontWeight: FontWeight.w500))),
+              ]),
+              const SizedBox(height: 10),
+              Row(children: [
+                _FeatureIcon(icon: Icons.king_bed_rounded, label: '${h.numberOfRooms} Rooms'),
+                const SizedBox(width: 16),
+                _FeatureIcon(icon: Icons.people_alt_rounded, label: '${h.maxGuests} Guests'),
+              ]),
+              const SizedBox(height: 16),
+              Row(children: [
+                Expanded(child: _ActionBtn(label: 'View Details', icon: Icons.remove_red_eye_outlined, color: _accent, onTap: onView)),
+                const SizedBox(width: 12),
+                _ABtn(icon: on ? Icons.pause_circle_outline_rounded : Icons.play_circle_outline_rounded,
+                    color: on ? _muted : Colors.green[600]!, onTap: onToggle),
+                const SizedBox(width: 8),
+                _ABtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, onTap: onDelete),
+              ]),
+            ]),
+          ),
+        ]),
+      ),
     );
   }
 }
@@ -473,14 +514,66 @@ class _ABtn extends StatelessWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onTap;
-  const _ABtn({required this.icon, required this.color, required this.onTap});
+  final String? tooltip;
+  const _ABtn({required this.icon, required this.color, required this.onTap, this.tooltip});
+
+  @override
+  Widget build(BuildContext context) {
+    final btn = InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 18, color: color),
+      ),
+    );
+    if (tooltip != null) return Tooltip(message: tooltip!, child: btn);
+    return btn;
+  }
+}
+
+class _ActionBtn extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+  const _ActionBtn({required this.label, required this.icon, required this.color, required this.onTap});
 
   @override
   Widget build(BuildContext context) => InkWell(
     onTap: onTap,
-    borderRadius: BorderRadius.circular(8),
-    child: Padding(padding: const EdgeInsets.all(6), child: Icon(icon, size: 20, color: color)),
+    borderRadius: BorderRadius.circular(10),
+    child: Container(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(10),
+        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))],
+      ),
+      child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+        Icon(icon, color: Colors.white, size: 16),
+        const SizedBox(width: 8),
+        Text(label, style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13)),
+      ]),
+    ),
   );
+}
+
+class _FeatureIcon extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _FeatureIcon({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
+    Icon(icon, size: 16, color: const Color(0xFF9CA3AF)),
+    const SizedBox(width: 4),
+    Text(label, style: GoogleFonts.inter(fontSize: 12, color: const Color(0xFF6B7280))),
+  ]);
 }
 
 class _StatusBadge extends StatelessWidget {
@@ -497,8 +590,8 @@ class _StatusBadge extends StatelessWidget {
     child: Row(mainAxisSize: MainAxisSize.min, children: [
       Container(width: 5, height: 5, decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle)),
       const SizedBox(width: 4),
-      Text(isActive ? 'Active' : 'Paused',
-          style: GoogleFonts.inter(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+      Text(isActive ? 'Active' : 'Pending/Paused',
+          style: GoogleFonts.inter(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.3)),
     ]),
   );
 }
@@ -519,9 +612,9 @@ class _ConfirmDialog extends StatelessWidget {
     title: Row(children: [
       Icon(icon, color: iconColor, size: 22),
       const SizedBox(width: 10),
-      Expanded(child: Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16, color: const Color(0xFF1C1F26)))),
+      Expanded(child: Text(title, style: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 16, color: _ink))),
     ]),
-    content: Text(body, style: GoogleFonts.inter(fontSize: 13, color: const Color(0xFF6B7280), height: 1.5)),
+    content: Text(body, style: GoogleFonts.inter(fontSize: 13, color: _muted, height: 1.5)),
     actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
     actions: [
       TextButton(
@@ -556,7 +649,7 @@ class _ErrorView extends StatelessWidget {
         const SizedBox(height: 20),
         ElevatedButton.icon(
           onPressed: onRetry,
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4F6AF5), elevation: 0,
+          style: ElevatedButton.styleFrom(backgroundColor: _accent, elevation: 0,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))),
           icon: const Icon(Icons.refresh_rounded, color: Colors.white, size: 16),
           label: Text('Retry', style: GoogleFonts.inter(color: Colors.white, fontWeight: FontWeight.w600)),

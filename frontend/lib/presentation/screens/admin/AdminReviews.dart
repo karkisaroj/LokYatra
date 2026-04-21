@@ -8,8 +8,15 @@ import '../../state_management/Bloc/review/review_bloc.dart';
 import '../../state_management/Bloc/review/review_event.dart';
 import '../../state_management/Bloc/review/review_state.dart';
 
-class Reviews extends StatelessWidget {
-  const Reviews({super.key});
+const _ink    = Color(0xFF0F172A);
+const _muted  = Color(0xFF64748B);
+const _accent = Color(0xFF334155);
+const _bg     = Color(0xFFF8FAFC);
+const _border = Color(0xFFE2E8F0);
+const _gold   = Color(0xFFF59E0B);
+
+class AdminReviews extends StatelessWidget {
+  const AdminReviews({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +35,6 @@ class _ReviewsContent extends StatefulWidget {
 }
 
 class _ReviewsContentState extends State<_ReviewsContent> {
-  static const _dark       = Color(0xFF2D1B10);
-  static const _terracotta = Color(0xFFCD6E4E);
-  static const _gold       = Color(0xFFC7A26B);
 
   String _typeFilter  = 'all';
   int?   _ratingFilter;
@@ -43,7 +47,7 @@ class _ReviewsContentState extends State<_ReviewsContent> {
       listener: (context, state) {
         if (state is ReviewError) {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(state.message, style: GoogleFonts.dmSans()),
+            content: Text(state.message, style: GoogleFonts.inter()),
             backgroundColor: Colors.red[700],
             behavior: SnackBarBehavior.floating,
           ));
@@ -55,17 +59,17 @@ class _ReviewsContentState extends State<_ReviewsContent> {
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
 
           Container(
-            color: Colors.white,
+            color: _bg,
             padding: isWeb
                 ? const EdgeInsets.fromLTRB(24, 20, 24, 16)
                 : EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 12.h),
             child: isWeb
                 ? Row(children: [
               Text('Reviews',
-                  style: GoogleFonts.playfairDisplay(
+                  style: GoogleFonts.inter(
                       fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: _dark)),
+                      fontWeight: FontWeight.w800,
+                      color: _ink)),
               const Spacer(),
               _TypeFilter(
                 value: _typeFilter,
@@ -91,10 +95,10 @@ class _ReviewsContentState extends State<_ReviewsContent> {
             ])
                 : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('Reviews',
-                  style: GoogleFonts.playfairDisplay(
+                  style: GoogleFonts.inter(
                       fontSize: 20.sp,
-                      fontWeight: FontWeight.bold,
-                      color: _dark)),
+                      fontWeight: FontWeight.w800,
+                      color: _ink)),
               SizedBox(height: 12.h),
               Row(children: [
                 Expanded(
@@ -124,11 +128,11 @@ class _ReviewsContentState extends State<_ReviewsContent> {
             ]),
           ),
 
-          Divider(height: 1, color: Colors.grey.shade200),
+          Divider(height: 1, color: _border),
 
           if (state is AllReviewsLoaded) ...[
             Container(
-              color: Colors.white,
+              color: _bg,
               padding: isWeb
                   ? const EdgeInsets.fromLTRB(24, 12, 1195, 16)
                   : EdgeInsets.fromLTRB(16.w, 10.h, 16.w, 14.h),
@@ -139,12 +143,7 @@ class _ReviewsContentState extends State<_ReviewsContent> {
                     'Homestay',
                     '${reviews.where((r) => r.homestayId != null).length}',
                     Icons.home_outlined,
-                    _terracotta),
-                _StatChip(
-                    'Site',
-                    '${reviews.where((r) => r.siteId != null).length}',
-                    Icons.temple_hindu_outlined,
-                    const Color(0xFF4A707A)),
+                    _accent),
                 if (reviews.isNotEmpty)
                   _StatChip(
                       'Avg Rating',
@@ -155,7 +154,7 @@ class _ReviewsContentState extends State<_ReviewsContent> {
                       _gold),
               ]),
             ),
-            Divider(height: 1, color: Colors.grey.shade100),
+            Divider(height: 1, color: _border),
           ],
 
           Expanded(
@@ -170,8 +169,8 @@ class _ReviewsContentState extends State<_ReviewsContent> {
                           size: 48, color: Colors.grey[300]),
                       const SizedBox(height: 12),
                       Text('No reviews found',
-                          style: GoogleFonts.dmSans(
-                              color: Colors.grey[400], fontSize: 15)),
+                          style: GoogleFonts.inter(
+                              color: _muted, fontSize: 15)),
                     ]))
                 : isWeb
                 ? _WebTable(reviews: reviews)
@@ -187,8 +186,6 @@ class _WebTable extends StatelessWidget {
   final List<Review> reviews;
   const _WebTable({required this.reviews});
 
-  static const _dark = Color(0xFF2D1B10);
-
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -198,7 +195,7 @@ class _WebTable extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey.shade200),
+          border: Border.all(color: _border),
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
@@ -209,8 +206,7 @@ class _WebTable extends StatelessWidget {
                 minWidth: MediaQuery.of(context).size.width - 48,
               ),
               child: DataTable(
-                headingRowColor:
-                WidgetStateProperty.all(Colors.grey.shade50),
+                headingRowColor: WidgetStateProperty.all(_bg),
                 dataRowMinHeight: 60,
                 dataRowMaxHeight: 80,
                 columns: [
@@ -224,10 +220,10 @@ class _WebTable extends StatelessWidget {
                 ]
                     .map((h) => DataColumn(
                   label: Text(h,
-                      style: GoogleFonts.dmSans(
+                      style: GoogleFonts.inter(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
-                          color: Colors.grey[600])),
+                          color: _muted)),
                 ))
                     .toList(),
                 rows: reviews.map((r) {
@@ -243,10 +239,10 @@ class _WebTable extends StatelessWidget {
                               : (r.siteName ?? '—'),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.dmSans(
+                          style: GoogleFonts.inter(
                               fontSize: 13,
-                              color: _dark,
-                              fontWeight: FontWeight.w500),
+                              color: _ink,
+                              fontWeight: FontWeight.w600),
                         ),
                       ),
                     ),
@@ -255,20 +251,16 @@ class _WebTable extends StatelessWidget {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 4),
                         decoration: BoxDecoration(
-                          color: (isHomestay
-                              ? const Color(0xFFCD6E4E)
-                              : const Color(0xFF4A707A))
+                          color: (isHomestay ? _accent : _muted)
                               .withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
                           isHomestay ? 'Homestay' : 'Site',
-                          style: GoogleFonts.dmSans(
+                          style: GoogleFonts.inter(
                               fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: isHomestay
-                                  ? const Color(0xFFCD6E4E)
-                                  : const Color(0xFF4A707A)),
+                              color: isHomestay ? _accent : _muted),
                         ),
                       ),
                     ),
@@ -280,15 +272,15 @@ class _WebTable extends StatelessWidget {
                           r.comment ?? '—',
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.dmSans(
-                              fontSize: 12, color: Colors.grey[600]),
+                          style: GoogleFonts.inter(
+                              fontSize: 12, color: _muted),
                         ),
                       ),
                     ),
                     DataCell(Text(
                       _fmtDate(r.createdAt),
-                      style: GoogleFonts.dmSans(
-                          fontSize: 12, color: Colors.grey[500]),
+                      style: GoogleFonts.inter(
+                          fontSize: 12, color: _muted),
                     )),
                     DataCell(_DeleteButton(review: r)),
                   ]);
@@ -337,7 +329,7 @@ class _MobileReviewCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14.r),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: _border),
         boxShadow: [
           BoxShadow(
               color: Colors.black.withValues(alpha: 0.03),
@@ -359,20 +351,16 @@ class _MobileReviewCard extends StatelessWidget {
             padding:
             EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
             decoration: BoxDecoration(
-              color: (isHomestay
-                  ? const Color(0xFFCD6E4E)
-                  : const Color(0xFF4A707A))
+              color: (isHomestay ? _accent : _muted)
                   .withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(6.r),
             ),
             child: Text(
               isHomestay ? 'Homestay' : 'Site',
-              style: GoogleFonts.dmSans(
+              style: GoogleFonts.inter(
                   fontSize: 10.sp,
                   fontWeight: FontWeight.bold,
-                  color: isHomestay
-                      ? const Color(0xFFCD6E4E)
-                      : const Color(0xFF4A707A)),
+                  color: isHomestay ? _accent : _muted),
             ),
           ),
           SizedBox(width: 8.w),
@@ -383,8 +371,8 @@ class _MobileReviewCard extends StatelessWidget {
                   : (review.siteName ?? ''),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: GoogleFonts.dmSans(
-                  fontSize: 12.sp, color: Colors.grey[600]),
+              style: GoogleFonts.inter(
+                  fontSize: 12.sp, color: _muted),
             ),
           ),
         ]),
@@ -394,9 +382,9 @@ class _MobileReviewCard extends StatelessWidget {
             review.comment!,
             maxLines: 3,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.dmSans(
+            style: GoogleFonts.inter(
                 fontSize: 13.sp,
-                color: Colors.grey[700],
+                color: _muted,
                 height: 1.5),
           ),
         ],
@@ -419,7 +407,7 @@ class _TouristCell extends StatelessWidget {
             imageUrl: review.touristImage,
             width: 32,
             height: 32,
-            borderRadiusValue: 16, // Circular
+            borderRadiusValue: 16,
             fit: BoxFit.cover,
           ),
           if (!hasImage)
@@ -429,10 +417,10 @@ class _TouristCell extends StatelessWidget {
                   review.touristName.isNotEmpty
                       ? review.touristName[0].toUpperCase()
                       : '?',
-                  style: GoogleFonts.dmSans(
+                   style: GoogleFonts.inter(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF2D1B10)),
+                      color: _ink),
                 ),
               ),
             ),
@@ -446,10 +434,10 @@ class _TouristCell extends StatelessWidget {
             review.touristName,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.dmSans(
+            style: GoogleFonts.inter(
                 fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: const Color(0xFF2D1B10)),
+                fontWeight: FontWeight.w600,
+                color: _ink),
           ),
         ),
       ),
@@ -470,7 +458,7 @@ class _StarRating extends StatelessWidget {
             (i) => Icon(
           i < rating ? Icons.star_rounded : Icons.star_outline_rounded,
           size: 14,
-          color: const Color(0xFFC7A26B),
+          color: _gold,
         ),
       ),
     );
@@ -498,15 +486,15 @@ class _DeleteButton extends StatelessWidget {
         shape:
         RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
         title: Text('Delete Review?',
-            style: GoogleFonts.playfairDisplay(
-                fontWeight: FontWeight.bold)),
+            style: GoogleFonts.inter(
+                fontWeight: FontWeight.w800, color: _ink)),
         content: Text('This cannot be undone.',
-            style: GoogleFonts.dmSans(color: Colors.grey[600])),
+            style: GoogleFonts.inter(color: _muted)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text('Cancel',
-                style: GoogleFonts.dmSans(color: Colors.grey[600])),
+                style: GoogleFonts.inter(color: _muted)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -516,7 +504,7 @@ class _DeleteButton extends StatelessWidget {
             style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red[700], elevation: 0),
             child: Text('Delete',
-                style: GoogleFonts.dmSans(
+                style: GoogleFonts.inter(
                     color: Colors.white,
                     fontWeight: FontWeight.bold)),
           ),
@@ -537,7 +525,7 @@ class _TypeFilter extends StatelessWidget {
       padding:
       const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: _border),
         borderRadius: BorderRadius.circular(10),
         color: Colors.white,
       ),
@@ -545,8 +533,8 @@ class _TypeFilter extends StatelessWidget {
         child: DropdownButton<String>(
           value: value,
           isDense: true,
-          style: GoogleFonts.dmSans(
-              fontSize: 13, color: const Color(0xFF2D1B10)),
+          style: GoogleFonts.inter(
+              fontSize: 13, color: _ink),
           items: const [
             DropdownMenuItem(value: 'all', child: Text('All Types')),
             DropdownMenuItem(
@@ -625,10 +613,10 @@ class _StatChip extends StatelessWidget {
         Icon(icon, size: 15, color: color),
         const SizedBox(width: 6),
         Text('$label: ',
-            style: GoogleFonts.dmSans(
-                fontSize: 12, color: Colors.grey[600])),
+            style: GoogleFonts.inter(
+                fontSize: 12, color: _muted)),
         Text(value,
-            style: GoogleFonts.dmSans(
+            style: GoogleFonts.inter(
                 fontSize: 13,
                 fontWeight: FontWeight.bold,
                 color: color)),

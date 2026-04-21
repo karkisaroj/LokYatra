@@ -5,6 +5,8 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/user/user_e
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/user/user_state.dart';
 import 'package:lokyatra_frontend/data/models/user.dart';
 import 'package:lokyatra_frontend/core/services/image_proxy.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class UserManagementPage extends StatefulWidget {
   final ValueNotifier<String?> subtitleNotifier;
@@ -95,39 +97,54 @@ class _UserManagementPageState extends State<UserManagementPage>
 
           return Column(children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: 'Search by name or email…',
-                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                onChanged: (v) => setState(() => _searchQuery = v),
-              ),
-            ),
-
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 4)),
+                  ],
+                ),
+                child: TextField(
+                  style: GoogleFonts.inter(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Search users by name or email...',
+                    hintStyle: GoogleFonts.inter(color: const Color(0xFF9CA3AF)),
+                    prefixIcon: const Icon(Icons.search_rounded, size: 20, color: Color(0xFF6B7280)),
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                  ),
+                  onChanged: (v) => setState(() => _searchQuery = v),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              child: Container(
+                height: 48,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: TabBar(
                   controller: _tabController,
-                  labelColor: Colors.grey,
-                  unselectedLabelColor: Colors.grey.shade500,
-                  indicatorSize: TabBarIndicatorSize.tab,
-                  dividerColor: Colors.transparent,
+                  labelColor: const Color(0xFF1F2937),
+                  unselectedLabelColor: const Color(0xFF6B7280),
+                  labelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w700),
+                  unselectedLabelStyle: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w500),
+                  indicator: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+                    ],
+                  ),
                   tabs: _roles.map((r) {
-                    final label = r == 'All'
-                        ? 'All'
-                        : '${r[0].toUpperCase()}${r.substring(1)}s';
+                    final label = r == 'All' ? 'All' : '${r[0].toUpperCase()}${r.substring(1)}s';
                     return Tab(text: label);
                   }).toList(),
                 ),
@@ -145,9 +162,12 @@ class _UserManagementPageState extends State<UserManagementPage>
                   itemCount: filtered.length,
                   separatorBuilder: (_, _) =>
                   const SizedBox(height: 10),
-                  itemBuilder: (ctx, i) => _UserCard(
-                    user: filtered[i],
-                    onDelete: () => _confirmDelete(ctx, filtered[i]),
+                  itemBuilder: (ctx, i) => FadeInLeft(
+                    delay: Duration(milliseconds: i * 30),
+                    child: _UserCard(
+                      user: filtered[i],
+                      onDelete: () => _confirmDelete(ctx, filtered[i]),
+                    ),
                   ),
                 ),
               ),
@@ -317,15 +337,15 @@ class _Stat extends StatelessWidget {
   Widget build(BuildContext context) => Expanded(
     child: Column(mainAxisSize: MainAxisSize.min, children: [
       Text('$count',
-          style: TextStyle(
+          style: GoogleFonts.inter(
               color: color,
               fontSize: 22,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w800,
               height: 1.1)),
-      const SizedBox(height: 2),
+      const SizedBox(height: 4),
       Text(label,
-          style: const TextStyle(
-              color: Colors.white60, fontSize: 10.5)),
+          style: GoogleFonts.inter(
+              color: Colors.white70, fontSize: 10, fontWeight: FontWeight.w600, letterSpacing: 0.5)),
     ]),
   );
 }
@@ -423,10 +443,10 @@ class _UserCard extends StatelessWidget {
                       Expanded(
                         child: Text(
                           user.name,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: Color(0xFF1A1A2E)),
+                          style: GoogleFonts.inter(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 16,
+                              color: const Color(0xFF1F2937)),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -498,12 +518,12 @@ class _UserCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Text(
                           isActive ? 'Active' : 'Inactive',
-                          style: TextStyle(
+                          style: GoogleFonts.inter(
                               fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                              fontWeight: FontWeight.w700,
                               color: isActive
-                                  ? Colors.green.shade700
-                                  : Colors.grey.shade600),
+                                  ? const Color(0xFF166534)
+                                  : const Color(0xFF4B5563)),
                         ),
                       ]),
                     ),
@@ -575,11 +595,12 @@ class _InfoRow extends StatelessWidget {
     Expanded(
       child: Text(
         text,
-        style: TextStyle(
-            fontSize: 12,
+        style: GoogleFonts.inter(
+            fontSize: 13,
             color: faint
-                ? Colors.grey.shade400
-                : Colors.grey.shade600,
+                ? const Color(0xFF9CA3AF)
+                : const Color(0xFF4B5563),
+            fontWeight: FontWeight.w500,
             fontStyle:
             faint ? FontStyle.italic : FontStyle.normal),
         overflow: TextOverflow.ellipsis,

@@ -15,7 +15,7 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
 
-  // Text controllers - initialized with existing story data
+
   late final _titleController = TextEditingController(text: (widget.story['title'] ?? '').toString());
   late final _typeController = TextEditingController(text: (widget.story['storyType'] ?? '').toString());
   late final _readTimeController = TextEditingController(text: (widget.story['estimatedReadTimeMinutes'] ?? 5).toString());
@@ -23,11 +23,11 @@ class _StoryEditDialogState extends State<StoryEditDialog> {
   late final _historicalController = TextEditingController(text: (widget.story['historicalContext'] ?? '').toString());
   late final _culturalController = TextEditingController(text: (widget.story['culturalSignificance'] ?? '').toString());
 
-  // Images
+
   final List<PlatformFile> _newFiles = [];
   late final List<String> _existingImageUrls = _getExistingImageUrls();
 
-  //Gets the existing image URLs from story data using a simple loop
+
   List<String> _getExistingImageUrls() {
     List<String> urls = [];
     if (widget.story['imageUrls'] != null && widget.story['imageUrls'] is List) {

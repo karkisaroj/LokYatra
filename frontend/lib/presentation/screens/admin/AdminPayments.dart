@@ -5,19 +5,19 @@ import '../../state_management/Bloc/Booking/booking_bloc.dart';
 import '../../state_management/Bloc/Booking/booking_event.dart';
 import '../../state_management/Bloc/Booking/booking_state.dart';
 
-class Payments extends StatefulWidget {
-  const Payments({super.key});
+class AdminPayments extends StatefulWidget {
+  const AdminPayments({super.key});
   @override
-  State<Payments> createState() => _PaymentsState();
+  State<AdminPayments> createState() => _AdminPaymentsState();
 }
 
-class _PaymentsState extends State<Payments> {
+class _AdminPaymentsState extends State<AdminPayments> {
   static const _slate      = Color(0xFF3D5A80);
   static const _terracotta = Color(0xFFCD6E4E);
   static const _bg         = Color(0xFFF4F6F9);
 
-  String _filter = 'All'; // All | Khalti | Cash
-  String _status = 'All'; // All | Completed | Pending
+  String _filter = 'All';
+  String _status = 'All';
   String _search = '';
 
   Map<String, dynamic> _inner(Map<String, dynamic> b) =>
@@ -109,12 +109,12 @@ class _PaymentsState extends State<Payments> {
               }),
             ),
 
-            // Filters
+
             Container(
               color: Colors.white,
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
               child: Column(children: [
-                // Search
+
                 SizedBox(
                   height: 42,
                   child: TextField(
@@ -132,7 +132,7 @@ class _PaymentsState extends State<Payments> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                // Chips
+
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(children: [
@@ -159,7 +159,7 @@ class _PaymentsState extends State<Payments> {
             ),
             const Divider(height: 1),
 
-            // Result count + refresh
+
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Row(children: [
@@ -173,7 +173,7 @@ class _PaymentsState extends State<Payments> {
               ]),
             ),
 
-            // List
+
             Expanded(
               child: filtered.isEmpty
                   ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -271,7 +271,7 @@ class _PaymentCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          // Header row
+
           Row(children: [
             Icon(Icons.tag_rounded, size: 12, color: Colors.grey[400]),
             const SizedBox(width: 3),
@@ -289,7 +289,7 @@ class _PaymentCard extends StatelessWidget {
           Divider(height: 1, color: Colors.grey.shade100),
           const SizedBox(height: 10),
 
-          // Tourist + Homestay
+
           Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(tourist, maxLines: 1, overflow: TextOverflow.ellipsis,

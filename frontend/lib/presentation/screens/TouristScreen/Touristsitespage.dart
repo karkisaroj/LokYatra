@@ -15,7 +15,6 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites
 const _ink    = Color(0xFF2D1B10);
 const _accent = Color(0xFFCD6E4E);
 const _teal   = Color(0xFF2D6A6A);
-const _cream  = Color(0xFFFAF7F2);
 const _border = Color(0xFFE8DDD5);
 
 class TouristSitesPage extends StatefulWidget {

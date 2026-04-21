@@ -66,3 +66,5 @@ class AuthAuthenticated extends AuthState {
 }
 
 class LogoutSuccess extends AuthState{}
+
+class AuthUnauthenticated extends AuthState {}

@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../../data/datasources/quiz_remote_datasource.dart';
 
-class TouristAddQuizzes extends StatefulWidget {
-  const TouristAddQuizzes({super.key});
+class AdminQuizzesPage extends StatefulWidget {
+  const AdminQuizzesPage({super.key});
   @override
-  State<TouristAddQuizzes> createState() => _TouristAddQuizzesState();
+  State<AdminQuizzesPage> createState() => _AdminQuizzesPageState();
 }
 
-class _TouristAddQuizzesState extends State<TouristAddQuizzes> {
+class _AdminQuizzesPageState extends State<AdminQuizzesPage> {
   static const _slate = Color(0xFF3D5A80);
   static const _bg    = Color(0xFFF4F6F9);
 

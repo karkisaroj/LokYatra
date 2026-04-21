@@ -5,9 +5,16 @@ import 'package:lokyatra_frontend/core/services/image_proxy.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_state.dart';
+import 'package:animate_do/animate_do.dart';
 import '../../../data/models/Site.dart';
 import 'SiteAddDialog.dart';
-import 'SiteDetailPage.dart';
+import 'AdminSiteDetail.dart';
+
+const _accent     = Color(0xFF6366F1);
+const _ink        = Color(0xFF0F172A);
+const _muted      = Color(0xFF64748B);
+const _bg         = Color(0xFFF8FAFC);
+const _terracotta = Color(0xFFE2725B);
 
 class AdminSites extends StatefulWidget {
   const AdminSites({super.key});
@@ -16,10 +23,6 @@ class AdminSites extends StatefulWidget {
 }
 
 class _AdminSitesState extends State<AdminSites> {
-  static const _accent = Color(0xFF4F6AF5);
-  static const _ink    = Color(0xFF1C1F26);
-  static const _muted  = Color(0xFF6B7280);
-  static const _bg     = Color(0xFFF7F8FC);
 
   final _searchCtrl = TextEditingController();
   String _search    = '';
@@ -157,7 +160,10 @@ class _AdminSitesState extends State<AdminSites> {
               }
               return Padding(
                 padding: const EdgeInsets.all(16),
-                child: isWide ? _webTable(sites) : _mobileList(sites),
+                child: ZoomIn(
+                  duration: const Duration(milliseconds: 400),
+                  child: isWide ? _webTable(sites) : _mobileList(sites),
+                ),
               );
             },
           ),
@@ -241,10 +247,10 @@ class _AdminSitesState extends State<AdminSites> {
           prefixIcon: const Icon(Icons.search, size: 18, color: Color(0xFF9CA3AF)),
           filled: true,
           fillColor: _bg,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
-          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFFE8EAF0))),
-          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: _accent)),
-          contentPadding: const EdgeInsets.symmetric(vertical: 10),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFFE2E8F0))),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _accent, width: 1.5)),
+          contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
         ),
       ),
     );
@@ -261,9 +267,9 @@ class _AdminSitesState extends State<AdminSites> {
           backgroundColor: _accent,
           foregroundColor: Colors.white,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w600, fontSize: 13),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: GoogleFonts.inter(fontWeight: FontWeight.w700, fontSize: 13),
         ),
       ),
     );
@@ -273,25 +279,25 @@ class _AdminSitesState extends State<AdminSites> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE8EAF0)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 3))],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 24, offset: const Offset(0, 8))
+        ],
       ),
       child: Column(children: [
         Container(
           decoration: const BoxDecoration(
-            color: Color(0xFFF9FAFB),
-            borderRadius: BorderRadius.vertical(top: Radius.circular(14)),
-            border: Border(bottom: BorderSide(color: Color(0xFFE8EAF0))),
+            color: Color(0xFFF1F5F9),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(children: [
             const SizedBox(width: 72),
-            const SizedBox(width: 12),
-            Expanded(flex: 3, child: Text('Name',     style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _muted))),
-            Expanded(flex: 2, child: Text('Category', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _muted))),
-            Expanded(flex: 2, child: Text('District', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: _muted))),
-            const SizedBox(width: 110, child: Text('Actions', textAlign: TextAlign.center)),
+            const SizedBox(width: 16),
+            Expanded(flex: 3, child: Text('SITE NAME',     style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: _muted))),
+            Expanded(flex: 2, child: Text('CATEGORY', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: _muted))),
+            Expanded(flex: 2, child: Text('DISTRICT', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: _muted))),
+            SizedBox(width: 110, child: Text('ACTIONS', textAlign: TextAlign.center, style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.5, color: _muted))),
           ]),
         ),
         Expanded(
@@ -302,40 +308,62 @@ class _AdminSitesState extends State<AdminSites> {
               final site  = sites[i];
               final img   = getFirstImageUrl(site.imageUrls);
               final siteId = int.tryParse(site.id.toString()) ?? 0;
-              return RepaintBoundary(
-                child: InkWell(
-                  onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                    child: Row(children: [
-                      ProxyImage(imageUrl: img, width: 72, height: 52, borderRadiusValue: 8, thumb: true),
-                      const SizedBox(width: 12),
-                      Expanded(flex: 3, child: Row(children: [
-                        Flexible(child: Text(site.name ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(fontSize: 13, fontWeight: FontWeight.w600, color: _ink))),
-                        if (site.isUNESCO == true) ...[
-                          const SizedBox(width: 6),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(4)),
-                            child: Text('UNESCO', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: const Color(0xFF059669))),
-                          ),
-                        ],
-                      ])),
-                      Expanded(flex: 2, child: Text(site.category ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(fontSize: 13, color: _muted))),
-                      Expanded(flex: 2, child: Text(site.district ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(fontSize: 13, color: _muted))),
-                      SizedBox(
-                        width: 110,
-                        child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          _IBtn(icon: Icons.remove_red_eye_outlined, color: _accent, tooltip: 'View',
-                              onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site)))),
-                          _IBtn(icon: Icons.edit_outlined, color: _muted, tooltip: 'Edit', onTap: () => _editSite(site)),
-                          _IBtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, tooltip: 'Delete', onTap: () => _deleteSite(siteId)),
-                        ]),
-                      ),
-                    ]),
+              return FadeInLeft(
+                delay: Duration(milliseconds: i * 50),
+                child: RepaintBoundary(
+                  child: InkWell(
+                    onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      child: Row(children: [
+                        Hero(
+                          tag: 'site-$siteId',
+                          child: ProxyImage(imageUrl: img, width: 72, height: 52, borderRadiusValue: 12, thumb: true),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(flex: 3, child: Row(children: [
+                          Flexible(child: Text(site.name ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w700, color: _ink))),
+                          if (site.isUNESCO == true) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(colors: [Color(0xFFECFDF5), Color(0xFFD1FAE5)]),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.2)),
+                              ),
+                              child: Text('UNESCO', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w800, color: const Color(0xFF047857))),
+                            ),
+                          ],
+                        ])),
+                        Expanded(flex: 2, child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(color: _bg, borderRadius: BorderRadius.circular(6)),
+                          child: Text(site.category ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w500, color: _muted)),
+                        )),
+                        Expanded(flex: 2, child: Padding(
+                          padding: const EdgeInsets.only(left: 12),
+                          child: Row(children: [
+                            const Icon(Icons.location_on_rounded, size: 14, color: _terracotta),
+                            const SizedBox(width: 6),
+                            Expanded(child: Text(site.district ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
+                                style: GoogleFonts.inter(fontSize: 14, color: _muted, fontWeight: FontWeight.w500))),
+                          ]),
+                        )),
+                        SizedBox(
+                          width: 110,
+                          child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                            _IBtn(icon: Icons.remove_red_eye_outlined, tooltip: 'View',
+                                onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site)))),
+                            _IBtn(icon: Icons.edit_outlined, tooltip: 'Edit', onTap: () => _editSite(site)),
+                            _IBtn(icon: Icons.delete_outline, color: Colors.red[400]!, tooltip: 'Delete', onTap: () => _deleteSite(siteId)),
+                          ]),
+                        ),
+                      ]),
+                    ),
                   ),
                 ),
               );
@@ -349,50 +377,64 @@ class _AdminSitesState extends State<AdminSites> {
   Widget _mobileList(List<CulturalSite> sites) {
     return ListView.separated(
       itemCount: sites.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (ctx, i) {
         final site    = sites[i];
         final img     = getFirstImageUrl(site.imageUrls);
         final siteId  = int.tryParse(site.id.toString()) ?? 0;
         final subtitle = [site.category ?? '', site.district ?? ''].where((v) => v.isNotEmpty).join(' · ');
-        return RepaintBoundary(
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: const Color(0xFFE8EAF0)),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 6, offset: const Offset(0, 2))],
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))),
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Row(children: [
-                  ProxyImage(imageUrl: img, width: 60, height: 60, borderRadiusValue: 8, thumb: true),
-                  const SizedBox(width: 12),
-                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(children: [
-                      Flexible(child: Text(site.name ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
-                          style: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, color: _ink))),
-                      if (site.isUNESCO == true) ...[
-                        const SizedBox(width: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                          decoration: BoxDecoration(color: const Color(0xFFD1FAE5), borderRadius: BorderRadius.circular(4)),
-                          child: Text('UNESCO', style: GoogleFonts.inter(fontSize: 9, fontWeight: FontWeight.w700, color: const Color(0xFF059669))),
-                        ),
-                      ],
+        return FadeInUp(
+          delay: Duration(milliseconds: i * 50),
+          child: RepaintBoundary(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFFE8EAF0)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 12, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: InkWell(
+                  onTap: () => Navigator.push(ctx, MaterialPageRoute(builder: (_) => SiteDetailPage(site: site))),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Row(children: [
+                      Hero(
+                        tag: 'site-col-$siteId',
+                        child: ProxyImage(imageUrl: img, width: 64, height: 64, borderRadiusValue: 12, thumb: true),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Row(children: [
+                          Flexible(child: Text(site.name ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w700, color: _ink))),
+                          if (site.isUNESCO == true) ...[
+                            const SizedBox(width: 6),
+                            const Icon(Icons.verified, size: 14, color: Color(0xFF059669)),
+                          ],
+                        ]),
+                        const SizedBox(height: 4),
+                        Row(children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(color: _bg, borderRadius: BorderRadius.circular(4)),
+                            child: Text(site.category ?? '—', style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: _muted)),
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(child: Text(site.district ?? '—', maxLines: 1, overflow: TextOverflow.ellipsis,
+                              style: GoogleFonts.inter(fontSize: 12, color: _muted))),
+                        ]),
+                      ])),
+                      Row(mainAxisSize: MainAxisSize.min, children: [
+                        _IBtn(icon: Icons.edit_outlined, tooltip: 'Edit',   onTap: () => _editSite(site)),
+                        _IBtn(icon: Icons.delete_outline, color: Colors.red[400]!, tooltip: 'Delete', onTap: () => _deleteSite(siteId)),
+                      ]),
                     ]),
-                    const SizedBox(height: 3),
-                    Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(fontSize: 12, color: _muted)),
-                  ])),
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    _IBtn(icon: Icons.edit_outlined,          color: _muted,         tooltip: 'Edit',   onTap: () => _editSite(site)),
-                    _IBtn(icon: Icons.delete_outline_rounded, color: Colors.red[400]!, tooltip: 'Delete', onTap: () => _deleteSite(siteId)),
-                  ]),
-                ]),
+                  ),
+                ),
               ),
             ),
           ),
@@ -430,10 +472,10 @@ class _Chip extends StatelessWidget {
 
 class _IBtn extends StatelessWidget {
   final IconData icon;
-  final Color color;
   final String tooltip;
   final VoidCallback onTap;
-  const _IBtn({required this.icon, required this.color, required this.tooltip, required this.onTap});
+  final Color color;
+  const _IBtn({required this.icon, required this.tooltip, required this.onTap, this.color = const Color(0xFF555555)});
 
   @override
   Widget build(BuildContext context) => Tooltip(
