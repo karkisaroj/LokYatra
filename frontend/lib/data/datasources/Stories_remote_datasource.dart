@@ -45,10 +45,10 @@ class StoriesRemoteDatasource {
       storiesBasePath,
       data: formData,
       options: Options(
+        contentType: null,
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
-          'Content-Type': null,
         },
         sendTimeout: const Duration(seconds: 120),
         receiveTimeout: const Duration(seconds: 120),
@@ -78,10 +78,10 @@ class StoriesRemoteDatasource {
       '$storiesBasePath/$id',
       data: formData,
       options: Options(
+        contentType: null,
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
-          'Content-Type': null,
         },
         sendTimeout: const Duration(seconds: 120),
         receiveTimeout: const Duration(seconds: 120),

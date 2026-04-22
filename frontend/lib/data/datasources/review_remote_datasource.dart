@@ -8,12 +8,16 @@ class ReviewRemoteDatasource {
     connectTimeout: connectTimeout,
     receiveTimeout: receiveTimeout,
     sendTimeout: sendTimeout,
+    headers: headers, // Use global headers (Accept: application/json)
   ));
 
-  Future<Options> _authOptions() async {
+  Future<Options> _authOptions({String? contentType}) async {
     final token = await SecureStorageService.getAccessToken();
     if (token == null) throw Exception('Not authenticated');
-    return Options(headers: {'Authorization': 'Bearer $token'});
+    return Options(
+      contentType: contentType ?? 'application/json',
+      headers: {'Authorization': 'Bearer $token'},
+    );
   }
   Future<Response> getMyReviews() async {
     final token = await SecureStorageService.getAccessToken();

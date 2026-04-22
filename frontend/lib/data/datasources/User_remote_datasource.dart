@@ -86,11 +86,13 @@ class UserRemoteDatasource {
     return dio.patch(
       'api/User/update-profile',
       data: formData,
-      options: Options(headers: {
-        'Authorization': 'Bearer $token',
-        'Accept': 'application/json',
-        'Content-Type': null,
-      }),
+      options: Options(
+        contentType: null,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      ),
     );
   }
 }

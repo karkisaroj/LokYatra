@@ -14,11 +14,13 @@ class KhaltiRemoteDatasource {
   Future<Options> _authOptions() async {
     final token = await SecureStorageService.getAccessToken();
     if (token == null) throw Exception('Not authenticated');
-    return Options(headers: {
-      'Authorization': 'Bearer $token',
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-    });
+    return Options(
+      contentType: 'application/json',
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Accept': 'application/json',
+      },
+    );
   }
 
   Future<Response> initiatePayment(int bookingId) async =>

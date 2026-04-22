@@ -12,6 +12,7 @@ class SitesRemoteDatasource {
       sendTimeout: sendTimeout,
       headers: headers,
       responseType: ResponseType.json,
+      validateStatus: (status) => status != null && status < 500, // Handle non-server-errors gracefully
     ),
   )..interceptors.add(LogInterceptor(requestBody: true, responseBody: true));
 
@@ -49,10 +50,10 @@ class SitesRemoteDatasource {
       sitesBasePath,
       data: formData,
       options: Options(
+        contentType: null,
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
-          'Content-Type': null, 
         },
         sendTimeout: uploadSendTimeout,
         receiveTimeout: uploadReceiveTimeout,
@@ -86,10 +87,10 @@ class SitesRemoteDatasource {
       '$sitesBasePath/$id',
       data: formData,
       options: Options(
+        contentType: null,
         headers: {
           'Authorization': 'Bearer $token',
           'Accept': 'application/json',
-          'Content-Type': null, // Let Dio set the correct multipart boundary
         },
         sendTimeout: uploadSendTimeout,
         receiveTimeout: uploadReceiveTimeout,

@@ -33,5 +33,4 @@ const String resetPassword = "api/Auth/reset-password";
 
 const Map<String, String> headers = {
   "Accept": "application/json",
-  "Content-Type": "application/json",
 };
