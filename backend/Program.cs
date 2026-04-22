@@ -17,9 +17,36 @@ builder.Services.AddControllers()
         );
         options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
     });
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        document.Info.Title = "LokYatra API";
+        document.Info.Version = "v1";
+        
+        var scheme = new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+        {
+            Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+            Name = "Authorization",
+            In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Enter your JWT token in the format: {your token}"
+        };
+        
+        document.Components ??= new Microsoft.OpenApi.Models.ApiComponents();
+        document.Components.SecuritySchemes.Add("Bearer", scheme);
+        
+        document.SecurityRequirements.Add(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+        {
+            [new Microsoft.OpenApi.Models.OpenApiReference { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" }] = Array.Empty<string>()
+        });
+        
+        return Task.CompletedTask;
+    });
+});
 
-// Railway provides DATABASE_URL as postgresql://user:pass@host:port/db
+// Railway provides DATABASE_URL
 var dbUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
 var connStr = string.IsNullOrEmpty(dbUrl) 
     ? builder.Configuration.GetConnectionString("UserDatabase") ?? ""
