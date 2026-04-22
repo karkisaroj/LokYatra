@@ -34,12 +34,21 @@ builder.Services.AddOpenApi(options =>
             Description = "Enter your JWT token in the format: {your token}"
         };
         
-        document.Components ??= new Microsoft.OpenApi.Models.ApiComponents();
+        document.Components ??= new Microsoft.OpenApi.Models.OpenApiComponents();
         document.Components.SecuritySchemes.Add("Bearer", scheme);
         
         document.SecurityRequirements.Add(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
         {
-            [new Microsoft.OpenApi.Models.OpenApiReference { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" }] = Array.Empty<string>()
+            [
+                new Microsoft.OpenApi.Models.OpenApiSecurityScheme 
+                { 
+                    Reference = new Microsoft.OpenApi.Models.OpenApiReference 
+                    { 
+                        Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, 
+                        Id = "Bearer" 
+                    } 
+                }
+            ] = Array.Empty<string>()
         });
         
         return Task.CompletedTask;
