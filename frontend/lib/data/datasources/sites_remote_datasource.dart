@@ -49,7 +49,11 @@ class SitesRemoteDatasource {
       sitesBasePath,
       data: formData,
       options: Options(
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': null, 
+        },
         sendTimeout: uploadSendTimeout,
         receiveTimeout: uploadReceiveTimeout,
       ),
@@ -82,7 +86,11 @@ class SitesRemoteDatasource {
       '$sitesBasePath/$id',
       data: formData,
       options: Options(
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': null, // Let Dio set the correct multipart boundary
+        },
         sendTimeout: uploadSendTimeout,
         receiveTimeout: uploadReceiveTimeout,
       ),

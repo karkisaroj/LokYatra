@@ -45,7 +45,11 @@ class StoriesRemoteDatasource {
       storiesBasePath,
       data: formData,
       options: Options(
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': null,
+        },
         sendTimeout: const Duration(seconds: 120),
         receiveTimeout: const Duration(seconds: 120),
       ),
@@ -74,7 +78,11 @@ class StoriesRemoteDatasource {
       '$storiesBasePath/$id',
       data: formData,
       options: Options(
-        headers: {'Authorization': 'Bearer $token', 'Accept': 'application/json'},
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+          'Content-Type': null,
+        },
         sendTimeout: const Duration(seconds: 120),
         receiveTimeout: const Duration(seconds: 120),
       ),

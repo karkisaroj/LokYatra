@@ -89,6 +89,7 @@ class UserRemoteDatasource {
       options: Options(headers: {
         'Authorization': 'Bearer $token',
         'Accept': 'application/json',
+        'Content-Type': null,
       }),
     );
   }

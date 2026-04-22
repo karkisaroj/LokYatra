@@ -70,7 +70,10 @@ class HomestaysRemoteDatasource {
     return uploadDio.post(
       'api/Homestays',
       data: formData,
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
+      options: Options(headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': null,
+      }),
       onSendProgress: (sent, total) {
         onSendProgress?.call(sent, total);
         if (total > 0) {
@@ -102,7 +105,10 @@ class HomestaysRemoteDatasource {
     return uploadDio.put(
       'api/Homestays/$id',
       data: formData,
-      options: Options(headers: {'Authorization': 'Bearer $token'}),
+      options: Options(headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': null,
+      }),
       onSendProgress: (sent, total) {
         onSendProgress?.call(sent, total);
         if (total > 0) {
