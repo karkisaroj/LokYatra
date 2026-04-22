@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lokyatra_frontend/data/datasources/sites_remote_datasource.dart';
 import '../../../../core/services/sqlite_service.dart';
-import '../../../../data/models/Site.dart';
+import '../../../../data/models/site.dart';
 import 'sites_event.dart';
 import 'sites_state.dart';
 

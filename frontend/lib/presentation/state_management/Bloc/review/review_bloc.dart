@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../data/datasources/review_remote_datasource.dart';
-import '../../../../data/models/Review.dart';
+import '../../../../data/models/review.dart';
 import 'review_event.dart';
 import 'review_state.dart';
 

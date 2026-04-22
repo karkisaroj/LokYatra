@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../data/datasources/notification_remote_datasource.dart';
-import '../../../../data/models/AppNotification.dart';
+import '../../../../data/models/app_notification.dart';
 import 'notification_event.dart';
 import 'notification_state.dart';
 

@@ -2,11 +2,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lokyatra_frontend/data/models/register.dart';
-import 'package:lokyatra_frontend/presentation/screens/authentication/loginPage.dart';
+import 'package:lokyatra_frontend/presentation/screens/authentication/login_page.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_state.dart';
 import '../../state_management/Bloc/auth/auth_event.dart';
-import '../shared/TermsAndConditionsPage.dart';
+import '../shared/terms_and_conditions_page.dart';
 
 enum UserRole { tourist, owner }
 

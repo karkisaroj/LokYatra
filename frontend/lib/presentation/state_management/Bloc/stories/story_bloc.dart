@@ -1,6 +1,6 @@
 import 'package:bloc/bloc.dart';
-import '../../../../data/datasources/Stories_remote_datasource.dart';
-import '../../../../data/models/Story.dart';
+import '../../../../data/datasources/stories_remote_datasource.dart';
+import '../../../../data/models/story.dart';
 import 'story_event.dart';
 import 'story_state.dart';
 
@@ -42,3 +42,4 @@ class StoryBloc extends Bloc<StoryEvent, StoryState> {
     }
   }
 }
+

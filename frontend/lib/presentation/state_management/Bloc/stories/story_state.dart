@@ -1,4 +1,4 @@
-import '../../../../data/models/Story.dart';
+import '../../../../data/models/story.dart';
 
 abstract class StoryState {}
 

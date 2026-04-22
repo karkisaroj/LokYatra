@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
-import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
+import 'package:lokyatra_frontend/presentation/widgets/Helpers/secure_storage_service.dart';
 
 import '../../core/services/sqlite_service.dart';
 

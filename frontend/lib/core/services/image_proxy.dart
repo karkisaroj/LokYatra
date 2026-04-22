@@ -120,7 +120,7 @@ class ProxyImage extends StatelessWidget {
         if (progress == null) return child;
         return _loading(w, h, progress: progress);
       },
-      errorBuilder: (_, __, ___) => _broken(w, h),
+      errorBuilder: (context, error, stackTrace) => _broken(w, h),
     );
   }
 

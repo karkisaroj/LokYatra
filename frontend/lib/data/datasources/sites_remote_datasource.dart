@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
-import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
+import 'package:lokyatra_frontend/presentation/widgets/Helpers/secure_storage_service.dart';
 
 class SitesRemoteDatasource {
   final Dio _dio = Dio(

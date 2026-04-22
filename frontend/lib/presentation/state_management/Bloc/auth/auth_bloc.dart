@@ -4,7 +4,7 @@ import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
 import 'package:lokyatra_frontend/core/services/sqlite_service.dart';
 import 'package:lokyatra_frontend/data/models/register.dart';
-import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
+import 'package:lokyatra_frontend/presentation/widgets/Helpers/secure_storage_service.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 

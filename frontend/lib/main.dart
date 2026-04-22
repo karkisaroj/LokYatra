@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:lokyatra_frontend/presentation/screens/Onboarding/OnBoarding.dart';
-import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/HomestayListingsPage.dart';
-import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerBookingsPage.dart';
-import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerHome.dart';
-import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/Ownerbalancepage.dart';
-import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/Ownerprofilepage.dart';
-import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/OwnerChangePasswordPage.dart';
-import 'package:lokyatra_frontend/presentation/screens/TouristScreen/TouristProfilePage.dart';
-import 'package:lokyatra_frontend/presentation/screens/TouristScreen/touristHome.dart';
-import 'package:lokyatra_frontend/presentation/screens/admin/AdminPanel.dart';
-import 'package:lokyatra_frontend/presentation/screens/authentication/loginPage.dart';
+import 'package:lokyatra_frontend/presentation/screens/Onboarding/on_boarding.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/homestay_listings_page.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/owner_bookings_page.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/owner_home.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/owner_balance_page.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/owner_profile_page.dart';
+import 'package:lokyatra_frontend/presentation/screens/OwnerScreen/owner_change_password_page.dart';
+import 'package:lokyatra_frontend/presentation/screens/TouristScreen/tourist_profile_page.dart';
+import 'package:lokyatra_frontend/presentation/screens/TouristScreen/tourist_home.dart';
+import 'package:lokyatra_frontend/presentation/screens/admin/admin_panel.dart';
+import 'package:lokyatra_frontend/presentation/screens/authentication/login_page.dart';
 import 'package:lokyatra_frontend/presentation/screens/authentication/register.dart';
 import 'package:lokyatra_frontend/presentation/splash/splash_screen.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/Booking/booking_bloc.dart';
@@ -19,8 +19,8 @@ import 'package:lokyatra_frontend/presentation/state_management/Bloc/Booking/boo
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_state.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/auth/auth_event.dart';
-import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayBloc.dart';
-import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/HomestayEvent.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/homestay_bloc.dart';
+import 'package:lokyatra_frontend/presentation/state_management/Bloc/homestays/homestay_event.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/notification/notification_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_bloc.dart';
 import 'package:lokyatra_frontend/presentation/state_management/Bloc/sites/sites_event.dart';
@@ -105,8 +105,8 @@ class MyAppRunner extends StatelessWidget {
                     context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
                     _navKey.currentState?.pushAndRemoveUntil(
                       PageRouteBuilder(
-                        pageBuilder: (_, __, ___) => const AdminDashboard(),
-                        transitionsBuilder: (_, anim, __, child) =>
+                        pageBuilder: (context, animation, secondaryAnimation) => const AdminDashboard(),
+                        transitionsBuilder: (context, anim, secondaryAnimation, child) =>
                             FadeTransition(opacity: anim, child: child),
                         transitionDuration: const Duration(milliseconds: 250),
                       ),
@@ -144,3 +144,9 @@ class MyAppRunner extends StatelessWidget {
     );
   }
 }
+
+
+
+
+
+

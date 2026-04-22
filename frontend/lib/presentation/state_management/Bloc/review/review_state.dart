@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import '../../../../data/models/Review.dart';
+import '../../../../data/models/review.dart';
 
 abstract class ReviewState extends Equatable {
   const ReviewState();

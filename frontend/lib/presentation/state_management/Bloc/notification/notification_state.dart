@@ -1,4 +1,4 @@
-import '../../../../data/models/AppNotification.dart';
+import '../../../../data/models/app_notification.dart';
 
 abstract class NotificationState {
   const NotificationState();

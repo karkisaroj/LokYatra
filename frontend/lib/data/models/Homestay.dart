@@ -1,5 +1,5 @@
-import 'NearCulturalSite.dart';
-import 'Owner.dart';
+import 'near_cultural_site.dart';
+import 'owner.dart';
 
 class Homestay {
   final int id;
@@ -137,3 +137,5 @@ class Homestay {
     };
   }
 }
+
+

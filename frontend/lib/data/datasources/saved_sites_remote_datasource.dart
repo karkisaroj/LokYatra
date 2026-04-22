@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
-import 'package:lokyatra_frontend/presentation/widgets/Helpers/SecureStorageService.dart';
+import 'package:lokyatra_frontend/presentation/widgets/Helpers/secure_storage_service.dart';
 
 class SavedSitesRemoteDatasource {
   final Dio _dio = Dio(
@@ -31,3 +31,4 @@ class SavedSitesRemoteDatasource {
   Future<Response> checkSaved(int siteId) async =>
       _dio.get('api/SavedSites/$siteId/check', options: await _authOptions());
 }
+
