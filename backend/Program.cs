@@ -24,6 +24,12 @@ builder.Services.AddOpenApi(options =>
         document.Info.Title = "LokYatra API";
         document.Info.Version = "v1";
         
+        // Force HTTPS production URL so Scalar doesn't use HTTP or localhost
+        document.Servers = new List<Microsoft.OpenApi.Models.OpenApiServer> 
+        { 
+            new Microsoft.OpenApi.Models.OpenApiServer { Url = "https://lokyatra-production.up.railway.app" } 
+        };
+        
         var scheme = new Microsoft.OpenApi.Models.OpenApiSecurityScheme
         {
             Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
