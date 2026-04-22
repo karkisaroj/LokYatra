@@ -62,10 +62,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll",
-        policy => policy.SetIsOriginAllowed(_ => true) // More robust for varied local/prod origins
+        policy => policy.SetIsOriginAllowed(_ => true) 
                         .AllowAnyMethod()
                         .AllowAnyHeader()
-                        .WithExposedHeaders("Content-Disposition")); // Helpful for file uploads
+                        .WithExposedHeaders("Content-Disposition"));
 });
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -98,15 +98,19 @@ using (var scope = app.Services.CreateScope())
 }
 Console.WriteLine("[STARTUP] Starting web server...");
 
-// ✅ Ensure UseRouting is called before UseCors if needed
 app.UseRouting();
 app.UseCors("AllowAll");
 
 
+app.MapOpenApi();
+app.MapScalarApiReference();
+
+// Helper redirects for easier access
+app.MapGet("/scalar", () => Results.Redirect("/scalar/v1"));
+app.MapGet("/docs", () => Results.Redirect("/scalar/v1"));
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
-    app.MapScalarApiReference();
 }
 
 app.UseAuthentication();
