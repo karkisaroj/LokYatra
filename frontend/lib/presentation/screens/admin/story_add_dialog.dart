@@ -1,4 +1,5 @@
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -105,128 +106,149 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
       },
       builder: (context, state) {
         final loading = state is StoryLoading;
-        final isWide  = MediaQuery.of(context).size.width > 700;
+        final size    = MediaQuery.of(context).size;
+        final isWide  = size.width > 600;
 
         return Dialog(
           backgroundColor: Colors.white,
+          elevation: 2,
           shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16.r)),
+              borderRadius: BorderRadius.circular(isWide ? 12 : 16.r)),
           insetPadding: EdgeInsets.symmetric(
-            horizontal: isWide ? 60.w : 16.w,
-            vertical:   32.h,
+            horizontal: isWide ? 40 : 16.w,
+            vertical: isWide ? 40 : 32.h,
           ),
           child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: 800.w),
+            constraints: BoxConstraints(
+              maxWidth: isWide ? 700 : 340,
+              maxHeight: size.height * 0.9,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _Header(onClose: () => Navigator.pop(context, false)),
+                _Header(
+                  isWide: isWide,
+                  onClose: () => Navigator.pop(context, false),
+                ),
 
                 Flexible(
                   child: SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(24.w, 0, 24.w, 8.h),
+                    padding: EdgeInsets.fromLTRB(
+                      isWide ? 32 : 24.w,
+                      isWide ? 16 : 0,
+                      isWide ? 32 : 24.w,
+                      isWide ? 24 : 8.h,
+                    ),
                     child: Form(
                       key: _formKey,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _SectionLabel('Basic Information'),
-                          SizedBox(height: 10.h),
+                          _SectionLabel('Basic Information', isWide: isWide),
+                          SizedBox(height: isWide ? 16 : 10.h),
 
                           isWide
                               ? Row(children: [
                             Expanded(
                                 flex: 3,
-                                child: _InputField(
+                                  child: _InputField(
+                                    controller: _title,
+                                    label: 'Story Title',
+                                    required: true,
+                                    isWide: isWide,
+                                  )),
+                              SizedBox(width: isWide ? 16 : 12.w),
+                              Expanded(
+                                  child: _InputField(
+                                    controller: _readMin,
+                                    label: 'Read Time (min)',
+                                    required: true,
+                                    inputType: TextInputType.number,
+                                    isWide: isWide,
+                                  )),
+                            ])
+                                : Column(children: [
+                              _InputField(
                                   controller: _title,
                                   label: 'Story Title',
                                   required: true,
-                                )),
-                            SizedBox(width: 12.w),
-                            Expanded(
-                                child: _InputField(
+                                  isWide: isWide),
+                              SizedBox(height: 12.h),
+                              _InputField(
                                   controller: _readMin,
-                                  label: 'Read Time (min)',
+                                  label: 'Read Time (minutes)',
                                   required: true,
                                   inputType: TextInputType.number,
-                                )),
-                          ])
-                              : Column(children: [
-                            _InputField(
-                                controller: _title,
-                                label: 'Story Title',
-                                required: true),
-                            SizedBox(height: 10.h),
-                            _InputField(
-                                controller: _readMin,
-                                label: 'Read Time (minutes)',
-                                required: true,
-                                inputType: TextInputType.number),
-                          ]),
+                                  isWide: isWide),
+                            ]),
 
-                          SizedBox(height: 10.h),
+                            SizedBox(height: isWide ? 20 : 10.h),
 
-                          _label('Story Type *'),
-                          SizedBox(height: 4.h),
-                          DropdownButtonFormField<String>(
-                            initialValue: _selectedType,
-                            isExpanded: true,
-                            decoration: _inputDecoration('Select story type'),
-                            items: _storyTypes
-                                .map((t) => DropdownMenuItem(
-                              value: t,
-                              child: Text(t,
-                                  style: GoogleFonts.dmSans(
-                                      fontSize: 13.sp)),
-                            ))
-                                .toList(),
-                            onChanged: (v) =>
-                                setState(() => _selectedType = v),
-                            validator: (v) =>
-                            v == null ? 'Please select a type' : null,
-                          ),
+                            _label('Story Type *', isWide),
+                            SizedBox(height: isWide ? 6 : 4.h),
+                            DropdownButtonFormField<String>(
+                              value: _selectedType,
+                              isExpanded: true,
+                              decoration: _inputDecoration('Select story type', isWide),
+                              items: _storyTypes
+                                  .map((t) => DropdownMenuItem(
+                                value: t,
+                                child: Text(t,
+                                    style: GoogleFonts.dmSans(
+                                        fontSize: isWide ? 14 : 13.sp)),
+                              ))
+                                  .toList(),
+                              onChanged: (v) =>
+                                  setState(() => _selectedType = v),
+                              validator: (v) =>
+                              v == null ? 'Please select a type' : null,
+                            ),
 
-                          SizedBox(height: 18.h),
+                            SizedBox(height: isWide ? 24 : 18.h),
 
-                          _SectionLabel('Story Content'),
-                          SizedBox(height: 10.h),
-                          _TextArea(
-                            controller: _full,
-                            label: 'Full Story Content',
-                            maxLines: 7,
-                            maxLength: 5000,
-                            required: true,
-                          ),
+                            _SectionLabel('Story Content', isWide: isWide),
+                            SizedBox(height: isWide ? 16 : 10.h),
+                            _TextArea(
+                              controller: _full,
+                              label: 'Full Story Content',
+                              maxLines: isWide ? 10 : 7,
+                              maxLength: 5000,
+                              required: true,
+                              isWide: isWide,
+                            ),
 
-                          SizedBox(height: 18.h),
+                            SizedBox(height: isWide ? 24 : 18.h),
 
-                          _SectionLabel('Cultural Context'),
-                          SizedBox(height: 10.h),
-                          _TextArea(
-                            controller: _hist,
-                            label: 'Historical Context (optional)',
-                            maxLines: 4,
-                            maxLength: 500,
-                          ),
-                          SizedBox(height: 10.h),
-                          _TextArea(
-                            controller: _cult,
-                            label: 'Cultural Significance (optional)',
-                            maxLines: 4,
-                            maxLength: 500,
-                          ),
+                            _SectionLabel('Cultural Context', isWide: isWide),
+                            SizedBox(height: isWide ? 16 : 10.h),
+                            _TextArea(
+                              controller: _hist,
+                              label: 'Historical Context (optional)',
+                              maxLines: 4,
+                              maxLength: 500,
+                              isWide: isWide,
+                            ),
+                            SizedBox(height: isWide ? 16 : 10.h),
+                            _TextArea(
+                              controller: _cult,
+                              label: 'Cultural Significance (optional)',
+                              maxLines: 4,
+                              maxLength: 500,
+                              isWide: isWide,
+                            ),
 
-                          SizedBox(height: 18.h),
+                            SizedBox(height: isWide ? 24 : 18.h),
 
-                          _SectionLabel('Story Images'),
-                          SizedBox(height: 10.h),
-                          _ImageUploadArea(
-                            files: _files,
-                            onPick: loading ? null : _pickFiles,
-                            onRemove: _removeFile,
-                          ),
+                            _SectionLabel('Story Images', isWide: isWide),
+                            SizedBox(height: isWide ? 16 : 10.h),
+                            _ImageUploadArea(
+                              files: _files,
+                              onPick: loading ? null : _pickFiles,
+                              onRemove: _removeFile,
+                              isWide: isWide,
+                            ),
 
-                          SizedBox(height: 8.h),
+                          SizedBox(height: isWide ? 8 : 8.h),
                         ],
                       ),
                     ),
@@ -235,7 +257,9 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
 
                 Container(
                   padding:
-                  EdgeInsets.symmetric(horizontal: 24.w, vertical: 16.h),
+                  EdgeInsets.symmetric(
+                      horizontal: isWide ? 24 : 24.w,
+                      vertical: isWide ? 16 : 16.h),
                   decoration: BoxDecoration(
                     border:
                     Border(top: BorderSide(color: _border, width: 1)),
@@ -247,32 +271,33 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
                         onPressed: () => Navigator.pop(context, false),
                         child: Text('Cancel',
                             style: GoogleFonts.dmSans(
-                                fontSize: 13.sp, color: Colors.grey[600])),
+                                fontSize: isWide ? 13 : 13.sp, color: Colors.grey[600])),
                       ),
-                      SizedBox(width: 10.w),
+                      SizedBox(width: isWide ? 10 : 10.w),
                       SizedBox(
-                        height: 42.h,
+                        height: isWide ? 42 : 42.h,
                         child: ElevatedButton(
                           onPressed: loading ? null : _submit,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: _accent,
                             foregroundColor: Colors.white,
                             padding: EdgeInsets.symmetric(
-                                horizontal: 24.w, vertical: 10.h),
+                                horizontal: isWide ? 24 : 24.w,
+                                vertical: isWide ? 10 : 10.h),
                             shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10.r)),
+                                borderRadius: BorderRadius.circular(isWide ? 10 : 10.r)),
                             elevation: 0,
                           ),
                           child: loading
                               ? SizedBox(
-                            width: 18.w,
-                            height: 18.h,
+                            width: isWide ? 18 : 18.w,
+                            height: isWide ? 18 : 18.h,
                             child: const CircularProgressIndicator(
                                 strokeWidth: 2, color: Colors.white),
                           )
                               : Text('Add Story',
                               style: GoogleFonts.dmSans(
-                                  fontSize: 13.sp,
+                                  fontSize: isWide ? 13 : 13.sp,
                                   fontWeight: FontWeight.w600)),
                         ),
                       ),
@@ -287,40 +312,45 @@ class _StoryAddDialogState extends State<StoryAddDialog> {
     );
   }
 
-  InputDecoration _inputDecoration(String hint) => InputDecoration(
+  InputDecoration _inputDecoration(String hint, bool isWide) => InputDecoration(
     hintText: hint,
-    hintStyle: GoogleFonts.dmSans(fontSize: 13.sp, color: Colors.grey[400]),
+    hintStyle: GoogleFonts.dmSans(
+        fontSize: isWide ? 14 : 13.sp, color: Colors.grey[400]),
     contentPadding:
-    EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+    EdgeInsets.symmetric(
+        horizontal: isWide ? 12 : 12.w, vertical: isWide ? 12 : 12.h),
     border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8.r),
+        borderRadius: BorderRadius.circular(isWide ? 8 : 8.r),
         borderSide: const BorderSide(color: _border)),
     enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8.r),
+        borderRadius: BorderRadius.circular(isWide ? 8 : 8.r),
         borderSide: const BorderSide(color: _border)),
     focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8.r),
+        borderRadius: BorderRadius.circular(isWide ? 8 : 8.r),
         borderSide: const BorderSide(color: _accent, width: 1.5)),
     filled: true,
     fillColor: _bg,
   );
 
-  Widget _label(String text) => Text(text,
-      style: GoogleFonts.dmSans(
-          fontSize: 12.sp,
-          fontWeight: FontWeight.w600,
-          color: Colors.grey[700]));
+  Widget _label(String text, bool isWide) {
+    return Text(text,
+        style: GoogleFonts.dmSans(
+            fontSize: isWide ? 14 : 12.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[700]));
+  }
 }
-
 
 class _Header extends StatelessWidget {
   final VoidCallback onClose;
-  const _Header({required this.onClose});
+  final bool isWide;
+  const _Header({required this.onClose, required this.isWide});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(24.w, 20.h, 12.w, 16.h),
+      padding: EdgeInsets.fromLTRB(
+          isWide ? 32 : 24.w, isWide ? 24 : 20.h, isWide ? 16 : 12.w, isWide ? 20 : 16.h),
       decoration: BoxDecoration(
         border: Border(
             bottom: BorderSide(color: Colors.grey.shade200)),
@@ -328,22 +358,22 @@ class _Header extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 4.w,
-            height: 20.h,
+            width: isWide ? 4 : 4.w,
+            height: isWide ? 24 : 20.h,
             decoration: BoxDecoration(
               color: const Color(0xFF3D5A80),
-              borderRadius: BorderRadius.circular(2.r),
+              borderRadius: BorderRadius.circular(2),
             ),
           ),
-          SizedBox(width: 10.w),
+          SizedBox(width: isWide ? 12 : 10.w),
           Expanded(
             child: Text('Add New Cultural Story',
                 style: GoogleFonts.playfairDisplay(
-                    fontSize: 18.sp, fontWeight: FontWeight.bold)),
+                    fontSize: isWide ? 22 : 18.sp, fontWeight: FontWeight.bold)),
           ),
           IconButton(
             onPressed: onClose,
-            icon: Icon(Icons.close, size: 20.sp, color: Colors.grey[600]),
+            icon: Icon(Icons.close, size: isWide ? 22 : 20.sp, color: Colors.grey[600]),
             splashRadius: 20,
           ),
         ],
@@ -354,7 +384,8 @@ class _Header extends StatelessWidget {
 
 class _SectionLabel extends StatelessWidget {
   final String label;
-  const _SectionLabel(this.label);
+  final bool isWide;
+  const _SectionLabel(this.label, {required this.isWide});
 
   @override
   Widget build(BuildContext context) {
@@ -362,10 +393,10 @@ class _SectionLabel extends StatelessWidget {
       children: [
         Text(label,
             style: GoogleFonts.dmSans(
-                fontSize: 13.sp,
+                fontSize: isWide ? 15 : 13.sp,
                 fontWeight: FontWeight.w700,
                 color: const Color(0xFF1A1A2E))),
-        SizedBox(width: 8.w),
+        SizedBox(width: 12),
         Expanded(child: Divider(color: Colors.grey.shade200)),
       ],
     );
@@ -377,10 +408,12 @@ class _InputField extends StatelessWidget {
   final String label;
   final bool required;
   final TextInputType inputType;
+  final bool isWide;
 
   const _InputField({
     required this.controller,
     required this.label,
+    required this.isWide,
     this.required = false,
     this.inputType = TextInputType.text,
   });
@@ -396,25 +429,25 @@ class _InputField extends StatelessWidget {
       children: [
         Text('$label${required ? ' *' : ''}',
             style: GoogleFonts.dmSans(
-                fontSize: 12.sp,
+                fontSize: isWide ? 13 : 12.sp,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[700])),
-        SizedBox(height: 4.h),
+        SizedBox(height: isWide ? 6 : 4.h),
         TextFormField(
           controller: controller,
           keyboardType: inputType,
-          style: GoogleFonts.dmSans(fontSize: 13.sp),
+          style: GoogleFonts.dmSans(fontSize: isWide ? 14 : 13.sp),
           decoration: InputDecoration(
-            contentPadding:
-            EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+            contentPadding: EdgeInsets.symmetric(
+                horizontal: isWide ? 14 : 12.w, vertical: isWide ? 14 : 12.h),
             border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.circular(isWide ? 8 : 8.r),
                 borderSide: const BorderSide(color: _border)),
             enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.circular(isWide ? 8 : 8.r),
                 borderSide: const BorderSide(color: _border)),
             focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.circular(isWide ? 8 : 8.r),
                 borderSide: const BorderSide(color: _accent, width: 1.5)),
             filled: true,
             fillColor: _bg,
@@ -434,10 +467,12 @@ class _TextArea extends StatelessWidget {
   final int maxLines;
   final int maxLength;
   final bool required;
+  final bool isWide;
 
   const _TextArea({
     required this.controller,
     required this.label,
+    required this.isWide,
     this.maxLines = 4,
     this.maxLength = 500,
     this.required = false,
@@ -454,26 +489,26 @@ class _TextArea extends StatelessWidget {
       children: [
         Text('$label${required ? ' *' : ''}',
             style: GoogleFonts.dmSans(
-                fontSize: 12.sp,
+                fontSize: isWide ? 13 : 12.sp,
                 fontWeight: FontWeight.w600,
                 color: Colors.grey[700])),
-        SizedBox(height: 4.h),
+        SizedBox(height: isWide ? 6 : 4.h),
         TextFormField(
           controller: controller,
           maxLength: maxLength,
           maxLines: maxLines,
-          style: GoogleFonts.dmSans(fontSize: 13.sp),
+          style: GoogleFonts.dmSans(fontSize: isWide ? 14 : 13.sp),
           decoration: InputDecoration(
-            contentPadding:
-            EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+            contentPadding: EdgeInsets.symmetric(
+                horizontal: isWide ? 14 : 12.w, vertical: isWide ? 14 : 12.h),
             border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.circular(isWide ? 8 : 8.r),
                 borderSide: const BorderSide(color: _border)),
             enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.circular(isWide ? 8 : 8.r),
                 borderSide: const BorderSide(color: _border)),
             focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(8.r),
+                borderRadius: BorderRadius.circular(isWide ? 8 : 8.r),
                 borderSide: const BorderSide(color: _accent, width: 1.5)),
             filled: true,
             fillColor: _bg,
@@ -491,11 +526,13 @@ class _ImageUploadArea extends StatelessWidget {
   final List<PlatformFile> files;
   final VoidCallback? onPick;
   final void Function(int index) onRemove;
+  final bool isWide;
 
   const _ImageUploadArea({
     required this.files,
     required this.onPick,
     required this.onRemove,
+    required this.isWide,
   });
 
   @override
@@ -507,45 +544,45 @@ class _ImageUploadArea extends StatelessWidget {
           onTap: onPick,
           child: Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(vertical: 16.h),
+            padding: EdgeInsets.symmetric(vertical: isWide ? 20 : 16.h),
             decoration: BoxDecoration(
               color: const Color(0xFFF8F8F8),
-              borderRadius: BorderRadius.circular(8.r),
+              borderRadius: BorderRadius.circular(isWide ? 8 : 8.r),
               border: Border.all(
                   color: Colors.grey.shade300, style: BorderStyle.solid),
             ),
             child: Column(
               children: [
                 Icon(Icons.cloud_upload_outlined,
-                    size: 28.sp, color: Colors.grey[500]),
-                SizedBox(height: 6.h),
+                    size: isWide ? 32 : 28.sp, color: Colors.grey[500]),
+                SizedBox(height: isWide ? 8 : 6.h),
                 Text('Click to upload images (max 3)',
                     style: GoogleFonts.dmSans(
-                        fontSize: 12.sp, color: Colors.grey[500])),
+                        fontSize: isWide ? 14 : 12.sp, color: Colors.grey[500])),
                 Text('PNG, JPG, JPEG, WEBP',
                     style: GoogleFonts.dmSans(
-                        fontSize: 11.sp, color: Colors.grey[400])),
+                        fontSize: isWide ? 12 : 11.sp, color: Colors.grey[400])),
               ],
             ),
           ),
         ),
 
         if (files.isNotEmpty) ...[
-          SizedBox(height: 8.h),
+          SizedBox(height: isWide ? 12 : 8.h),
           Wrap(
-            spacing: 8.w,
-            runSpacing: 6.h,
+            spacing: isWide ? 10 : 8.w,
+            runSpacing: isWide ? 8 : 6.h,
             children: files.asMap().entries.map((e) {
               return Chip(
                 label: Text(e.value.name,
                     style:
-                    GoogleFonts.dmSans(fontSize: 11.sp)),
-                deleteIcon: Icon(Icons.close, size: 14.sp),
+                    GoogleFonts.dmSans(fontSize: isWide ? 13 : 11.sp)),
+                deleteIcon: Icon(Icons.close, size: isWide ? 16 : 14.sp),
                 onDeleted: () => onRemove(e.key),
                 backgroundColor: Colors.grey.shade100,
                 side: BorderSide(color: Colors.grey.shade300),
                 padding: EdgeInsets.symmetric(
-                    horizontal: 8.w, vertical: 2.h),
+                    horizontal: isWide ? 10 : 8.w, vertical: isWide ? 4 : 2.h),
               );
             }).toList(),
           ),
