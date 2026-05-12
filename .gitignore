@@ -1,0 +1,15 @@
+# .NET
+LokYatra/backend/bin/
+LokYatra/backend/obj/
+
+# Flutter
+LokYatra/frontend/build/
+LokYatra/frontend/.dart_tool/
+LokYatra/frontend/.idea/
+LokYatra/frontend/.flutter-plugins
+LokYatra/frontend/.flutter-plugins-dependencies
+
+# Node
+node_modules/
+package.json
+package-lock.json

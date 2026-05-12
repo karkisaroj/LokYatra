@@ -1,0 +1,136 @@
+﻿using System.Text.Json;
+using backend.Database;
+using backend.DTO;
+using backend.Models;
+using backend.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace backend.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class StoriesController(AppDbContext db, ICloudImageService imageService) : ControllerBase
+    {
+        // Shared mapping — one place to change fields
+        private static object MapStory(Story s) => new
+        {
+            id = s.Id,
+            culturalSiteId = s.CulturalSiteId,
+            title = s.Title,
+            storyType = s.StoryType,
+            estimatedReadTimeMinutes = s.EstimatedReadTimeMinutes,
+            fullContent = s.FullContent,
+            historicalContext = s.HistoricalContext,
+            culturalSignificance = s.CulturalSignificance,
+            imageUrls = s.ImageUrls,
+            createdAt = s.CreatedAt,   // ← was missing
+            updatedAt = s.UpdatedAt,   // ← was missing
+        };
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<object>>> GetStories([FromQuery] int? siteId = null)
+        {
+            var q = db.Stories.AsQueryable();
+            if (siteId.HasValue) q = q.Where(s => s.CulturalSiteId == siteId.Value);
+
+            var list = await q
+                .OrderByDescending(s => s.CreatedAt)
+                .ToListAsync();
+
+            return Ok(list.Select(MapStory));
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<object>> GetStory(int id)
+        {
+            var story = await db.Stories.FindAsync(id);
+            if (story is null) return NotFound("Story not found");
+            return Ok(MapStory(story));
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpPost]
+        [RequestSizeLimit(25_000_000)]
+        public async Task<ActionResult<object>> Create([FromForm] StoryCreateFormDto form)
+        {
+            var site = await db.CulturalSites.FindAsync(form.CulturalSiteId);
+            if (site is null) return NotFound("Related site not found");
+
+            var files = Request.Form.Files;
+            var urls = files.Count > 0
+                ? await imageService.UploadFilesAsync("lokyatra/stories", files)
+                : new List<string>();
+
+            var entity = new Story
+            {
+                CulturalSiteId = form.CulturalSiteId,
+                Title = form.Title,
+                StoryType = form.StoryType,
+                EstimatedReadTimeMinutes = form.EstimatedReadTimeMinutes,
+                FullContent = form.FullContent,
+                HistoricalContext = form.HistoricalContext,
+                CulturalSignificance = form.CulturalSignificance,
+                ImageUrls = [.. urls],
+                CreatedAt = DateTimeOffset.UtcNow,
+                UpdatedAt = DateTimeOffset.UtcNow,
+            };
+
+            db.Stories.Add(entity);
+            await db.SaveChangesAsync();
+            return Ok(MapStory(entity));
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpPut("{id:int}")]
+        [RequestSizeLimit(25_000_000)]
+        public async Task<ActionResult<object>> Update(int id, [FromForm] StoryCreateFormDto form)
+        {
+            var entity = await db.Stories.FindAsync(id);
+            if (entity is null) return NotFound("Story not found");
+
+            var site = await db.CulturalSites.FindAsync(form.CulturalSiteId);
+            if (site is null) return NotFound("Related site not found");
+
+            var keepUrls = string.IsNullOrWhiteSpace(form.ExistingImagesJson)
+                ? entity.ImageUrls.ToList()
+                : JsonSerializer.Deserialize<List<string>>(form.ExistingImagesJson) ?? [];
+
+            var files = Request.Form.Files;
+            if (files.Count > 0)
+            {
+                var newUrls = await imageService.UploadFilesAsync("lokyatra/stories", files);
+                entity.ImageUrls = [.. keepUrls, .. newUrls];
+            }
+            else
+            {
+                entity.ImageUrls = keepUrls.ToArray();
+            }
+
+            entity.CulturalSiteId = form.CulturalSiteId;
+            entity.Title = form.Title;
+            entity.StoryType = form.StoryType;
+            entity.EstimatedReadTimeMinutes = form.EstimatedReadTimeMinutes;
+            entity.FullContent = form.FullContent;
+            entity.HistoricalContext = form.HistoricalContext;
+            entity.CulturalSignificance = form.CulturalSignificance;
+            entity.UpdatedAt = DateTimeOffset.UtcNow;
+
+            await db.SaveChangesAsync();
+            return Ok(MapStory(entity));
+        }
+
+        [Authorize(Roles = "admin")]
+        [HttpDelete("{id:int}")]
+        public async Task<ActionResult> Delete(int id)
+        {
+            var entity = await db.Stories.FindAsync(id);
+            if (entity is null) return NotFound("Story not found");
+
+            db.Stories.Remove(entity);
+            await db.SaveChangesAsync();
+            return Ok(new { message = "Story deleted successfully" });
+        }
+    }
+}
