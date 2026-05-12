@@ -150,7 +150,7 @@ class _SavedCard extends StatelessWidget {
                 width: double.infinity,
                 height: 190.h,
                 child: imageUrl != null
-                    ? ProxyImage(imageUrl: imageUrl, width: double.infinity, height: double.infinity, fit: BoxFit.cover, borderRadiusValue: 0, thumb: true)
+                    ? ProxyImage(imageUrl: imageUrl, width: double.infinity, height: 190, fit: BoxFit.cover, borderRadiusValue: 0)
                     : _placeholder(),
               ),
               Positioned(

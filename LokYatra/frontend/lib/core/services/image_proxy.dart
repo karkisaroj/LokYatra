@@ -5,6 +5,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
 import 'package:lokyatra_frontend/core/services/constants.dart';
 
+// ─── Custom FileService ───────────────────────────────────────────────────────
+// Sends a browser-like User-Agent so Wikimedia and other hosts don't block us.
+class _BrowserFileService extends HttpFileService {
+  @override
+  Future<FileServiceResponse> get(String url,
+      {Map<String, String>? headers}) {
+    return super.get(url, headers: {
+      'User-Agent':
+          'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 '
+          '(KHTML, like Gecko) Chrome/120 Mobile Safari/537.36 LokYatra/1.0',
+      ...?headers,
+    });
+  }
+}
+
 // ─── Cache ────────────────────────────────────────────────────────────────────
 class LokYatraCacheManager extends CacheManager with ImageCacheManager {
   static const key = 'lokyatraImageCache';
@@ -16,6 +31,7 @@ class LokYatraCacheManager extends CacheManager with ImageCacheManager {
           key,
           stalePeriod: const Duration(days: 30),
           maxNrOfCacheObjects: 500,
+          fileService: _BrowserFileService(),
         ));
 }
 
@@ -99,7 +115,7 @@ class ProxyImage extends StatelessWidget {
         ? 200.0
         : height;
 
-    final url = _resolveUrl(Uri.decodeFull(raw));
+    final url = _resolveUrl(raw);
     if (url.isEmpty) return _blank();
 
     return ClipRRect(
@@ -136,7 +152,6 @@ class ProxyImage extends StatelessWidget {
       fadeOutDuration: const Duration(milliseconds: 100),
       placeholder:     (_, _) => _loading(w, h),
       errorWidget: (_, failedUrl, err) {
-        debugPrint('[ProxyImage] failed: $failedUrl — $err');
         return _broken(w, h);
       },
     );

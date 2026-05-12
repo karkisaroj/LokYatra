@@ -236,7 +236,7 @@ class _BookingCard extends StatelessWidget {
               width: double.infinity,
               height: 170.h,
               child: imageUrl.isNotEmpty
-                  ? ProxyImage(imageUrl: imageUrl, width: double.infinity, height: double.infinity, fit: BoxFit.cover, borderRadiusValue: 0, thumb: true)
+                  ? ProxyImage(imageUrl: imageUrl, width: double.infinity, height: 170.h, fit: BoxFit.cover, borderRadiusValue: 0)
                   : _fallbackImage(),
             ),
             Container(
@@ -513,8 +513,18 @@ class _BookingCard extends StatelessWidget {
   }
 
   Widget _fallbackImage() => Container(
-    color: Colors.grey.shade200,
-    child: Center(child: Icon(Icons.hotel_outlined, size: 48.sp, color: Colors.grey[400])),
+    decoration: BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [const Color(0xFFCD6E4E).withValues(alpha: 0.15), const Color(0xFF2D1B10).withValues(alpha: 0.08)],
+      ),
+    ),
+    child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+      Icon(Icons.hotel_outlined, size: 40.sp, color: const Color(0xFFCD6E4E).withValues(alpha: 0.5)),
+      SizedBox(height: 6.h),
+      Text('Homestay', style: GoogleFonts.dmSans(fontSize: 12.sp, color: Colors.grey[500])),
+    ])),
   );
 
   String _fmtDate(dynamic raw) {
