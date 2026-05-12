@@ -139,6 +139,7 @@ class _HomeTab extends StatefulWidget {
 class _HomeTabState extends State<_HomeTab> {
   static const _dark = Color(0xFF2D1B10);
   String? _profileImage;
+  bool _preloadDone = false;
 
   @override
   void didUpdateWidget(_HomeTab oldWidget) {
@@ -162,8 +163,42 @@ class _HomeTabState extends State<_HomeTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         context.read<HomestayBloc>().add(const TouristLoadAllHomestays());
+        _schedulePreload();
       }
     });
+  }
+
+  void _schedulePreload() {
+    Future.delayed(const Duration(seconds: 2), () {
+      if (mounted && !_preloadDone) _preloadAllImages();
+    });
+  }
+
+  void _preloadAllImages() {
+    if (!mounted || _preloadDone) return;
+    _preloadDone = true;
+    final urls = <String>[];
+
+    final sitesState = context.read<SitesBloc>().state;
+    if (sitesState is SitesLoaded) {
+      for (final s in sitesState.sites) {
+        if (s.imageUrls.isNotEmpty) urls.add(s.imageUrls.first);
+      }
+    }
+    final homestayState = context.read<HomestayBloc>().state;
+    if (homestayState is TouristAllHomestaysLoaded) {
+      for (final h in homestayState.homestays) {
+        if (h.imageUrls.isNotEmpty) urls.add(h.imageUrls.first);
+      }
+    }
+
+    for (final url in urls) {
+      _download(url);
+    }
+  }
+
+  Future<void> _download(String url) async {
+    try { await LokYatraCacheManager().downloadFile(url); } catch (_) {}
   }
 
   Future<void> _loadProfile() async {
@@ -184,7 +219,6 @@ class _HomeTabState extends State<_HomeTab> {
         }
       }
     } catch (e) {
-      debugPrint('profile load error: $e');
     }
   }
 
